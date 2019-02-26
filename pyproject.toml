@@ -39,6 +39,9 @@ classifiers = []
 
 [tool.poetry.dependencies]
 python = "^3.7"
+cafeteria-asyncio = "^0.1.0"
+aiohttp = "^3.5"
+graphql-core-next = "^1.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^1.11"
