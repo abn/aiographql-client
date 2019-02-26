@@ -59,3 +59,27 @@ async def get_bots():
     subscription: GraphQLSubscription = await client.subscribe(request, callbacks)
     await subscription.task
 ```
+
+### Query Validation Failures
+If your query is in valid, thanks to graphql-core-next, we get a detailed exception in the traceback.
+
+```
+aiographql.client.exceptions.GraphQLClientValidationException: Query validation failed
+
+Cannot query field 'ids' on type 'chatbot'. Did you mean 'id'?
+
+GraphQL request (4:13)
+3:           chatbot {
+4:             ids, bot_names
+               ^
+5:           }
+
+Cannot query field 'bot_names' on type 'chatbot'. Did you mean 'bot_name' or 'bot_language'?
+
+GraphQL request (4:18)
+3:           chatbot {
+4:             ids, bot_names
+                    ^
+5:           }
+
+```
