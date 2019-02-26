@@ -83,3 +83,24 @@ GraphQL request (4:18)
 5:           }
 
 ```
+
+### Sample Requests
+#### Using `variables` and `operationName`
+```py
+GraphQLRequest(
+    query="""
+    query get_bot_created($id: Int) {
+      chatbot(where: {id: {_eq: $id}}) {
+        id, created
+      }
+    }
+    query get_bot_name($id: Int) {
+      chatbot(where: {id: {_eq: $id}}) {
+        id, bot_name
+      }
+    }
+    """,
+    variables={'id': '109'},
+    operationName='get_bot_name'
+)
+```
