@@ -22,7 +22,11 @@ class GraphQLRequest:
 
     def json(self) -> Dict[str, Any]:
         # TODO: serialise variables correctly
-        return {k: v for k, v in asdict(self).items() if v is not None}
+        return {
+            k: v
+            for k, v in asdict(self).items()
+            if k not in {"schema"} and v is not None
+        }
 
 
 @dataclass
