@@ -22,6 +22,9 @@ exclude = '''
 
 [tool.poetry]
 name = "aiographql-client"
+packages = [
+    { include = "aiographql" }
+]
 version = "0.1.0-dev"
 description = "An asyncio GraphQL client built on top of aiohttp and graphql-core-next"
 authors = [
