@@ -8,7 +8,11 @@ from typing import Dict, Any, Optional, List, Union, NoReturn
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 
-from aiographql.client.transaction import GraphQLResponse, GraphQLRequest
+from aiographql.client.transaction import (
+    GraphQLResponse,
+    GraphQLRequest,
+    GraphQLBaseResponse,
+)
 
 
 class GraphQLSubscriptionEventType(Enum):
@@ -25,9 +29,7 @@ class GraphQLSubscriptionEventType(Enum):
 
 
 @dataclass
-class GraphQLSubscriptionMessage:
-    json: Dict[str, Any] = field(default_factory=dict)
-
+class GraphQLSubscriptionMessage(GraphQLBaseResponse):
     @property
     def id(self) -> Optional[str]:
         return self.json.get("id")
@@ -44,7 +46,7 @@ class GraphQLSubscriptionMessage:
         payload = self.json.get("payload")
         if payload is not None:
             if self.type == GraphQLSubscriptionEventType.DATA:
-                return GraphQLResponse(json=payload)
+                return GraphQLResponse(request=self.request, json=payload)
             return payload
 
 
@@ -119,7 +121,8 @@ class GraphQLSubscription:
 
     def create_event(self, message: Dict[str, Any]) -> GraphQLSubscriptionEvent:
         return GraphQLSubscriptionEvent(
-            subscription=self, message=GraphQLSubscriptionMessage(json=message)
+            subscription=self,
+            message=GraphQLSubscriptionMessage(request=self.request, json=message),
         )
 
     async def handle(self, event: GraphQLSubscriptionEvent) -> NoReturn:

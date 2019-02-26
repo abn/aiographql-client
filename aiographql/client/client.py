@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 
 import aiohttp
 import graphql
@@ -17,11 +17,7 @@ from aiographql.client.subscription import (
     GraphQLSubscriptionEventType,
     GraphQLSubscription,
 )
-from aiographql.client.transaction import (
-    GraphQLTransaction,
-    GraphQLResponse,
-    GraphQLRequest,
-)
+from aiographql.client.transaction import GraphQLTransaction, GraphQLRequest
 
 QUERY_METHOD_POST = "post"
 QUERY_METHOD_GET = "get"
@@ -42,29 +38,38 @@ class GraphQLClient:
         # TODO: consider adding ttl logic for expiring schemas for long running services
         return self._schema
 
-    async def introspect(self):
-        introspection = await self.query(
+    async def introspect(self) -> graphql.GraphQLSchema:
+        request = GraphQLRequest(
             query=graphql.get_introspection_query(descriptions=False), validate=False
         )
+        introspection = await self.query(request)
         self._schema = graphql.build_client_schema(introspection=introspection.data)
+        return self._schema
 
-    async def validate(self, query) -> List[graphql.GraphQLError]:
-        if self.schema is None:
-            await self.introspect()
+    async def validate(
+        self, query: str, schema: Optional[graphql.GraphQLSchema] = None
+    ) -> List[graphql.GraphQLError]:
+        if schema is None:
+            if self.schema is None:
+                await self.introspect()
+            schema = self.schema
+
         return await asyncio.get_running_loop().run_in_executor(
-            None, graphql.validate, self.schema, graphql.parse(query)
+            None, graphql.validate, schema, graphql.parse(query)
         )
 
-    async def _validate(self, query: str, validate: bool = True):
-        if validate:
-            errors = await self.validate(query)
+    async def _validate(self, request: GraphQLRequest):
+        if request.validate:
+            errors = await self.validate(request.query, request.schema)
+            if request.schema is None:
+                request.schema = self.schema
             if errors:
                 raise GraphQLClientValidationException(*errors)
 
     async def request(
-        self, request: GraphQLRequest, validate: bool = True, method: str = None
+        self, request: GraphQLRequest, method: str = None
     ) -> GraphQLTransaction:
-        await self._validate(request.query, validate)
+        await self._validate(request)
         method = method or self._method
 
         if method == QUERY_METHOD_POST:
@@ -77,36 +82,21 @@ class GraphQLClient:
         async with aiohttp.ClientSession(headers=self._headers) as session:
             async with session.request(method, self.endpoint, **kwargs) as resp:
                 body = await resp.json()
-                transaction = GraphQLTransaction(
-                    request=request, response=GraphQLResponse(json=body)
-                )
+                transaction = GraphQLTransaction.create(request=request, json=body)
 
                 if 200 <= resp.status < 300:
                     return transaction
 
                 raise GraphQLTransactionException(transaction)
 
-    async def post(
-        self, request: GraphQLRequest, validate: bool = True
-    ) -> GraphQLTransaction:
-        return await self.request(request, validate, QUERY_METHOD_POST)
+    async def post(self, request: GraphQLRequest) -> GraphQLTransaction:
+        return await self.request(request, QUERY_METHOD_POST)
 
-    async def get(
-        self, request: GraphQLRequest, validate: bool = True
-    ) -> GraphQLTransaction:
-        return await self.request(request, validate, QUERY_METHOD_GET)
+    async def get(self, request: GraphQLRequest) -> GraphQLTransaction:
+        return await self.request(request, QUERY_METHOD_GET)
 
-    async def query(
-        self,
-        query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        operation_name: Optional[str] = None,
-        validate: bool = True,
-    ) -> GraphQLTransaction:
-        request = GraphQLRequest(
-            query=query, variables=variables, operationName=operation_name
-        )
-        return await self.request(request=request, validate=validate)
+    async def query(self, request: GraphQLRequest) -> GraphQLTransaction:
+        return await self.request(request=request)
 
     async def _subscribe(self, subscription: GraphQLSubscription):
         async with aiohttp.ClientSession() as session:
@@ -138,12 +128,9 @@ class GraphQLClient:
                     await ws.send_json(data=subscription.connection_stop_request)
 
     async def subscribe(
-        self,
-        request: GraphQLRequest,
-        callbacks: Optional[CallbackRegistry] = None,
-        validate: bool = True,
+        self, request: GraphQLRequest, callbacks: Optional[CallbackRegistry] = None
     ) -> GraphQLSubscription:
-        await self._validate(request.query, validate)
+        await self._validate(request)
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks or CallbackRegistry()
         )
