@@ -61,7 +61,7 @@ async def get_bots():
 ```
 
 ### Query Validation Failures
-If your query is in valid, thanks to graphql-core-next, we get a detailed exception in the traceback.
+If your query is invalid, thanks to graphql-core-next, we get a detailed exception in the traceback.
 
 ```
 aiographql.client.exceptions.GraphQLClientValidationException: Query validation failed
