@@ -29,7 +29,6 @@ class GraphQLClient:
         self._method = method
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
-        self._connector = aiohttp.TCPConnector(ttl_dns_cache=60)
         self._schema: Optional[graphql.GraphQLSchema] = None
 
     async def introspect(self) -> graphql.GraphQLSchema:
