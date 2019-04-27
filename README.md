@@ -49,7 +49,7 @@ async def get_bots():
         """
     )
     
-    # configure callbaks, here we simply print the event message when a data event
+    # configure callbacks, here we simply print the event message when a data event
     # (`GraphQLSubscriptionEvent`) is received.
     callbacks = CallbackRegistry()
     callbacks.register(
