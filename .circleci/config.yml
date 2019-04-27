@@ -1,0 +1,53 @@
+version: 2
+jobs:
+  black:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: ensure black
+          command: |
+            pip install --user black
+            ~/.local/bin/black --check ./aiographql ./tests
+
+  test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install --user --upgrade poetry tox tox-venv
+      - run:
+          name: run tests
+          command: |
+            poetry run ~/.local/bin/tox
+
+  publish:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: publish python wheel
+          command: |
+            pip install poetry
+            poetry config repositories.twyla $PYPI_REPO_URL
+            poetry config http-basic.twyla $PYPI_REPO_USERNAME $PYPI_REPO_PASSWORD
+            poetry publish --build -r twyla
+
+workflows:
+  version: 2
+  ci-checks:
+    jobs:
+      - black
+      - test
+      - publish:
+          context: Build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
