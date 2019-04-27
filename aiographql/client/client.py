@@ -31,38 +31,48 @@ class GraphQLClient:
         self._headers.update(headers or dict())
         self._connector = aiohttp.TCPConnector(ttl_dns_cache=60)
         self._schema: Optional[graphql.GraphQLSchema] = None
-        asyncio.create_task(self.introspect())
-
-    @property
-    def schema(self):
-        # TODO: consider adding ttl logic for expiring schemas for long running services
-        return self._schema
 
     async def introspect(self) -> graphql.GraphQLSchema:
+        """
+        Introspect the GraphQL endpoint specified for this client and return a `graphql.GraphQLSchema` object
+        specifying the schema associated with this endpoint.
+
+        :return: GraphQL schema for the configured endpoint
+        """
         request = GraphQLRequest(
             query=graphql.get_introspection_query(descriptions=False), validate=False
         )
         introspection = await self.query(request)
-        self._schema = graphql.build_client_schema(introspection=introspection.data)
+        return graphql.build_client_schema(introspection=introspection.data)
+
+    async def get_schema(self, refresh: bool = False) -> graphql.GraphQLSchema:
+        """
+        Get the introspected schema for the endpoint used by this client. If an unexpired cache exists, this is
+        returned unless the `refresh` parameter is set to True.
+
+        :param refresh: Refresh the cached schema by forcing an introspection of the GraphQL endpoint.
+        :return: The GraphQL schema as introspected. This maybe a previously cached value.
+        """
+        # TODO: consider adding ttl logic for expiring schemas for long running services
+        if self._schema is None or refresh:
+            self._schema = await self.introspect()
         return self._schema
 
     async def validate(
         self, query: str, schema: Optional[graphql.GraphQLSchema] = None
     ) -> List[graphql.GraphQLError]:
-        if schema is None:
-            if self.schema is None:
-                await self.introspect()
-            schema = self.schema
-
         return await asyncio.get_running_loop().run_in_executor(
-            None, graphql.validate, schema, graphql.parse(query)
+            None,
+            graphql.validate,
+            schema or await self.get_schema(),
+            graphql.parse(query),
         )
 
     async def _validate(self, request: GraphQLRequest):
         if request.validate:
             errors = await self.validate(request.query, request.schema)
             if request.schema is None:
-                request.schema = self.schema
+                request.schema = await self.get_schema()
             if errors:
                 raise GraphQLClientValidationException(*errors)
 
