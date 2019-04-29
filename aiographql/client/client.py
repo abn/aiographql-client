@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import aiohttp
 import graphql
@@ -31,7 +31,11 @@ class GraphQLClient:
         self._headers.update(headers or dict())
         self._schema: Optional[graphql.GraphQLSchema] = None
 
-    async def introspect(self) -> graphql.GraphQLSchema:
+    async def introspect(
+        self, extra_headers: Optional[Dict[str, str]] = None
+    ) -> graphql.GraphQLSchema:
+        if extra_headers is None:
+            extra_headers = {}
         """
         Introspect the GraphQL endpoint specified for this client and return a `graphql.GraphQLSchema` object
         specifying the schema associated with this endpoint.
@@ -39,7 +43,9 @@ class GraphQLClient:
         :return: GraphQL schema for the configured endpoint
         """
         request = GraphQLRequest(
-            query=graphql.get_introspection_query(descriptions=False), validate=False
+            query=graphql.get_introspection_query(descriptions=False),
+            validate=False,
+            extra_headers=extra_headers,
         )
         introspection = await self.query(request)
         return graphql.build_client_schema(introspection=introspection.data)
@@ -58,8 +64,16 @@ class GraphQLClient:
         return self._schema
 
     async def validate(
-        self, query: str, schema: Optional[graphql.GraphQLSchema] = None
+        self,
+        query: str,
+        schema: Optional[graphql.GraphQLSchema] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
     ) -> List[graphql.GraphQLError]:
+        if schema is None:
+            if self.schema is None:
+                await self.introspect(extra_headers)
+            schema = self.schema
+
         return await asyncio.get_running_loop().run_in_executor(
             None,
             graphql.validate,
@@ -69,7 +83,9 @@ class GraphQLClient:
 
     async def _validate(self, request: GraphQLRequest):
         if request.validate:
-            errors = await self.validate(request.query, request.schema)
+            errors = await self.validate(
+                request.query, request.schema, extra_headers=request.extra_headers
+            )
             if request.schema is None:
                 request.schema = await self.get_schema()
             if errors:
@@ -87,8 +103,8 @@ class GraphQLClient:
             kwargs = dict(params=request.json())
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
-
-        async with aiohttp.ClientSession(headers=self._headers) as session:
+        headers = {**self._headers, **request.extra_headers}
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.request(method, self.endpoint, **kwargs) as resp:
                 body = await resp.json()
                 transaction = GraphQLTransaction.create(request=request, json=body)

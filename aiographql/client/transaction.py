@@ -19,13 +19,14 @@ class GraphQLRequest:
     variables: Dict[str, Any] = field(default=None)
     validate: bool = field(default=True)
     schema: Optional[graphql.GraphQLSchema] = None
+    extra_headers: Dict[str, str] = field(default_factory=dict)
 
     def json(self) -> Dict[str, Any]:
         # TODO: serialise variables correctly
         return {
             k: v
             for k, v in asdict(self).items()
-            if k not in {"schema"} and v is not None
+            if k not in {"schema", "extra_headers"} and v is not None
         }
 
 
