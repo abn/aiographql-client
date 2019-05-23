@@ -47,7 +47,7 @@ aiohttp = "^3.5"
 graphql-core-next = "^1.0"
 
 [tool.poetry.dev-dependencies]
-pre-commit = "^1.11"
+pre-commit = "^1.16"
 flake8 = "^3.5"
 coverage = "^4.5"
 black = "^18.3-alpha.0"
