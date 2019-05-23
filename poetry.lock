@@ -62,11 +62,11 @@ description = "The uncompromising code formatter."
 name = "black"
 optional = false
 python-versions = ">=3.6"
-version = "18.9b0"
+version = "19.3b0"
 
 [package.dependencies]
 appdirs = "*"
-attrs = ">=17.4.0"
+attrs = ">=18.1.0"
 click = ">=6.5"
 toml = ">=0.9.4"
 
@@ -304,7 +304,7 @@ setuptools = "*"
 six = ">=1.10.0"
 
 [package.dependencies.more-itertools]
-python = ">2.7"
+python = ">=2.8"
 version = ">=4.0.0"
 
 [[package]]
@@ -388,7 +388,7 @@ python-versions = ">=2.7"
 version = "0.3.3"
 
 [metadata]
-content-hash = "b1c5879e1a97d196745a174a1b51d974a9d4c055b9d974812bac349ffb85dd9d"
+content-hash = "346bf1a35ee8e6b917e3adc81e69967e86983e596f2c206fd3fb3c03039310b3"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -398,7 +398,7 @@ appdirs = ["9e5896d1372858f8dd3344faf4e5014d21849c756c8d5701f78f8a103b372d92", "
 async-timeout = ["0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f", "4291ca197d287d274d0b6cb5d6f8f8f82d434ed288f962539ff18cc9012f9ea3"]
 atomicwrites = ["03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b4", "75a9445bac02d8d058d5e1fe689654ba5a6556a1dfd8ce6ec55a0ed79866cfa6"]
 attrs = ["69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79", "f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399"]
-black = ["817243426042db1d36617910df579a54f1afd659adb96fc5032fcf4b36209739", "e030a9a28f542debc08acceb273f228ac422798e5215ba2a791a6ddeaaca22a5"]
+black = ["09a9dcb7c46ed496a9850b76e4e825d6049ecd38b611f1224857a79bd985a8cf", "68950ffd4d9169716bcb8719a56c07a2f4485354fec061cdd5910aa07369731c"]
 cafeteria = ["1dfa0d86172105251ea763e1d9dddc035c6e7ed88c20ac874f2f642314519c79", "f44b12575d24c8046c6a49fdab884dcc22fbcd8b293a6137ab12d3abf1f85afb"]
 cafeteria-asyncio = ["2fb46bdeb6bd2bc7944cc4e34cf30a2f78555da0f8403d75370b8f22468efbac", "5e01be03d8eb2032fda74a1c48918d98f576a42bbcae1c11845ad69117c824f6"]
 cfgv = ["6e9f2feea5e84bc71e56abd703140d7a2c250fc5ba38b8702fd6a68ed4e3b2ef", "e7f186d4a36c099a9e20b04ac3108bd8bb9b9257e692ce18c8c3764d5cb12172"]
