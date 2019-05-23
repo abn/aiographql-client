@@ -7,9 +7,14 @@ from aiographql.client.transaction import GraphQLRequest
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.fixture
+def server(request):
+    return request.config.getoption("--pokemon-server")
+
+
 @pytest.fixture(autouse=True)
-def client() -> GraphQLClient:
-    return GraphQLClient(endpoint="https://graphql-pokemon.now.sh/")
+def client(server) -> GraphQLClient:
+    return GraphQLClient(endpoint=server)
 
 
 async def test_simple_anonymous_query(client):
