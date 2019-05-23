@@ -14,6 +14,7 @@ jobs:
   test:
     docker:
       - image: circleci/python:3.7
+      - image: docker.io/devnullcake/graphql-pokemon:latest
     steps:
       - checkout
       - run:
