@@ -173,7 +173,7 @@ description = "GraphQL-core-next is a Python port of GraphQL.js, the JavaScript 
 name = "graphql-core-next"
 optional = false
 python-versions = ">=3.6"
-version = "1.0.2"
+version = "1.0.4"
 
 [[package]]
 category = "dev"
@@ -304,7 +304,7 @@ setuptools = "*"
 six = ">=1.10.0"
 
 [package.dependencies.more-itertools]
-python = ">2.7"
+python = ">=2.8"
 version = ">=4.0.0"
 
 [[package]]
@@ -409,7 +409,7 @@ coverage = ["0c5fe441b9cfdab64719f24e9684502a59432df7570521563d7b1aff27ac755f", 
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 filelock = ["b8d5ca5ca1c815e1574aee746650ea7301de63d87935b3463d26368b76e31633", "d610c1bb404daf85976d7a82eb2ada120f04671007266b708606565dd03b5be6"]
 flake8 = ["859996073f341f2670741b51ec1e67a01da142831aa1fdc6242dbf88dffbe661", "a796a115208f5c03b18f332f7c11729812c8c3ded6c46319c59b53efd3819da8"]
-graphql-core-next = ["04d34cd701fdc5a51b0bdd33f857f125a73727bc251be35aa08bad2699ee087d", "6acc14924c111cb532ae373a6c2d06850ec29d861b8884c86ab2d6f57f0e4c0b"]
+graphql-core-next = ["078232883ca3d9dcccfcddadd031d393f837fea6170e262892a36f3265ad1177", "6da7c218e905d2a57eb920efeaf9dfca632465599371dfaf5fb59623cd84043d"]
 identify = ["244e7864ef59f0c7c50c6db73f58564151d91345cd9b76ed793458953578cadd", "8ff062f90ad4b09cfe79b5dfb7a12e40f19d2e68a5c9598a49be45f16aba7171"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
 importlib-metadata = ["46fc60c34b6ed7547e2a723fc8de6dc2e3a1173f8423246b3ce497f064e9c3de", "bc136180e961875af88b1ab85b4009f4f1278f8396a60526c0009f503a1a96ca"]
