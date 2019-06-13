@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import uuid
 from asyncio import Task
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Any, Optional, List, Union, NoReturn
+from typing import Any, Dict, List, NoReturn, Optional, Union
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 
 from aiographql.client.transaction import (
-    GraphQLResponse,
-    GraphQLRequest,
     GraphQLBaseResponse,
+    GraphQLRequest,
+    GraphQLResponse,
 )
 
 
@@ -101,7 +101,7 @@ class GraphQLSubscription:
     def connection_init_request(self):
         return {
             "type": GraphQLSubscriptionEventType.CONNECTION_INIT.value,
-            "payload": {"headers": self.headers},
+            "payload": {"headers": self.headers or self.request.headers},
         }
 
     @property
@@ -109,7 +109,7 @@ class GraphQLSubscription:
         return {
             "id": self.id,
             "type": GraphQLSubscriptionEventType.START.value,
-            "payload": asdict(self.request),
+            "payload": self.request.asdict(),
         }
 
     @property
