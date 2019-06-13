@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Optional, List
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 import aiohttp
 import graphql
@@ -10,28 +11,33 @@ from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
 
 from aiographql.client.exceptions import (
     GraphQLClientException,
-    GraphQLTransactionException,
     GraphQLClientValidationException,
+    GraphQLTransactionException,
 )
 from aiographql.client.subscription import (
-    GraphQLSubscriptionEventType,
     GraphQLSubscription,
+    GraphQLSubscriptionEventType,
 )
-from aiographql.client.transaction import GraphQLTransaction, GraphQLRequest
+from aiographql.client.transaction import GraphQLRequest, GraphQLTransaction
 
-QUERY_METHOD_POST = "post"
-QUERY_METHOD_GET = "get"
+
+@dataclass(frozen=True)
+class QueryMethod:
+    post: str = "post"
+    get: str = "get"
 
 
 class GraphQLClient:
-    def __init__(self, endpoint, headers=None, method=QUERY_METHOD_POST):
+    def __init__(self, endpoint, headers=None, method=QueryMethod.post):
         self.endpoint = endpoint
         self._method = method
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
         self._schema: Optional[graphql.GraphQLSchema] = None
 
-    async def introspect(self) -> graphql.GraphQLSchema:
+    async def introspect(
+        self, headers: Optional[Dict[str, str]] = None
+    ) -> graphql.GraphQLSchema:
         """
         Introspect the GraphQL endpoint specified for this client and return a `graphql.GraphQLSchema` object
         specifying the schema associated with this endpoint.
@@ -39,7 +45,9 @@ class GraphQLClient:
         :return: GraphQL schema for the configured endpoint
         """
         request = GraphQLRequest(
-            query=graphql.get_introspection_query(descriptions=False), validate=False
+            query=graphql.get_introspection_query(descriptions=False),
+            validate=False,
+            headers=headers,
         )
         introspection = await self.query(request)
         return graphql.build_client_schema(introspection=introspection.data)
@@ -76,19 +84,26 @@ class GraphQLClient:
                 raise GraphQLClientValidationException(*errors)
 
     async def request(
-        self, request: GraphQLRequest, method: str = None
+        self,
+        request: GraphQLRequest,
+        method: str = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLTransaction:
         await self._validate(request)
         method = method or self._method
 
-        if method == QUERY_METHOD_POST:
-            kwargs = dict(data=json.dumps(request.json()))
-        elif method == QUERY_METHOD_GET:
-            kwargs = dict(params=request.json())
+        if method == QueryMethod.post:
+            kwargs = dict(data=json.dumps(request.asdict()))
+        elif method == QueryMethod.get:
+            kwargs = dict(params=request.asdict())
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        async with aiohttp.ClientSession(headers=self._headers) as session:
+        headers = headers or {}
+
+        async with aiohttp.ClientSession(
+            headers={**self._headers, **request.headers, **headers}
+        ) as session:
             async with session.request(method, self.endpoint, **kwargs) as resp:
                 body = await resp.json()
                 transaction = GraphQLTransaction.create(request=request, json=body)
@@ -98,14 +113,20 @@ class GraphQLClient:
 
                 raise GraphQLTransactionException(transaction)
 
-    async def post(self, request: GraphQLRequest) -> GraphQLTransaction:
-        return await self.request(request, QUERY_METHOD_POST)
+    async def post(
+        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
+    ) -> GraphQLTransaction:
+        return await self.request(request, method=QueryMethod.post, headers=headers)
 
-    async def get(self, request: GraphQLRequest) -> GraphQLTransaction:
-        return await self.request(request, QUERY_METHOD_GET)
+    async def get(
+        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
+    ) -> GraphQLTransaction:
+        return await self.request(request, method=QueryMethod.get, headers=headers)
 
-    async def query(self, request: GraphQLRequest) -> GraphQLTransaction:
-        return await self.request(request=request)
+    async def query(
+        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
+    ) -> GraphQLTransaction:
+        return await self.request(request=request, headers=headers)
 
     async def _subscribe(self, subscription: GraphQLSubscription):
         async with aiohttp.ClientSession() as session:
@@ -137,12 +158,17 @@ class GraphQLClient:
                     await ws.send_json(data=subscription.connection_stop_request)
 
     async def subscribe(
-        self, request: GraphQLRequest, callbacks: Optional[CallbackRegistry] = None
+        self,
+        request: GraphQLRequest,
+        callbacks: Optional[CallbackRegistry] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLSubscription:
         await self._validate(request)
+        headers = headers or {}
         subscription = GraphQLSubscription(
-            request=request, callbacks=callbacks or CallbackRegistry()
+            request=request,
+            callbacks=callbacks or CallbackRegistry(),
+            headers={**self._headers, **request.headers, **headers},
         )
-        subscription.headers.update(**self._headers)
         subscription.task = asyncio.create_task(self._subscribe(subscription))
         return subscription

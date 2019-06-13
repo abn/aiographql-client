@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, Any, Optional, List
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional
 
 import graphql
 
@@ -15,17 +15,21 @@ class GraphQLError:
 @dataclass
 class GraphQLRequest:
     query: str
-    operationName: str = field(default=None)
-    variables: Dict[str, Any] = field(default=None)
+    operationName: Optional[str] = field(default=None)
+    variables: Optional[Dict[str, Any]] = field(default=None)
     validate: bool = field(default=True)
+    headers: Dict[str, str] = field(default_factory=dict)
     schema: Optional[graphql.GraphQLSchema] = None
 
-    def json(self) -> Dict[str, Any]:
+    def __post_init__(self) -> None:
+        self.headers = self.headers or dict()
+
+    def asdict(self) -> Dict[str, Any]:
         # TODO: serialise variables correctly
         return {
             k: v
             for k, v in asdict(self).items()
-            if k not in {"schema"} and v is not None
+            if k not in {"schema", "headers"} and v is not None
         }
 
 
