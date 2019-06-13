@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Mapping
 
 import aiohttp
 import graphql
@@ -28,9 +28,25 @@ class QueryMethod:
 
 
 class GraphQLClient:
-    def __init__(self, endpoint, headers=None, method=QueryMethod.post):
+    def __init__(
+        self,
+        endpoint: str,
+        headers: Optional[Mapping[str, str]] = None,
+        method: Optional[str] = None,
+    ) -> None:
+        """
+        Initialise a GraphQL Client
+
+        :param endpoint: URI of graph api.
+        :param headers: Default headers to use for every request made by this client.
+            By default the client adds 'Content-Type: application/json' and
+            'Accept-Encoding: gzip' to all requests. These can be overridden by
+            specifying then here.
+        :param method: Default method to use when submitting a GraphQL request to the
+            specified `endpoint`.
+        """
         self.endpoint = endpoint
-        self._method = method
+        self._method = method or QueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
         self._schema: Optional[graphql.GraphQLSchema] = None
