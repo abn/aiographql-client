@@ -48,7 +48,7 @@ graphql-core-next = "^1.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^1.17"
-flake8 = "^3.5"
+flake8 = "^3.7"
 coverage = "^4.5"
 black = "^19.3b0"
 tox = "^3.13"
