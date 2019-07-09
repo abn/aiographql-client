@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Dict, List, Optional
 
 import graphql
@@ -28,7 +28,13 @@ class GraphQLRequest:
         # TODO: serialise variables correctly
         return {
             k: v
-            for k, v in asdict(self).items()
+            for k, v in asdict(
+                replace(
+                    self,
+                    schema=None,
+                    headers={},
+                )
+            ).items()
             if k not in {"schema", "headers"} and v is not None
         }
 
