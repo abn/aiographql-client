@@ -28,14 +28,8 @@ class GraphQLRequest:
         # TODO: serialise variables correctly
         return {
             k: v
-            for k, v in asdict(
-                replace(
-                    self,
-                    schema=None,
-                    headers={},
-                )
-            ).items()
-            if k not in {"schema", "headers"} and v is not None
+            for k, v in asdict(replace(self, schema=None, headers=None)).items()
+            if v is not None
         }
 
 
