@@ -68,34 +68,42 @@ class GraphQLClient:
         introspection = await self.query(request)
         return graphql.build_client_schema(introspection=introspection.data)
 
-    async def get_schema(self, refresh: bool = False) -> graphql.GraphQLSchema:
+    async def get_schema(
+        self, refresh: bool = False, headers: Optional[Dict[str, str]] = None
+    ) -> graphql.GraphQLSchema:
         """
         Get the introspected schema for the endpoint used by this client. If an unexpired cache exists, this is
         returned unless the `refresh` parameter is set to True.
 
         :param refresh: Refresh the cached schema by forcing an introspection of the GraphQL endpoint.
+        :param headers: Request headers
         :return: The GraphQL schema as introspected. This maybe a previously cached value.
         """
         # TODO: consider adding ttl logic for expiring schemas for long running services
         if self._schema is None or refresh:
-            self._schema = await self.introspect()
+            self._schema = await self.introspect(headers=headers)
         return self._schema
 
     async def validate(
-        self, query: str, schema: Optional[graphql.GraphQLSchema] = None
+        self,
+        query: str,
+        schema: Optional[graphql.GraphQLSchema] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> List[graphql.GraphQLError]:
         return await asyncio.get_running_loop().run_in_executor(
             None,
             graphql.validate,
-            schema or await self.get_schema(),
+            schema or await self.get_schema(headers=headers),
             graphql.parse(query),
         )
 
-    async def _validate(self, request: GraphQLRequest):
+    async def _validate(
+        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
+    ):
         if request.validate:
-            errors = await self.validate(request.query, request.schema)
+            errors = await self.validate(request.query, request.schema, headers=headers)
             if request.schema is None:
-                request.schema = await self.get_schema()
+                request.schema = await self.get_schema(headers=headers)
             if errors:
                 raise GraphQLClientValidationException(*errors)
 
@@ -105,7 +113,8 @@ class GraphQLClient:
         method: str = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLTransaction:
-        await self._validate(request)
+        headers = {**self._headers, **request.headers, **(headers or dict())}
+        await self._validate(request=request, headers=headers)
         method = method or self._method
 
         if method == QueryMethod.post:
@@ -114,8 +123,6 @@ class GraphQLClient:
             kwargs = dict(params=request.asdict())
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
-
-        headers = headers or {}
 
         async with aiohttp.ClientSession(
             headers={**self._headers, **request.headers, **headers}
