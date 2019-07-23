@@ -198,7 +198,7 @@ class GraphQLClient:
         callbacks: Optional[CallbackRegistry] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLSubscription:
-        await self._validate(request)
+        await self._validate(request, headers=headers)
         headers = headers or {}
         subscription = GraphQLSubscription(
             request=request,
