@@ -13,6 +13,7 @@ from aiographql.client.exceptions import (
     GraphQLClientException,
     GraphQLClientValidationException,
     GraphQLTransactionException,
+    GraphQLIntrospectionException,
 )
 from aiographql.client.subscription import (
     GraphQLSubscription,
@@ -66,7 +67,12 @@ class GraphQLClient:
             headers=headers,
         )
         introspection = await self.query(request)
-        return graphql.build_client_schema(introspection=introspection.data)
+        try:
+            return graphql.build_client_schema(introspection=introspection.data)
+        except TypeError:
+            raise GraphQLIntrospectionException(
+                f"Failed to build schema from introspection data: {introspection.errors}"
+            )
 
     async def get_schema(
         self, refresh: bool = False, headers: Optional[Dict[str, str]] = None

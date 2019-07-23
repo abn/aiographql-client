@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import graphql
 
@@ -23,3 +24,8 @@ class GraphQLTransactionException(GraphQLClientException):
             f"Transaction failed with response {json.dumps(transaction.response.json)}"
         )
         self.transaction = transaction
+
+
+class GraphQLIntrospectionException(GraphQLClientException):
+    def __init__(self, message: Optional[str] = None) -> None:
+        super().__init__(message or "Something went wrong during introspection process")
