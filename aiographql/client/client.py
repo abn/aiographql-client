@@ -126,7 +126,13 @@ class GraphQLClient:
         if method == QueryMethod.post:
             kwargs = dict(data=json.dumps(request.asdict()))
         elif method == QueryMethod.get:
-            kwargs = dict(params=request.asdict())
+            params = request.asdict()
+            for item in params:
+                if isinstance(params[item], bool):
+                    params[item] = int(params[item])
+                if isinstance(params[item], dict):
+                    params[item] = str(params[item])
+            kwargs = dict(params=params)
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
