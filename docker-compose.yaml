@@ -1,6 +1,22 @@
-version: "3"
+version: '3.6'
 services:
-  graphql-pokemon:
-    image: docker.io/devnullcake/graphql-pokemon:latest
+
+  postgres:
+    image: postgres:9.6-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_PASSWORD: hasura
+      POSTGRES_USER: hasura
+      POSTGRES_DB: hasura
+
+  hasura:
+    image: quay.io/twyla-ai/hasura-world-db:latest
     ports:
-      - 5000:5000
+      - 8080:8080
+    depends_on:
+      - postgres
+    restart: on-failure
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: secret
