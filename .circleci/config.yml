@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
   black:
     docker:
@@ -10,6 +10,18 @@ jobs:
           command: |
             pip install --user black
             ~/.local/bin/black --check ./aiographql ./tests
+
+  lint:
+    docker:
+      - image: circleci/python:3.7
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: ensure flake8
+          command: |
+            pip install --user flake8
+            ~/.local/bin/flake8 aiographql ./tests
 
   test:
     docker:
@@ -30,8 +42,11 @@ jobs:
           - "sed -i s/'nc localhost'/'nc -z localhost'/g /bin/docker-entrypoint.sh; echo -n 'Waiting for postgres '; until nc -z 127.0.0.1 5432 >/dev/null 2>&1; do echo -n .; sleep 2s; done; echo ' DONE'; source docker-entrypoint.sh graphql-engine serve"
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - python-{{ checksum "poetry.lock" }}
       - run:
-          name: install dependencies
+          name: install test dependencies
           command: |
             pip install --user --upgrade poetry tox tox-venv wait-for-port
       - run:
@@ -42,6 +57,18 @@ jobs:
           name: run tests
           command: |
             ~/.local/bin/tox
+      - persist_to_workspace:
+          root: coverage
+          paths:
+            - html
+            - coverage.xml
+      - store_artifacts:
+          path: coverage
+      - save_cache:
+          key: python-{{ checksum "poetry.lock" }}
+          paths:
+            - ~/project/.tox
+            - ~/.cache/pip
 
   publish:
     docker:
@@ -57,12 +84,26 @@ jobs:
             poetry publish --build -r twyla
 
 workflows:
-  version: 2
   ci-checks:
     jobs:
       - black
+      - lint
       - test
       - publish:
+          name: publish-pre-release-package
+          context: Build
+          requires:
+            - black
+            - lint
+            - test
+          filters:
+            branches:
+              only:
+                - master
+  release:
+    jobs:
+      - publish:
+          name: publish-release-package
           context: Build
           filters:
             tags:
