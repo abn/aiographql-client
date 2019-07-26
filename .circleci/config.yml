@@ -70,6 +70,17 @@ jobs:
             - ~/project/.tox
             - ~/.cache/pip
 
+  wheel:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: build python wheel
+          command: |
+            pip install poetry
+            poetry build
+
   publish:
     docker:
       - image: circleci/python:3.7
@@ -88,16 +99,7 @@ workflows:
       - black
       - lint
       - test
-      - publish:
-          name: publish-pre-release-package
-          requires:
-            - black
-            - lint
-            - test
-          filters:
-            branches:
-              only:
-                - master
+      - wheel
   release:
     jobs:
       - publish:
