@@ -79,9 +79,8 @@ jobs:
           name: publish python wheel
           command: |
             pip install poetry
-            poetry config repositories.twyla $PYPI_REPO_URL
-            poetry config http-basic.twyla $PYPI_REPO_USERNAME $PYPI_REPO_PASSWORD
-            poetry publish --build -r twyla
+            poetry config http-basic.pypi "@token" "${PYPI_API_TOKEN}"
+            poetry publish --build
 
 workflows:
   ci-checks:
@@ -91,7 +90,6 @@ workflows:
       - test
       - publish:
           name: publish-pre-release-package
-          context: Build
           requires:
             - black
             - lint
@@ -104,7 +102,6 @@ workflows:
     jobs:
       - publish:
           name: publish-release-package
-          context: Build
           filters:
             tags:
               only: /^v.*/
