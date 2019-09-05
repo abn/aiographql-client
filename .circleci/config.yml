@@ -39,7 +39,7 @@ jobs:
         entrypoint: /bin/sh
         command:
           - -c
-          - "sed -i s/'nc localhost'/'nc -z localhost'/g /bin/docker-entrypoint.sh; echo -n 'Waiting for postgres '; until nc -z 127.0.0.1 5432 >/dev/null 2>&1; do echo -n .; sleep 2s; done; echo ' DONE'; source docker-entrypoint.sh graphql-engine serve"
+          - "sed -i s/'nc localhost'/'nc -z localhost'/g /bin/docker-entrypoint.sh; sed -i s/'hasura-cli'/'hasura-cli --skip-update-check'/g /bin/docker-entrypoint.sh; echo -n 'Waiting for postgres '; until nc -z 127.0.0.1 5432 >/dev/null 2>&1; do echo -n .; sleep 2s; done; echo ' DONE'; source docker-entrypoint.sh graphql-engine serve"
     steps:
       - checkout
       - restore_cache:
