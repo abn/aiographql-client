@@ -90,7 +90,7 @@ jobs:
           name: publish python wheel
           command: |
             pip install poetry
-            poetry config http-basic.pypi "@token" "${PYPI_API_TOKEN}"
+            poetry config http-basic.pypi "__token__" "${PYPI_API_TOKEN}"
             poetry publish --build
 
 workflows:
