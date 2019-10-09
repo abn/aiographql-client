@@ -1,0 +1,42 @@
+name: Test Suite
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.7]
+    services:
+      postgres:
+        image: docker.io/postgres:9.6-alpine
+        env:
+          POSTGRES_PASSWORD: hasura
+          POSTGRES_USER: hasura
+          POSTGRES_DB: hasura
+        ports: 
+          - 5432:5432
+      hasura: 
+        image: quay.io/twyla-ai/hasura-world-db:latest
+        env:
+          HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
+          HASURA_GRAPHQL_ADMIN_SECRET: secret
+        ports: 
+          - 8080:8080
+        options: --restart on-failure
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip poetry
+        poetry install
+    - name: Execute test suite
+      run: |
+        poetry run pytest --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
+  
