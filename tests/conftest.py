@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import pytest
@@ -10,7 +11,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--world-server",
         action="store",
-        default="http://127.0.0.1:8080/v1/graphql",
+        default=os.environ.get(
+            "WORLD_SERVER_GRAPHQL_ENDPOINT", "http://127.0.0.1:8080/v1/graphql"
+        ),
         help="GraphQL server to use for integration tests",
     )
 
