@@ -17,14 +17,14 @@ pytestmark = pytest.mark.asyncio
 
 async def test_simple_anonymous_post(client, headers, query_city, query_output):
     request = GraphQLRequest(query=query_city, headers=headers)
-    transaction = await client.post(request)
-    assert transaction.response.data == query_output
+    response = await client.post(request)
+    assert response.data == query_output
 
 
 async def test_simple_anonymous_query(client, headers, query_city, query_output):
     request = GraphQLRequest(query=query_city, headers=headers)
-    transaction = await client.query(request)
-    assert transaction.response.data == query_output
+    response = await client.query(request)
+    assert response.data == query_output
 
 
 async def test_invalid_query(client, headers, invalid_query):
@@ -41,8 +41,8 @@ async def test_invalid_method(client, headers, query_city):
 
 async def test_mutation(client, headers, mutation_city, mutation_output):
     request = GraphQLRequest(query=mutation_city, headers=headers)
-    transaction = await client.query(request)
-    assert transaction.response.data == mutation_output
+    response = await client.query(request)
+    assert response.data == mutation_output
 
 
 async def test_subscription(
@@ -53,20 +53,19 @@ async def test_subscription(
     m = []
 
     def callback(data):
-        assert "city" in data.get("data")
+        assert "city" in data
         m.append(data)
         if len(m) > 1:
-            city = data.get("data").get("city")[0]
+            city = data.get("city")[0]
             assert city.get("name") == city_name
             s1.cancel()
 
     callbacks.register(
-        GraphQLSubscriptionEventType.DATA,
-        lambda event: callback(event.message.payload.json),
+        GraphQLSubscriptionEventType.DATA, lambda event: callback(event.payload.data)
     )
 
     subscription: GraphQLSubscription = await client.subscribe(
-        request, callbacks, headers=headers
+        request=request, callbacks=callbacks, headers=headers
     )
 
     s1 = subscription.task
