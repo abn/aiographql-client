@@ -1,9 +1,9 @@
-import json
 from typing import Optional
 
 import graphql
+import ujson as json
 
-from aiographql.client.transaction import GraphQLTransaction
+from aiographql.client.transaction import GraphQLResponse
 
 
 class GraphQLClientException(Exception):
@@ -18,12 +18,10 @@ class GraphQLClientValidationException(GraphQLClientException):
         super().__init__(message)
 
 
-class GraphQLTransactionException(GraphQLClientException):
-    def __init__(self, transaction: GraphQLTransaction) -> None:
-        super().__init__(
-            f"Transaction failed with response {json.dumps(transaction.response.json)}"
-        )
-        self.transaction = transaction
+class GraphQLRequestException(GraphQLClientException):
+    def __init__(self, response: GraphQLResponse) -> None:
+        super().__init__(f"Request failed with response {json.dumps(response.json)}")
+        self.response = response
 
 
 class GraphQLIntrospectionException(GraphQLClientException):

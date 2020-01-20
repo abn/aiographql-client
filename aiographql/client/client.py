@@ -1,25 +1,24 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Mapping
+from typing import Any, Dict, Mapping, Optional, Union
 
 import aiohttp
 import graphql
-from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
+from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
 
 from aiographql.client.exceptions import (
     GraphQLClientException,
     GraphQLClientValidationException,
-    GraphQLTransactionException,
     GraphQLIntrospectionException,
+    GraphQLRequestException,
 )
 from aiographql.client.subscription import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
-from aiographql.client.transaction import GraphQLRequest, GraphQLTransaction
+from aiographql.client.transaction import GraphQLRequest, GraphQLResponse
 
 
 @dataclass(frozen=True)
@@ -92,118 +91,182 @@ class GraphQLClient:
 
     async def validate(
         self,
-        query: str,
+        request: GraphQLRequest,
         schema: Optional[graphql.GraphQLSchema] = None,
         headers: Optional[Dict[str, str]] = None,
-    ) -> List[graphql.GraphQLError]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None,
-            graphql.validate,
-            schema or await self.get_schema(headers=headers),
-            graphql.parse(query),
-        )
+        force: bool = False,
+    ) -> None:
+        """
+        Validate a given request against a schema (provided or fetched). Validation is
+        skipped if the request's `validate` property is set to `False` unless forced.
 
-    async def _validate(
-        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
-    ):
-        if request.validate:
-            errors = await self.validate(request.query, request.schema, headers=headers)
-            if request.schema is None:
-                request.schema = await self.get_schema(headers=headers)
-            if errors:
-                raise GraphQLClientValidationException(*errors)
+        :param request: Request that is to be validated.
+        :param schema: Schema against which provided request should be validated, if
+                       different from `GraphQLRequest.schema` or as fetched from the
+                       client endpoint.
+        :param headers: Headers to be set when fetching the schema from the client
+                        endpoint. If provided, request headers are ignored.
+        :param force: Force validation even if the provided request has validation
+                      disabled.
+        """
+        if not request.validate and not force:
+            # skip validation if request validate flag is set to false
+            return
+
+        if request.schema is None:
+            request.schema = schema or await self.get_schema(
+                headers=headers or request.headers
+            )
+
+        errors = await asyncio.get_running_loop().run_in_executor(
+            None, graphql.validate, request.schema, graphql.parse(request.query)
+        )
+        if errors:
+            raise GraphQLClientValidationException(*errors)
+
+    def _prepare_request(
+        self,
+        request: Union[GraphQLRequest, str],
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> GraphQLRequest:
+        if isinstance(request, str):
+            request = GraphQLRequest(query=request)
+
+        return request.copy(
+            headers=headers,
+            headers_fallback=self._headers,
+            operation=operation,
+            variables=variables,
+        )
 
     async def request(
         self,
-        request: GraphQLRequest,
+        request: Union[GraphQLRequest, str],
         method: str = None,
         headers: Optional[Dict[str, str]] = None,
-    ) -> GraphQLTransaction:
-        headers = {**self._headers, **request.headers, **(headers or dict())}
-        await self._validate(request=request, headers=headers)
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> GraphQLResponse:
+        """
+        Method to send provided `GraphQLRequest` to the configured endpoint as an
+        HTTP request. This method handles the configuration of headers HTTP method
+        specific handling of request parameters and/or data as required.
+
+        The order of precedence, least to greatest, of headers is as follows,
+            1. client headers (`GraphQLClient.headers`)
+            2. request headers (`GraphQLRequest.headers`)
+            3. `headers` specified as method parameter
+
+        In accordance to the GraphQL specification, any non 2XX response  is treated as
+        an error and raises `GraphQLTransactionException` instance.
+
+        :param request: Request to send to the GraphQL server.
+        :param method: HTTP method to use when submitting request (POST/GET). If once is
+                       not specified, the client default (`GraphQLClient.method`) is
+                       used.
+        :param headers: Additional headers to be set when sending HTTP request.
+        :param operation: GraphQL operation name to use if the `GraphQLRequest.query`
+                          contains named operations. This will override any default
+                          operation set.
+        :param variables: Query variables to set for the provided request. This will
+                          override the default values for any existing variables in the
+                          request if set.
+        :return: The resulting transaction object.
+        """
+        request = self._prepare_request(
+            request=request, operation=operation, variables=variables, headers=headers
+        )
+
+        await self.validate(request=request)
         method = method or self._method
 
         if method == QueryMethod.post:
-            kwargs = dict(data=json.dumps(request.asdict()))
+            kwargs = dict(json=request.payload())
         elif method == QueryMethod.get:
-            params = request.asdict()
-            for item in params:
-                if isinstance(params[item], bool):
-                    params[item] = int(params[item])
-                if isinstance(params[item], dict):
-                    params[item] = str(params[item])
-            kwargs = dict(params=params)
+            kwargs = dict(params=request.payload(coerce=True))
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        async with aiohttp.ClientSession(
-            headers={**self._headers, **request.headers, **headers}
-        ) as session:
+        async with aiohttp.ClientSession(headers=request.headers) as session:
             async with session.request(method, self.endpoint, **kwargs) as resp:
                 body = await resp.json()
-                transaction = GraphQLTransaction.create(request=request, json=body)
+                response = GraphQLResponse(request=request, json=body)
 
                 if 200 <= resp.status < 300:
-                    return transaction
+                    return response
 
-                raise GraphQLTransactionException(transaction)
+                raise GraphQLRequestException(response)
 
     async def post(
-        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
-    ) -> GraphQLTransaction:
-        return await self.request(request, method=QueryMethod.post, headers=headers)
+        self,
+        request: GraphQLRequest,
+        headers: Optional[Dict[str, str]] = None,
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> GraphQLResponse:
+        """
+        Helper method that wraps `GraphQLClient.request` with method set as
+        `QueryMethod.POST`.
+        """
+        return await self.request(
+            request,
+            method=QueryMethod.post,
+            headers=headers,
+            operation=operation,
+            variables=variables,
+        )
 
     async def get(
-        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
-    ) -> GraphQLTransaction:
-        return await self.request(request, method=QueryMethod.get, headers=headers)
+        self,
+        request: GraphQLRequest,
+        headers: Optional[Dict[str, str]] = None,
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> GraphQLResponse:
+        return await self.request(
+            request,
+            method=QueryMethod.get,
+            headers=headers,
+            operation=operation,
+            variables=variables,
+        )
 
     async def query(
-        self, request: GraphQLRequest, headers: Optional[Dict[str, str]] = None
-    ) -> GraphQLTransaction:
-        return await self.request(request=request, headers=headers)
-
-    async def _subscribe(self, subscription: GraphQLSubscription):
-        async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(self.endpoint) as ws:
-                await ws.send_json(data=subscription.connection_init_request)
-
-                subscription.callbacks.register(
-                    GraphQLSubscriptionEventType.CONNECTION_ACK,
-                    SimpleTriggerCallback(
-                        function=ws.send_json,
-                        data=subscription.connection_start_request,
-                    ),
-                )
-
-                try:
-                    async for msg in ws:  # type:  aiohttp.WSMessage
-                        if msg.type != aiohttp.WSMsgType.TEXT:
-                            if msg.type == aiohttp.WSMsgType.ERROR:
-                                break
-                            continue
-
-                        # noinspection PyTypeChecker,PyNoneFunctionAssignment
-                        event = subscription.create_event(msg.json())
-                        await subscription.handle(event=event)
-
-                        if subscription.is_stop_event(event):
-                            break
-                except (asyncio.CancelledError, KeyboardInterrupt):
-                    await ws.send_json(data=subscription.connection_stop_request)
+        self,
+        request: Union[GraphQLRequest, str],
+        headers: Optional[Dict[str, str]] = None,
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> GraphQLResponse:
+        return await self.request(
+            request=request, headers=headers, operation=operation, variables=variables
+        )
 
     async def subscribe(
         self,
         request: GraphQLRequest,
-        callbacks: Optional[CallbackRegistry] = None,
         headers: Optional[Dict[str, str]] = None,
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+        callbacks: Optional[CallbackRegistry] = None,
+        on_data: Optional[CallbackType] = None,
+        on_error: Optional[CallbackType] = None,
     ) -> GraphQLSubscription:
-        await self._validate(request, headers=headers)
-        headers = headers or {}
-        subscription = GraphQLSubscription(
-            request=request,
-            callbacks=callbacks or CallbackRegistry(),
-            headers={**self._headers, **request.headers, **headers},
+        request = self._prepare_request(
+            request=request, operation=operation, variables=variables, headers=headers
         )
-        subscription.task = asyncio.create_task(self._subscribe(subscription))
+        await self.validate(request=request)
+
+        callbacks = callbacks or CallbackRegistry()
+        if on_data:
+            callbacks.register(GraphQLSubscriptionEventType.DATA, on_data)
+        if on_error:
+            callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
+
+        subscription = GraphQLSubscription(
+            request=request, callbacks=callbacks or CallbackRegistry()
+        )
+        subscription.subscribe(endpoint=self.endpoint)
         return subscription
