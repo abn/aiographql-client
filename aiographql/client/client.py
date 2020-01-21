@@ -131,6 +131,17 @@ class GraphQLClient:
         variables: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLRequest:
+        """
+        Helper method to ensure that queries handle both string and `GraphQLRequest`
+        objects.
+
+        :param request:
+        :param operation:
+        :param variables:
+        :param headers:
+        :return: A copy of the `request` object with the specified values of
+            `operation`, `variables` and `headers` set/merged.
+        """
         if isinstance(request, str):
             request = GraphQLRequest(query=request)
 
@@ -141,7 +152,7 @@ class GraphQLClient:
             variables=variables,
         )
 
-    async def request(
+    async def query(
         self,
         request: Union[GraphQLRequest, str],
         method: str = None,
@@ -207,10 +218,10 @@ class GraphQLClient:
         variables: Optional[Dict[str, Any]] = None,
     ) -> GraphQLResponse:
         """
-        Helper method that wraps `GraphQLClient.request` with method set as
+        Helper method that wraps `GraphQLClient.query` with method explicitly set as
         `QueryMethod.POST`.
         """
-        return await self.request(
+        return await self.query(
             request,
             method=QueryMethod.post,
             headers=headers,
@@ -225,23 +236,16 @@ class GraphQLClient:
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
     ) -> GraphQLResponse:
-        return await self.request(
+        """
+        Helper method that wraps `GraphQLClient.query` with method explicitly set as
+        `QueryMethod.GET`.
+        """
+        return await self.query(
             request,
             method=QueryMethod.get,
             headers=headers,
             operation=operation,
             variables=variables,
-        )
-
-    async def query(
-        self,
-        request: Union[GraphQLRequest, str],
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-    ) -> GraphQLResponse:
-        return await self.request(
-            request=request, headers=headers, operation=operation, variables=variables
         )
 
     async def subscribe(

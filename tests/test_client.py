@@ -36,7 +36,7 @@ async def test_invalid_query(client, headers, invalid_query):
 async def test_invalid_method(client, headers, query_city):
     request = GraphQLRequest(query=query_city, headers=headers)
     with pytest.raises(GraphQLClientException):
-        _ = await client.request(method="PUT", request=request)
+        _ = await client.query(method="PUT", request=request)
 
 
 async def test_mutation(client, headers, mutation_city, mutation_output):

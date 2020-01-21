@@ -23,9 +23,6 @@ class GraphQLRequest:
     headers: Dict[str, str] = field(default_factory=dict)
     schema: Optional[graphql.GraphQLSchema] = None
 
-    def __post_init__(self) -> None:
-        pass
-
     @staticmethod
     def _coerce_value(value: Any) -> Any:
         if isinstance(value, bool):
