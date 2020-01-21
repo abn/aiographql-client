@@ -4,7 +4,6 @@ from copy import deepcopy
 from dataclasses import InitVar, asdict, dataclass, field, replace
 from typing import Any, Dict, List, Optional
 
-import graphql
 import ujson as json
 
 
@@ -14,14 +13,13 @@ class GraphQLError:
     message: Optional[str] = field(default=None)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GraphQLRequest:
     query: str
     operationName: Optional[str] = field(default=None)
     variables: Dict[str, Any] = field(default_factory=dict)
     validate: bool = field(default=True)
     headers: Dict[str, str] = field(default_factory=dict)
-    schema: Optional[graphql.GraphQLSchema] = None
 
     @staticmethod
     def _coerce_value(value: Any) -> Any:
