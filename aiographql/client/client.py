@@ -6,8 +6,6 @@ from typing import Any, Dict, Mapping, Optional, Union
 
 import aiohttp
 import graphql
-from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
-
 from aiographql.client.exceptions import (
     GraphQLClientException,
     GraphQLClientValidationException,
@@ -19,6 +17,7 @@ from aiographql.client.subscription import (
     GraphQLSubscriptionEventType,
 )
 from aiographql.client.transaction import GraphQLRequest, GraphQLResponse
+from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
 
 
 @dataclass(frozen=True)
@@ -33,6 +32,7 @@ class GraphQLClient:
         endpoint: str,
         headers: Optional[Mapping[str, str]] = None,
         method: Optional[str] = None,
+        schema: Optional[graphql.GraphQLSchema] = None,
     ) -> None:
         """
         Initialise a GraphQL Client
@@ -49,7 +49,7 @@ class GraphQLClient:
         self._method = method or QueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
-        self._schema: Optional[graphql.GraphQLSchema] = None
+        self._schema = schema
 
     async def introspect(
         self, headers: Optional[Dict[str, str]] = None
@@ -113,13 +113,9 @@ class GraphQLClient:
             # skip validation if request validate flag is set to false
             return
 
-        if request.schema is None:
-            request.schema = schema or await self.get_schema(
-                headers=headers or request.headers
-            )
-
+        schema = schema or await self.get_schema(headers=headers or request.headers)
         errors = await asyncio.get_running_loop().run_in_executor(
-            None, graphql.validate, request.schema, graphql.parse(request.query)
+            None, graphql.validate, schema, graphql.parse(request.query)
         )
         if errors:
             raise GraphQLClientValidationException(*errors)
