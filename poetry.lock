@@ -127,7 +127,7 @@ version = "7.0"
 [[package]]
 category = "dev"
 description = "Cross-platform colored terminal text."
-marker = "platform_system == \"Windows\" or sys_platform == \"win32\""
+marker = "sys_platform == \"win32\" or platform_system == \"Windows\""
 name = "colorama"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -177,7 +177,7 @@ description = "GraphQL implementation for Python, a port of GraphQL.js, the Java
 name = "graphql-core"
 optional = false
 python-versions = ">=3.6,<4"
-version = "3.0.0"
+version = "3.0.3"
 
 [[package]]
 category = "dev"
@@ -495,7 +495,7 @@ coverage = ["08907593569fe59baca0bf152c43f3863201efb6113ecb38ce7e97ce339805a6", 
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 filelock = ["18d82244ee114f543149c66a6e0c14e9c4f8a1044b5cdaadd0f82159d6a6ff59", "929b7d63ec5b7d6b71b0fa5ac14e030b3f70b75747cef1b10da9b879fef15836"]
 flake8 = ["45681a117ecc81e870cbf1262835ae4af5e7a8b08e40b944a8a6e6b895914cfb", "49356e766643ad15072a789a20915d3c91dc89fd313ccd71802303fd67e4deca"]
-graphql-core = ["908d31016ec816586319e49e1a1f7f1f7741c882a412da3b253e10a12dfc83a7", "a87999a16ace994f28bb15c189865293fc80f4425cf87cd6da1c14f68703074f"]
+graphql-core = ["31e9e62967cc3cb1afc0d4752e2576633adebbdcb14b4c62b9055413c239a48d", "e586db99173ffbfbc520a468246c2e1af83267f01ae6ee8a0ed9112453fa3a32"]
 identify = ["7782115794ec28b011702815d9f5e532244560cd2bf0789c4f09381d43befd90", "9e7521e9abeaede4d2d1092a106e418c65ddf6b3182b43930bcb3c8cfb974488"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
 importlib-metadata = ["3a8b2dfd0a2c6a3636e7c016a7e54ae04b997d30e69d5eacdca7a6c2221a1402", "41e688146d000891f32b1669e8573c57e39e5060e7f5f647aa617cd9a9568278"]
