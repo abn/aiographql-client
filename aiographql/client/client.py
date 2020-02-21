@@ -35,6 +35,7 @@ class GraphQLClient:
         headers: Optional[Mapping[str, str]] = None,
         method: Optional[str] = None,
         schema: Optional[graphql.GraphQLSchema] = None,
+        session: Optional[aiohttp.ClientSession] = None,
     ) -> None:
         """
         Initialise a GraphQL Client
@@ -46,12 +47,15 @@ class GraphQLClient:
             specifying then here.
         :param method: Default method to use when submitting a GraphQL request to the
             specified `endpoint`.
+        :param session: Optional `aiohttp.ClientSession` to use when making requests.
+            This is expected to be externally managed.
         """
         self.endpoint = endpoint
         self._method = method or QueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
         self._schema = schema
+        self._session = session
 
     async def introspect(
         self, headers: Optional[Dict[str, str]] = None
@@ -218,9 +222,12 @@ class GraphQLClient:
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        if session:
+        if session or self._session:
             return await self._http_request(
-                session=session, method=method, request=request, **kwargs
+                session=session or self._session,
+                method=method,
+                request=request,
+                **kwargs,
             )
 
         connector = await create_default_connector()
@@ -296,5 +303,7 @@ class GraphQLClient:
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks or CallbackRegistry()
         )
-        await subscription.subscribe(endpoint=self.endpoint, session=session)
+        await subscription.subscribe(
+            endpoint=self.endpoint, session=session or self._session
+        )
         return subscription
