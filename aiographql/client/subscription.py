@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from asyncio import CancelledError, Task
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, NoReturn, Optional, Union
@@ -69,7 +68,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
             GraphQLSubscriptionEventType.COMPLETE,
         ]
     )
-    task: Task = field(default=None, init=False, compare=False)
+    task: asyncio.Task = field(default=None, init=False, compare=False)
 
     @property
     def is_running(self) -> bool:
@@ -169,6 +168,6 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if self.is_running:
             try:
                 self.task.cancel()
-            except CancelledError:
+            except asyncio.CancelledError:
                 pass
         object.__setattr__(self, "task", None)
