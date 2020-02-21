@@ -103,7 +103,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if event.id is None or event.id == self.id:
             await self.callbacks.handle_event(event.type, event)
 
-    async def _create_websocket_session(
+    async def _websocket_connect(
         self, endpoint: str, session: aiohttp.ClientSession
     ) -> None:
         async with session.ws_connect(endpoint) as ws:
@@ -133,7 +133,17 @@ class GraphQLSubscription(GraphQLRequestContainer):
             except (asyncio.CancelledError, KeyboardInterrupt):
                 await ws.send_json(data=self.connection_stop_request())
 
-    def subscribe(
+    async def _subscribe(
+        self, endpoint: str, session: Optional[aiohttp.ClientSession] = None
+    ) -> None:
+        if session:
+            return await self._websocket_connect(endpoint=endpoint, session=session)
+
+        connector = await create_default_connector()
+        async with aiohttp.ClientSession(connector=connector) as session:
+            return await self._websocket_connect(endpoint=endpoint, session=session)
+
+    async def subscribe(
         self,
         endpoint: str,
         force: bool = False,
@@ -149,16 +159,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if self.is_running and not force:
             return
         self.unsubscribe()
-        if session:
-            task = asyncio.create_task(
-                self._create_websocket_session(endpoint=endpoint, session=session)
-            )
-        else:
-            connector = await create_default_connector()
-            with aiohttp.ClientSession(connector=connector) as session:
-                task = asyncio.create_task(
-                    self._create_websocket_session(endpoint=endpoint, session=session)
-                )
+        task = asyncio.create_task(self._subscribe(endpoint=endpoint, session=session))
         object.__setattr__(self, "task", task)
 
     def unsubscribe(self) -> None:

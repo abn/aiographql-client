@@ -296,5 +296,5 @@ class GraphQLClient:
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks or CallbackRegistry()
         )
-        subscription.subscribe(endpoint=self.endpoint, session=session)
+        await subscription.subscribe(endpoint=self.endpoint, session=session)
         return subscription

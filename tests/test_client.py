@@ -58,7 +58,7 @@ async def test_subscription(
         if len(m) > 1:
             city = data.get("city")[0]
             assert city.get("name") == city_name
-            s1.cancel()
+            subscription.unsubscribe()
 
     callbacks.register(
         GraphQLSubscriptionEventType.DATA, lambda event: callback(event.payload.data)
@@ -68,16 +68,13 @@ async def test_subscription(
         request=request, callbacks=callbacks, headers=headers
     )
 
-    s1 = subscription.task
-    asyncio.ensure_future(s1)
-
     await asyncio.sleep(0.1)
 
     request = GraphQLRequest(query=mutation_city, headers=headers)
     _ = await client.query(request)
 
     try:
-        await asyncio.wait([s1], timeout=1)
+        await asyncio.wait([subscription.task], timeout=1)
         assert len(m) == 2
     except TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
