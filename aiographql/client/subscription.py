@@ -10,6 +10,7 @@ from typing import Any, Dict, List, NoReturn, Optional, Union
 import aiohttp
 from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
 
+from aiographql.client.helpers import create_default_connector
 from aiographql.client.transaction import (
     GraphQLBaseResponse,
     GraphQLRequestContainer,
@@ -103,45 +104,68 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if event.id is None or event.id == self.id:
             await self.callbacks.handle_event(event.type, event)
 
-    async def _create_websocket_session(self, endpoint: str) -> None:
-        async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(endpoint) as ws:
-                await ws.send_json(data=self.connection_init_request())
+    async def _create_websocket_session(
+        self, endpoint: str, session: aiohttp.ClientSession
+    ) -> None:
+        async with session.ws_connect(endpoint) as ws:
+            await ws.send_json(data=self.connection_init_request())
 
-                self.callbacks.register(
-                    GraphQLSubscriptionEventType.CONNECTION_ACK,
-                    SimpleTriggerCallback(
-                        function=ws.send_json, data=self.connection_start_request()
-                    ),
-                )
+            self.callbacks.register(
+                GraphQLSubscriptionEventType.CONNECTION_ACK,
+                SimpleTriggerCallback(
+                    function=ws.send_json, data=self.connection_start_request()
+                ),
+            )
 
-                try:
-                    async for msg in ws:  # type:  aiohttp.WSMessage
-                        if msg.type != aiohttp.WSMsgType.TEXT:
-                            if msg.type == aiohttp.WSMsgType.ERROR:
-                                break
-                            continue
-
-                        event = GraphQLSubscriptionEvent(
-                            subscription_id=self.id,
-                            request=self.request,
-                            json=msg.json(),
-                        )
-                        await self.handle(event=event)
-
-                        if self.is_stop_event(event):
+            try:
+                async for msg in ws:  # type:  aiohttp.WSMessage
+                    if msg.type != aiohttp.WSMsgType.TEXT:
+                        if msg.type == aiohttp.WSMsgType.ERROR:
                             break
-                except (asyncio.CancelledError, KeyboardInterrupt):
-                    await ws.send_json(data=self.connection_stop_request())
+                        continue
 
-    def subscribe(self, endpoint: str, force: bool = False) -> None:
+                    event = GraphQLSubscriptionEvent(
+                        subscription_id=self.id, request=self.request, json=msg.json(),
+                    )
+                    await self.handle(event=event)
+
+                    if self.is_stop_event(event):
+                        break
+            except (asyncio.CancelledError, KeyboardInterrupt):
+                await ws.send_json(data=self.connection_stop_request())
+
+    def subscribe(
+        self,
+        endpoint: str,
+        force: bool = False,
+        session: Optional[aiohttp.ClientSession] = None,
+    ) -> None:
+        """
+        Create a websocket subscription and set internal task.
+
+        :param endpoint: GraphQL endpoint to subscribe to
+        :param force: Force re-subscription if already subscribed
+        :param session: Optional `aiohttp.ClientSession` to use for requests
+        """
         if self.is_running and not force:
             return
         self.unsubscribe()
-        task = asyncio.create_task(self._create_websocket_session(endpoint=endpoint))
+        if session:
+            task = asyncio.create_task(
+                self._create_websocket_session(endpoint=endpoint, session=session)
+            )
+        else:
+            connector = await create_default_connector()
+            with aiohttp.ClientSession(connector=connector) as session:
+                task = asyncio.create_task(
+                    self._create_websocket_session(endpoint=endpoint, session=session)
+                )
         object.__setattr__(self, "task", task)
 
-    def unsubscribe(self):
+    def unsubscribe(self) -> None:
+        """
+        Unsubscribe current websocket subscription if active and clear internal task.
+        """
         if self.is_running:
             try:
                 self.task.cancel()

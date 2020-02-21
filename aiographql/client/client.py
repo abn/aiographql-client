@@ -6,18 +6,20 @@ from typing import Any, Dict, Mapping, Optional, Union
 
 import aiohttp
 import graphql
+from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
+
 from aiographql.client.exceptions import (
     GraphQLClientException,
     GraphQLClientValidationException,
     GraphQLIntrospectionException,
     GraphQLRequestException,
 )
+from aiographql.client.helpers import create_default_connector
 from aiographql.client.subscription import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
 from aiographql.client.transaction import GraphQLRequest, GraphQLResponse
-from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
 
 
 @dataclass(frozen=True)
@@ -148,6 +150,24 @@ class GraphQLClient:
             variables=variables,
         )
 
+    async def _http_request(
+        self,
+        session: aiohttp.ClientSession,
+        method: str,
+        request: GraphQLRequest,
+        **kwargs: Any,
+    ):
+        async with session.request(
+            method=method, url=self.endpoint, headers=request.headers, **kwargs
+        ) as resp:
+            body = await resp.json()
+            response = GraphQLResponse(request=request, json=body)
+
+            if 200 <= resp.status < 300:
+                return response
+
+            raise GraphQLRequestException(response)
+
     async def query(
         self,
         request: Union[GraphQLRequest, str],
@@ -155,6 +175,7 @@ class GraphQLClient:
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
+        session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLResponse:
         """
         Method to send provided `GraphQLRequest` to the configured endpoint as an
@@ -180,6 +201,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param session: Optional `aiohttp.ClientSession` to use for requests
         :return: The resulting transaction object.
         """
         request = self._prepare_request(
@@ -196,15 +218,16 @@ class GraphQLClient:
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        async with aiohttp.ClientSession(headers=request.headers) as session:
-            async with session.request(method, self.endpoint, **kwargs) as resp:
-                body = await resp.json()
-                response = GraphQLResponse(request=request, json=body)
+        if session:
+            return await self._http_request(
+                session=session, method=method, request=request, **kwargs
+            )
 
-                if 200 <= resp.status < 300:
-                    return response
-
-                raise GraphQLRequestException(response)
+        connector = await create_default_connector()
+        async with aiohttp.ClientSession(connector=connector) as session:
+            return await self._http_request(
+                session=session, method=method, request=request, **kwargs
+            )
 
     async def post(
         self,
@@ -212,6 +235,7 @@ class GraphQLClient:
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
+        session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
@@ -223,6 +247,7 @@ class GraphQLClient:
             headers=headers,
             operation=operation,
             variables=variables,
+            session=session,
         )
 
     async def get(
@@ -231,6 +256,7 @@ class GraphQLClient:
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
+        session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
@@ -242,6 +268,7 @@ class GraphQLClient:
             headers=headers,
             operation=operation,
             variables=variables,
+            session=session,
         )
 
     async def subscribe(
@@ -253,6 +280,7 @@ class GraphQLClient:
         callbacks: Optional[CallbackRegistry] = None,
         on_data: Optional[CallbackType] = None,
         on_error: Optional[CallbackType] = None,
+        session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLSubscription:
         request = self._prepare_request(
             request=request, operation=operation, variables=variables, headers=headers
@@ -268,5 +296,5 @@ class GraphQLClient:
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks or CallbackRegistry()
         )
-        subscription.subscribe(endpoint=self.endpoint)
+        subscription.subscribe(endpoint=self.endpoint, session=session)
         return subscription
