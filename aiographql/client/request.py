@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import InitVar, asdict, dataclass, field, replace
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field, asdict, replace, InitVar
+from typing import Optional, Dict, Any
 
 import ujson as json
-
-
-@dataclass(frozen=True)
-class GraphQLError:
-    extensions: Dict[str, Any] = field(default_factory=dict)
-    message: Optional[str] = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -75,23 +69,3 @@ class GraphQLRequestContainer:
                 headers=headers, operation=operation, variables=variables
             ),
         )
-
-
-@dataclass(frozen=True)
-class GraphQLBaseResponse(GraphQLRequestContainer):
-    json: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class GraphQLResponse(GraphQLBaseResponse):
-    @property
-    def errors(self) -> List[GraphQLError]:
-        return [GraphQLError(**error) for error in self.json.get("errors", list())]
-
-    @property
-    def data(self) -> Dict[str, Any]:
-        return self.json.get("data", dict())
-
-    @property
-    def query(self):
-        return self.request.query
