@@ -10,11 +10,8 @@ import aiohttp
 from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
 
 from aiographql.client.helpers import create_default_connector
-from aiographql.client.transaction import (
-    GraphQLBaseResponse,
-    GraphQLRequestContainer,
-    GraphQLResponse,
-)
+from aiographql.client.response import GraphQLBaseResponse, GraphQLResponse
+from aiographql.client.request import GraphQLRequestContainer
 
 
 class GraphQLSubscriptionEventType(Enum):
@@ -59,6 +56,17 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
 
 @dataclass(frozen=True)
 class GraphQLSubscription(GraphQLRequestContainer):
+    """
+    Subscription container, with an attached :class:`CallbackRegistry`. When subscribed,
+    the `task` will be populated with the :class:`asyncio.Task` instance.
+
+    By default the subscription will be stopped, if an error, connection error or
+    complete (:class:`GraphQLSubscriptionEventType`) is received.
+
+    Subscription instances are intended to be used as immutable objects. However,
+    `callbacks` and `stop_event_types` can be updated after initialisation.
+    """
+
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
     callbacks: CallbackRegistry = field(default_factory=CallbackRegistry)
     stop_event_types: List[GraphQLSubscriptionEventType] = field(
@@ -70,23 +78,33 @@ class GraphQLSubscription(GraphQLRequestContainer):
     )
     task: asyncio.Task = field(default=None, init=False, compare=False)
 
-    @property
-    def is_running(self) -> bool:
+    def active(self) -> bool:
+        """
+        Check if the subscription is active.
+
+        :return: `True` if subscribed and active.
+        """
         return (
             self.task is not None and not self.task.done() and not self.task.cancelled()
         )
 
-    @property
-    def is_complete(self) -> bool:
-        return self.task is not None and (self.task.done() or self.task.cancelled())
-
     def connection_init_request(self) -> Dict[str, Any]:
+        """
+        Connection init payload to use when initiating a new subscription.
+
+        :return: Connection initialise payload.
+        """
         return {
             "type": GraphQLSubscriptionEventType.CONNECTION_INIT.value,
             "payload": {"headers": {**self.request.headers}},
         }
 
     def connection_start_request(self) -> Dict[str, Any]:
+        """
+        Connection start payload to use when starting a subscription.
+
+        :return: Connection start payload.
+        """
         return {
             "id": self.id,
             "type": GraphQLSubscriptionEventType.START.value,
@@ -94,18 +112,45 @@ class GraphQLSubscription(GraphQLRequestContainer):
         }
 
     def connection_stop_request(self) -> Dict[str, Any]:
+        """
+        Connection stop payload to use when stopping a subscription.
+
+        :return: Connection stop payload.
+        """
         return {"id": self.id, "type": GraphQLSubscriptionEventType.STOP.value}
 
     def is_stop_event(self, event: GraphQLSubscriptionEvent) -> bool:
+        """
+        Check if the provided :param:`event` is configured as a stop even for this subscription.
+
+        :param event: Event to check.
+        :return: `True` if `event` is in `stop_event_types`.
+        """
         return event.type in self.stop_event_types
 
     async def handle(self, event: GraphQLSubscriptionEvent) -> NoReturn:
+        """
+        Helper method to dispatch any configured callbacks for the specified event type.
+
+        :param event: Event to dispatch callbacks for.
+        """
         if event.id is None or event.id == self.id:
             await self.callbacks.handle_event(event.type, event)
 
     async def _websocket_connect(
         self, endpoint: str, session: aiohttp.ClientSession
     ) -> None:
+        """
+        Helper method to create websocket connection with specified *endpoint*
+        using the specified :class:`aiohttp.ClientSession`. Once connected, we
+        initialise and start the GraphQL subscription; then wait for any incoming
+        messages. Any message received via the websocket connection is cast into
+        a :class:`GraphQLSubscriptionEvent` instance and dispatched for handling via
+        :method:`handle`.
+
+        :param endpoint: Endpoint to use when creating the websocket connection.
+        :param session: Session to use when creating the websocket connection.
+        """
         async with session.ws_connect(endpoint) as ws:
             await ws.send_json(data=self.connection_init_request())
 
@@ -136,6 +181,13 @@ class GraphQLSubscription(GraphQLRequestContainer):
     async def _subscribe(
         self, endpoint: str, session: Optional[aiohttp.ClientSession] = None
     ) -> None:
+        """
+        Helper method wrapping :method:`GraphQLSubscription._websocket_connect` handling
+        unique :class:`aiohttp.ClentSession` creation if on is not already provided.
+
+        :param endpoint: Endpoint to use when creating the websocket connection.
+        :param session: Optional session to use when creating the websocket connection.
+        """
         if session:
             return await self._websocket_connect(endpoint=endpoint, session=session)
 
@@ -154,9 +206,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
         :param endpoint: GraphQL endpoint to subscribe to
         :param force: Force re-subscription if already subscribed
-        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :param session: Optional session to use for requests
         """
-        if self.is_running and not force:
+        if self.active() and not force:
             return
         self.unsubscribe()
         task = asyncio.create_task(self._subscribe(endpoint=endpoint, session=session))
@@ -166,7 +218,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         """
         Unsubscribe current websocket subscription if active and clear internal task.
         """
-        if self.is_running:
+        if self.active():
             try:
                 self.task.cancel()
             except asyncio.CancelledError:

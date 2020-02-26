@@ -1,8 +1,11 @@
 import pytest
 
-from aiographql.client.client import GraphQLClient
-from aiographql.client.exceptions import GraphQLIntrospectionException
-from aiographql.client.transaction import GraphQLRequest, GraphQLResponse
+from aiographql.client import (
+    GraphQLClient,
+    GraphQLIntrospectionException,
+    GraphQLRequest,
+    GraphQLResponse,
+)
 
 pytestmark = pytest.mark.asyncio
 
