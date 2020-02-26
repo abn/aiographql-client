@@ -3,7 +3,7 @@ from typing import Optional
 import graphql
 import ujson as json
 
-from aiographql.client.transaction import GraphQLResponse
+from aiographql.client.response import GraphQLResponse
 
 
 class GraphQLClientException(Exception):

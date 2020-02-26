@@ -19,11 +19,12 @@ from aiographql.client.subscription import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
-from aiographql.client.transaction import GraphQLRequest, GraphQLResponse
+from aiographql.client.response import GraphQLResponse
+from aiographql.client.request import GraphQLRequest
 
 
 @dataclass(frozen=True)
-class QueryMethod:
+class GraphQLQueryMethod:
     post: str = "post"
     get: str = "get"
 
@@ -51,7 +52,7 @@ class GraphQLClient:
             This is expected to be externally managed.
         """
         self.endpoint = endpoint
-        self._method = method or QueryMethod.post
+        self._method = method or GraphQLQueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or dict())
         self._schema = schema
@@ -134,13 +135,17 @@ class GraphQLClient:
         headers: Optional[Dict[str, str]] = None,
     ) -> GraphQLRequest:
         """
-        Helper method to ensure that queries handle both string and `GraphQLRequest`
-        objects.
+        Helper method to ensure that queries handle both string and
+        :class:`GraphQLRequest` objects.
 
-        :param request:
-        :param operation:
-        :param variables:
-        :param headers:
+        :param request: Request to send to the GraphQL server.
+        :param operation: GraphQL operation name to use if the `GraphQLRequest.query`
+                          contains named operations. This will override any default
+                          operation set.
+        :param variables: Query variables to set for the provided request. This will
+                          override the default values for any existing variables in the
+                          request if set.
+        :param headers: Additional headers to be set when sending HTTP request.
         :return: A copy of the `request` object with the specified values of
             `operation`, `variables` and `headers` set/merged.
         """
@@ -161,6 +166,18 @@ class GraphQLClient:
         request: GraphQLRequest,
         **kwargs: Any,
     ):
+        """
+        Helper method to make an http request using the provided *session*.
+
+        :param session: Session to use when making the request.
+        :param method: HTTP method to use when making the request.
+        :param request: Prepared GraphQL request to dispatch to the server.
+        :param kwargs: Additional arguments to pass to
+            :method:`aiohttp.ClientSession.request` when making the request.
+        :raises: :class:`GraphQLRequestException` when the server responds with a
+            non 200 status code.
+        :return: Query response.
+        """
         async with session.request(
             method=method, url=self.endpoint, headers=request.headers, **kwargs
         ) as resp:
@@ -182,13 +199,13 @@ class GraphQLClient:
         session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLResponse:
         """
-        Method to send provided `GraphQLRequest` to the configured endpoint as an
-        HTTP request. This method handles the configuration of headers HTTP method
+        Method to send provided :class:`GraphQLRequest` to the configured endpoint as
+        an HTTP request. This method handles the configuration of headers HTTP method
         specific handling of request parameters and/or data as required.
 
         The order of precedence, least to greatest, of headers is as follows,
-            1. client headers (`GraphQLClient.headers`)
-            2. request headers (`GraphQLRequest.headers`)
+            1. client headers (:ivar:`GraphQLClient.headers`)
+            2. request headers (:ivar:`GraphQLRequest.headers`)
             3. `headers` specified as method parameter
 
         In accordance to the GraphQL specification, any non 2XX response  is treated as
@@ -206,7 +223,7 @@ class GraphQLClient:
                           override the default values for any existing variables in the
                           request if set.
         :param session: Optional `aiohttp.ClientSession` to use for requests
-        :return: The resulting transaction object.
+        :return: The resulting response object.
         """
         request = self._prepare_request(
             request=request, operation=operation, variables=variables, headers=headers
@@ -215,9 +232,9 @@ class GraphQLClient:
         await self.validate(request=request)
         method = method or self._method
 
-        if method == QueryMethod.post:
+        if method == GraphQLQueryMethod.post:
             kwargs = dict(json=request.payload())
-        elif method == QueryMethod.get:
+        elif method == GraphQLQueryMethod.get:
             kwargs = dict(params=request.payload(coerce=True))
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
@@ -246,11 +263,22 @@ class GraphQLClient:
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
-        `QueryMethod.POST`.
+        :ivar:`GraphQLQueryMethod.post`.
+
+        :param request: Request to send to the GraphQL server.
+        :param headers: Additional headers to be set when sending HTTP request.
+        :param operation: GraphQL operation name to use if the `GraphQLRequest.query`
+                          contains named operations. This will override any default
+                          operation set.
+        :param variables: Query variables to set for the provided request. This will
+                          override the default values for any existing variables in the
+                          request if set.
+        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :return: The resulting `GraphQLResponse` object.
         """
         return await self.query(
             request,
-            method=QueryMethod.post,
+            method=GraphQLQueryMethod.post,
             headers=headers,
             operation=operation,
             variables=variables,
@@ -266,12 +294,23 @@ class GraphQLClient:
         session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLResponse:
         """
-        Helper method that wraps `GraphQLClient.query` with method explicitly set as
-        `QueryMethod.GET`.
+        Helper method that wraps :method: `GraphQLClient.query` with method explicitly
+        set as :ivar:`GraphQLQueryMethod.get`.
+
+        :param request: Request to send to the GraphQL server.
+        :param headers: Additional headers to be set when sending HTTP request.
+        :param operation: GraphQL operation name to use if the `GraphQLRequest.query`
+                          contains named operations. This will override any default
+                          operation set.
+        :param variables: Query variables to set for the provided request. This will
+                          override the default values for any existing variables in the
+                          request if set.
+        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :return: The resulting `GraphQLResponse` object.
         """
         return await self.query(
             request,
-            method=QueryMethod.get,
+            method=GraphQLQueryMethod.get,
             headers=headers,
             operation=operation,
             variables=variables,
@@ -289,6 +328,31 @@ class GraphQLClient:
         on_error: Optional[CallbackType] = None,
         session: Optional[aiohttp.ClientSession] = None,
     ) -> GraphQLSubscription:
+        """
+        Create and initialise a GraphQL subscription. Once subscribed and a known event
+        is received, all registered callbacks for the event type is triggered with the
+        :class:`aiographql.client.GraphQLSubscriptionEvent` instance passed in the first
+        argument.
+
+        :param request: Request to send to the GraphQL server.
+        :param headers: Additional headers to be set when sending HTTP request.
+        :param operation: GraphQL operation name to use if the `GraphQLRequest.query`
+                          contains named operations. This will override any default
+                          operation set.
+        :param variables: Query variables to set for the provided request. This will
+                          override the default values for any existing variables in the
+                          request if set.
+        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :return: The resulting `GraphQLResponse` object.
+        :param callbacks: Custom callback registry mapping an event to one more more
+            callback methods. If not provided, a new instance is created.
+        :param on_data: Callback to use when data event is received.
+        :param on_error: Callback to use when an error occurs.
+        :param session: Optional session to use for connecting the graphql endpoint, if
+            one is not provided, a new session is created for the duration of the
+            subscription.
+        :return: The initialised subscription.
+        """
         request = self._prepare_request(
             request=request, operation=operation, variables=variables, headers=headers
         )

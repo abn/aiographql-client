@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from aiographql.client.client import GraphQLClient
-from aiographql.client.transaction import GraphQLRequest
+from aiographql.client.request import GraphQLRequest
 
 
 def pytest_addoption(parser):
