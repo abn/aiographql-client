@@ -98,3 +98,26 @@ async def test_subscription(
         assert len(m) == 2
     except TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
+
+
+async def test_subscription_on_data_on_error_callbacks(
+    client, subscription_query, headers
+):
+    request = GraphQLRequest(query=subscription_query, headers=headers)
+
+    async def event_on_data(_):
+        pass
+
+    def event_on_error(_):
+        pass
+
+    subscription: GraphQLSubscription = await client.subscribe(
+        request=request,
+        headers=headers,
+        on_data=event_on_data,
+        on_error=event_on_error,
+    )
+    registry = subscription.callbacks
+    assert registry.exists(GraphQLSubscriptionEventType.DATA, event_on_data)
+    assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
+    await subscription.unsubscribe_and_wait()
