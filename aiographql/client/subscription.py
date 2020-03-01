@@ -234,3 +234,11 @@ class GraphQLSubscription(GraphQLRequestContainer):
             except asyncio.CancelledError:
                 pass
         object.__setattr__(self, "task", None)
+
+    async def unsubscribe_and_wait(self) -> None:
+        task = self.task
+        self.unsubscribe()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
