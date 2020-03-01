@@ -131,7 +131,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
     def is_stop_event(self, event: GraphQLSubscriptionEvent) -> bool:
         """
-        Check if the provided :param:`event` is configured as a stop even for this subscription.
+        Check if the provided *event* is configured as a stop even for this subscription.
 
         :param event: Event to check.
         :return: `True` if `event` is in `stop_event_types`.
