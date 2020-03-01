@@ -1,5 +1,9 @@
 # Asyncio GraphQL Client
-[![PyPI version](https://badge.fury.io/py/aiographql-client.svg)](https://badge.fury.io/py/aiographql-client) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=twyla-ai_aiographql-client&metric=alert_status)](https://sonarcloud.io/dashboard?id=twyla-ai_aiographql-client) [![CircleCI](https://circleci.com/gh/twyla-ai/aiographql-client.svg?style=svg)](https://circleci.com/gh/twyla-ai/aiographql-client)
+[![PyPI version](https://badge.fury.io/py/aiographql-client.svg)](https://badge.fury.io/py/aiographql-client)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=twyla-ai_aiographql-client&metric=alert_status)](https://sonarcloud.io/dashboard?id=twyla-ai_aiographql-client)
+[![](https://github.com/twyla-ai/aiographql-client/workflows/Test%20Suite/badge.svg)](https://github.com/twyla-ai/aiographql-client/actions?query=workflow%3A%22Test+Suite%22)
 
 An asyncio GraphQL client built on top of aiohttp and graphql-core-next. The client by default introspects schemas and validates all queries prior to dispatching to the server.
 
