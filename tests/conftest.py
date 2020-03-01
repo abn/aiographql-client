@@ -68,7 +68,18 @@ def query_output():
 
 
 @pytest.fixture
-def invalid_query():
+def invalid_query_schema():
+    return """
+        query{
+          citeee {
+            id
+          }
+        }
+        """
+
+
+@pytest.fixture
+def invalid_query_syntax():
     return """
         query{
           city(where: {name: {_eq: "Groningen"}}) {
