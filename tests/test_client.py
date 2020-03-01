@@ -6,6 +6,7 @@ from graphql import GraphQLSyntaxError
 
 from aiographql.client import (
     GraphQLClientException,
+    GraphQLClientValidationException,
     GraphQLRequest,
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
@@ -27,8 +28,27 @@ async def test_simple_anonymous_query(client, headers, query_city, query_output)
     assert response.data == query_output
 
 
-async def test_invalid_query(client, headers, invalid_query):
-    request = GraphQLRequest(query=invalid_query, headers=headers)
+async def test_invalid_query_schema(client, headers, invalid_query_schema):
+    request = GraphQLRequest(query=invalid_query_schema, headers=headers)
+    with pytest.raises(GraphQLClientValidationException) as excinfo:
+        _ = await client.query(request)
+    message = str(excinfo.value)
+    assert (
+        """Query validation failed
+
+Cannot query field 'citeee' on type 'query_root'. Did you mean 'city'?
+
+GraphQL request:3:11
+2 |         query{
+3 |           citeee {
+  |           ^
+4 |             id"""
+        == message
+    )
+
+
+async def test_invalid_query_syntax(client, headers, invalid_query_syntax):
+    request = GraphQLRequest(query=invalid_query_syntax, headers=headers)
     with pytest.raises(GraphQLSyntaxError):
         _ = await client.query(request)
 
