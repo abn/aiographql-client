@@ -366,9 +366,7 @@ class GraphQLClient:
         if on_error:
             callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
 
-        subscription = GraphQLSubscription(
-            request=request, callbacks=callbacks or CallbackRegistry()
-        )
+        subscription = GraphQLSubscription(request=request, callbacks=callbacks)
         await subscription.subscribe(
             endpoint=self.endpoint, session=session or self._session
         )
