@@ -15,12 +15,13 @@ from aiographql.client.exceptions import (
     GraphQLRequestException,
 )
 from aiographql.client.helpers import create_default_connector
+from aiographql.client.request import GraphQLRequest
+from aiographql.client.response import GraphQLResponse
 from aiographql.client.subscription import (
+    CallbacksType,
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
-from aiographql.client.response import GraphQLResponse
-from aiographql.client.request import GraphQLRequest
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,20 @@ class GraphQLQueryMethod:
 
 
 class GraphQLClient:
+    """
+    Client implementation handling all interactions with a specified endpoint.
+
+    :param endpoint: URI of graph api.
+    :param headers: Default headers to use for every request made by this client.
+        By default the client adds 'Content-Type: application/json' and
+        'Accept-Encoding: gzip' to all requests. These can be overridden by
+        specifying then here.
+    :param method: Default method to use when submitting a GraphQL request to the
+        specified `endpoint`.
+    :param session: Optional `aiohttp.ClientSession` to use when making requests.
+        This is expected to be externally managed.
+    """
+
     def __init__(
         self,
         endpoint: str,
@@ -38,19 +53,6 @@ class GraphQLClient:
         schema: Optional[graphql.GraphQLSchema] = None,
         session: Optional[aiohttp.ClientSession] = None,
     ) -> None:
-        """
-        Initialise a GraphQL Client
-
-        :param endpoint: URI of graph api.
-        :param headers: Default headers to use for every request made by this client.
-            By default the client adds 'Content-Type: application/json' and
-            'Accept-Encoding: gzip' to all requests. These can be overridden by
-            specifying then here.
-        :param method: Default method to use when submitting a GraphQL request to the
-            specified `endpoint`.
-        :param session: Optional `aiohttp.ClientSession` to use when making requests.
-            This is expected to be externally managed.
-        """
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
@@ -204,8 +206,8 @@ class GraphQLClient:
         specific handling of request parameters and/or data as required.
 
         The order of precedence, least to greatest, of headers is as follows,
-            1. client headers (:ivar:`GraphQLClient.headers`)
-            2. request headers (:ivar:`GraphQLRequest.headers`)
+            1. client headers (:attr:`GraphQLClient.headers`)
+            2. request headers (:attr:`GraphQLRequest.headers`)
             3. `headers` specified as method parameter
 
         In accordance to the GraphQL specification, any non 2XX response  is treated as
@@ -263,7 +265,7 @@ class GraphQLClient:
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
-        :ivar:`GraphQLQueryMethod.post`.
+        :attr:`GraphQLQueryMethod.post`.
 
         :param request: Request to send to the GraphQL server.
         :param headers: Additional headers to be set when sending HTTP request.
@@ -295,7 +297,7 @@ class GraphQLClient:
     ) -> GraphQLResponse:
         """
         Helper method that wraps :method: `GraphQLClient.query` with method explicitly
-        set as :ivar:`GraphQLQueryMethod.get`.
+        set as :attr:`GraphQLQueryMethod.get`.
 
         :param request: Request to send to the GraphQL server.
         :param headers: Additional headers to be set when sending HTTP request.
@@ -323,7 +325,7 @@ class GraphQLClient:
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
-        callbacks: Optional[CallbackRegistry] = None,
+        callbacks: Optional[CallbacksType] = None,
         on_data: Optional[CallbackType] = None,
         on_error: Optional[CallbackType] = None,
         session: Optional[aiohttp.ClientSession] = None,
