@@ -41,7 +41,7 @@ classifiers = []
 
 [tool.poetry.dependencies]
 python = "^3.7"
-cafeteria-asyncio = "^0"
+cafeteria-asyncio = "^0.2"
 aiohttp = "^3.5"
 graphql-core = "^3.0"
 ujson = "^1.35"
@@ -55,3 +55,4 @@ tox = "^3.13"
 pytest = "^5.2"
 pytest-asyncio = "^0.10.0"
 pytest-cov = "^2.7"
+pytest-mock = "^2.0.0"
