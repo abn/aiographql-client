@@ -88,6 +88,21 @@ class GraphQLSubscription(GraphQLRequestContainer):
     )
     task: asyncio.Task = field(default=None, init=False, compare=False)
 
+    def __post_init__(
+        self,
+        headers: Optional[Dict[str, str]] = None,
+        operation: Optional[str] = None,
+        variables: Optional[Dict[str, Any]] = None,
+    ):
+        super().__post_init__(headers, operation, variables)
+
+        if self.callbacks is None:
+            object.__setattr__(self, "callbacks", CallbackRegistry())
+        elif isinstance(self.callbacks, dict):
+            object.__setattr__(
+                self, "callbacks", CallbackRegistry(callbacks=self.callbacks)
+            )
+
     def active(self) -> bool:
         """
         Check if the subscription is active.
