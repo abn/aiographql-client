@@ -1,5 +1,6 @@
 import asyncio
 
+import aiohttp
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
@@ -8,6 +9,7 @@ from aiographql.client import (
     GraphQLClientException,
     GraphQLClientValidationException,
     GraphQLRequest,
+    GraphQLRequestException,
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
@@ -66,6 +68,27 @@ async def test_invalid_method(client, headers, query_city):
         _ = await client.query(method="PUT", request=request)
 
 
+async def test_unsuccessful_request(client, headers, query_city, query_output):
+    # hasura does not support GET requests, we use this to test this case
+    request = GraphQLRequest(query=query_city, headers=headers)
+    with pytest.raises(GraphQLRequestException) as excinfo:
+        _ = await client.get(request)
+    assert (
+        'Request failed with response {"path":"$","error":"resource does not exist","code":"not-found"}'
+        in str(excinfo.value)
+    )
+
+
+async def test_external_aiohttp_session(
+    mocker, client, headers, query_city, query_output
+):
+    async with aiohttp.ClientSession() as session:
+        spy = mocker.spy(session, "request")
+        response = await client.post(query_city, headers=headers, session=session)
+        assert response.data == query_output
+        spy.assert_called_once()
+
+
 async def test_mutation(client, headers, mutation_city, mutation_output):
     request = GraphQLRequest(query=mutation_city, headers=headers)
     response = await client.query(request)
@@ -76,7 +99,6 @@ async def test_subscription(
     client, headers, subscription_query, mutation_city, city_name
 ):
     request = GraphQLRequest(query=subscription_query, headers=headers)
-    callbacks = CallbackRegistry()
     m = []
 
     def callback(data):
@@ -87,12 +109,13 @@ async def test_subscription(
             assert city.get("name") == city_name
             subscription.unsubscribe()
 
+    callbacks = CallbackRegistry()
     callbacks.register(
         GraphQLSubscriptionEventType.DATA, lambda event: callback(event.payload.data)
     )
 
     subscription: GraphQLSubscription = await client.subscribe(
-        request=request, callbacks=callbacks, headers=headers
+        request=request, callbacks=callbacks, headers=headers,
     )
 
     await asyncio.sleep(0.1)
@@ -101,9 +124,9 @@ async def test_subscription(
     _ = await client.query(request)
 
     try:
-        await asyncio.wait([subscription.task], timeout=1)
+        await asyncio.wait_for(subscription.task, timeout=1)
         assert len(m) == 2
-    except TimeoutError:
+    except asyncio.TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
 
 
