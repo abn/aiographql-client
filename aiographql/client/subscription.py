@@ -145,7 +145,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         :param event: Event to dispatch callbacks for.
         """
         if event.id is None or event.id == self.id:
-            await self.callbacks.handle_event(event.type, event)
+            self.callbacks.dispatch(event.type, event)
 
     async def _websocket_connect(
         self, endpoint: str, session: aiohttp.ClientSession
