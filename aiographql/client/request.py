@@ -10,10 +10,15 @@ import ujson as json
 @dataclass(frozen=True)
 class GraphQLRequest:
     query: str
-    operationName: Optional[str] = field(default=None)
+    operation: InitVar[Optional[str]] = field(default=None)
+    operationName: Optional[str] = field(default=None, init=False)
     variables: Dict[str, Any] = field(default_factory=dict)
     validate: bool = field(default=True)
     headers: Dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self, operation: Optional[str] = None):
+        if operation is not None:
+            object.__setattr__(self, "operationName", operation)
 
     @staticmethod
     def _coerce_value(value: Any) -> Any:
@@ -39,7 +44,7 @@ class GraphQLRequest:
     ) -> GraphQLRequest:
         return replace(
             self,
-            operationName=operation or self.operationName,
+            operation=operation or self.operationName,
             variables={**deepcopy(self.variables), **(variables or dict())},
             headers={
                 **(headers_fallback or dict()),
