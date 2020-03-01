@@ -7,11 +7,15 @@ from enum import Enum
 from typing import Any, Dict, List, NoReturn, Optional, Union
 
 import aiohttp
-from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
+from cafeteria.asyncio.callbacks import (
+    CallbackRegistry,
+    CallbackType,
+    SimpleTriggerCallback,
+)
 
 from aiographql.client.helpers import create_default_connector
-from aiographql.client.response import GraphQLBaseResponse, GraphQLResponse
 from aiographql.client.request import GraphQLRequestContainer
+from aiographql.client.response import GraphQLBaseResponse, GraphQLResponse
 
 
 class GraphQLSubscriptionEventType(Enum):
@@ -25,6 +29,12 @@ class GraphQLSubscriptionEventType(Enum):
     COMPLETE = "complete"
     STOP = "stop"
     KEEP_ALIVE = "ka"
+
+
+CallbacksType = Union[
+    CallbackRegistry,
+    Dict[GraphQLSubscriptionEventType, Union[CallbackType, List[CallbackType]]],
+]
 
 
 @dataclass(frozen=True)
@@ -68,7 +78,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
     """
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
-    callbacks: CallbackRegistry = field(default_factory=CallbackRegistry)
+    callbacks: Optional[CallbacksType] = field(default_factory=CallbackRegistry)
     stop_event_types: List[GraphQLSubscriptionEventType] = field(
         default_factory=lambda: [
             GraphQLSubscriptionEventType.ERROR,
