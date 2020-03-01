@@ -22,6 +22,13 @@ async def test_simple_anonymous_post(client, headers, query_city, query_output):
     assert response.data == query_output
 
 
+async def test_simple_anonymous_post_with_string(
+    client, headers, query_city, query_output
+):
+    response = await client.post(request=query_city, headers=headers)
+    assert response.data == query_output
+
+
 async def test_simple_anonymous_query(client, headers, query_city, query_output):
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.query(request)
