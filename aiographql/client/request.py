@@ -9,6 +9,19 @@ import ujson as json
 
 @dataclass(frozen=True)
 class GraphQLRequest:
+    """
+    GraphQL Request object that can be reused or used to store multiple named queries
+    with default *operationName`, *variables* and *header* to use.
+
+    :param query: GraphQL query string.
+    :param operation: Optional name of operation to use from the query.
+    :param variables: Variable dictionary pass with the query to the server.
+    :param validate: If `True`, the request query is validated against the latest available
+        schema from the server.
+    :param headers: Headers to use, in addition to client default headers when making
+        the HTTP request.
+    """
+
     query: str
     operation: InitVar[Optional[str]] = field(default=None)
     operationName: Optional[str] = field(default=None, init=False)
@@ -19,6 +32,11 @@ class GraphQLRequest:
     def __post_init__(self, operation: Optional[str] = None):
         if operation is not None:
             object.__setattr__(self, "operationName", operation)
+
+    def __getattr__(self, item):
+        if item == "operation":
+            return self.operationName
+        return super(GraphQLRequest, self).__getattribute__(item)
 
     @staticmethod
     def _coerce_value(value: Any) -> Any:

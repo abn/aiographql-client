@@ -32,7 +32,28 @@ class GraphQLQueryMethod:
 
 class GraphQLClient:
     """
-    Client implementation handling all interactions with a specified endpoint.
+    Client implementation handling all interactions with a specified endpoint. The
+    following example shows how to make a simple query.
+
+    .. code-block:: python
+
+        client = GraphQLClient(
+            endpoint="http://127.0.0.1:8080/v1/graphql",
+            headers={"Authorization": "Bearer <token>"},
+        )
+        response: GraphQLResponse = await client.query("{ city { name } }")
+
+    You can also use an application scoped :class:`aiohttp.ClientSession` throughout
+    the life of the client as show below.
+
+    .. code-block:: python
+        :emphasize-lines: 1,4
+
+        async with aiohttp.ClientSession() as session:
+            client = GraphQLClient(
+                endpoint="http://127.0.0.1:8080/v1/graphql",
+                session=session
+            )
 
     :param endpoint: URI of graph api.
     :param headers: Default headers to use for every request made by this client.
@@ -335,6 +356,21 @@ class GraphQLClient:
         is received, all registered callbacks for the event type is triggered with the
         :class:`aiographql.client.GraphQLSubscriptionEvent` instance passed in the first
         argument.
+
+        The following example will start a subscription that prints all data events as
+        it receives them.
+
+        .. code-block:: python
+
+            # initialise and subscribe to events in the background
+            subscription: GraphQLSubscription = await client.subscribe(
+                request="{ notifications: { id, summary } }",
+                on_data=lambda event: print(f"Data: {event}"),
+                on_error=lambda event: print(f"Error: {event}"),
+            )
+            # process events for 10 seconds then unsubscribe
+            await asyncio.wait(subscription.task, timeout=10)
+            subscription.unsubscribe()
 
         :param request: Request to send to the GraphQL server.
         :param headers: Additional headers to be set when sending HTTP request.

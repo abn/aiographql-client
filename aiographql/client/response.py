@@ -12,14 +12,24 @@ class GraphQLBaseResponse(GraphQLRequestContainer):
 
 @dataclass(frozen=True)
 class GraphQLResponse(GraphQLBaseResponse):
+    """
+    GraphQL Response object wrapping response data and any errors. This object also
+    contains the a copy of the :class:`GraphQLRequest` that produced this response.
+    """
+
     @property
     def errors(self) -> List[GraphQLError]:
+        """
+        A list of :class:`GraphQLError` objects if server responded with query errors.
+        """
         return [GraphQLError(**error) for error in self.json.get("errors", list())]
 
     @property
     def data(self) -> Dict[str, Any]:
+        """The data payload the server responded with."""
         return self.json.get("data", dict())
 
     @property
-    def query(self):
+    def query(self) -> str:
+        """The query string used to produce this response."""
         return self.request.query
