@@ -1,9 +1,13 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
 
 import graphql
 import ujson as json
 
-from aiographql.client.response import GraphQLResponse
+
+if TYPE_CHECKING:
+    from aiographql.client import GraphQLResponse
 
 
 class GraphQLClientException(Exception):
