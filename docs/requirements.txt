@@ -1,0 +1,5 @@
+sphinx
+sphinxcontrib-spelling
+sphinx-autodoc-typehints
+readthedocs-sphinx-ext
+sphinx-rtd-theme
