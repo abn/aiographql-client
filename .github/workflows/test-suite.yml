@@ -8,7 +8,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: [3.7, 3.8]
     services:
       postgres:
         image: docker.io/postgres:9.6-alpine
@@ -34,9 +34,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip poetry
-        poetry install
+        python -m pip install --upgrade pip poetry tox
     - name: Execute test suite
       run: |
-        poetry run pytest --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
-  
+        tox -e py -- --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
