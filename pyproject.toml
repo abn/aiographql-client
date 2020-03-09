@@ -24,17 +24,29 @@ packages = [
 version = "1.0.0-alpha.0"
 description = "An asyncio GraphQL client built on top of aiohttp and graphql-core-next"
 authors = [
-    "Twyla Engineering <software@twyla.ai>"
+    "Arun Neelicattu <arun.neelicattu@gmail.com>"
 ]
 license = "MIT"
-
 readme = "README.md"
-
 repository = "https://github.com/twyla-ai/aiographql-client"
-
-keywords = []
-
-classifiers = []
+keywords = [
+    "aiohttp",
+    "asyncio",
+    "client",
+    "graphql",
+    "graphql-core",
+    "graphql-core-next",
+]
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Framework :: AsyncIO"
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
