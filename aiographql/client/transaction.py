@@ -20,6 +20,7 @@ class GraphQLRequest:
     validate: bool = field(default=True)
     headers: Dict[str, str] = field(default_factory=dict)
     schema: Optional[graphql.GraphQLSchema] = None
+    socks: Optional[Dict[str, Any]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.headers = self.headers or dict()
@@ -28,7 +29,8 @@ class GraphQLRequest:
         # TODO: serialise variables correctly
         return {
             k: v
-            for k, v in asdict(replace(self, schema=None, headers=None)).items()
+            for k, v in asdict(
+                replace(self, schema=None, headers=None, socks=None)).items()
             if v is not None
         }
 

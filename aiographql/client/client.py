@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Mapping
+from typing import Dict, List, Optional, Mapping, Any
 
 import aiohttp
+from aiohttp_socks import SocksConnector, SocksVer
 import graphql
 from cafeteria.asyncio.callbacks import CallbackRegistry, SimpleTriggerCallback
 
@@ -118,6 +119,7 @@ class GraphQLClient:
         request: GraphQLRequest,
         method: str = None,
         headers: Optional[Dict[str, str]] = None,
+        socks: Optional[Dict[str, Any]] = None
     ) -> GraphQLTransaction:
         headers = {**self._headers, **request.headers, **(headers or dict())}
         await self._validate(request=request, headers=headers)
@@ -136,8 +138,14 @@ class GraphQLClient:
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
+        connector = None
+        socks = {**(request.socks or dict()), **(socks or dict())}
+        if socks:
+            connector = SocksConnector(**socks)
+
         async with aiohttp.ClientSession(
-            headers={**self._headers, **request.headers, **headers}
+            headers={**self._headers, **request.headers, **headers},
+            connector=connector
         ) as session:
             async with session.request(method, self.endpoint, **kwargs) as resp:
                 body = await resp.json()
