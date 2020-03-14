@@ -9,6 +9,15 @@ services:
       POSTGRES_USER: hasura
       POSTGRES_DB: hasura
 
+  brook:
+    image: imkcat/brook:latest
+    ports:
+      - 1080:1080
+    restart: on-failure
+    command: 'socks5 -l :1080 -i 127.0.0.1'
+    depends_on:
+      - hasura
+
   hasura:
     image: quay.io/twyla-ai/hasura-world-db:latest
     ports:
@@ -20,3 +29,4 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ADMIN_SECRET: secret
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"

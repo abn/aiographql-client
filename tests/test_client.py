@@ -3,12 +3,14 @@ import asyncio
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
+from aiohttp_socks import SocksVer
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.subscription import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
+from aiographql.client.client import GraphQLClient
 from aiographql.client.transaction import GraphQLRequest
 
 # noinspection SpellCheckingInspection
@@ -23,6 +25,13 @@ async def test_simple_anonymous_post(client, headers, query_city, query_output):
 
 async def test_simple_anonymous_query(client, headers, query_city, query_output):
     request = GraphQLRequest(query=query_city, headers=headers)
+    transaction = await client.query(request)
+    assert transaction.response.data == query_output
+
+async def test_simple_anonymous_query_socks(headers, query_city, query_output):
+    client = GraphQLClient(endpoint='http://127.0.0.1:8080/v1/graphql')
+    request = GraphQLRequest(query=query_city, headers=headers,
+        socks={'host': '127.0.0.1', 'port': 1080, 'rdns': False})
     transaction = await client.query(request)
     assert transaction.response.data == query_output
 
