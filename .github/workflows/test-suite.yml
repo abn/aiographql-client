@@ -3,7 +3,7 @@ name: Test Suite
 on: [push]
 
 jobs:
-  build:
+  test-suite:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4

@@ -1,20 +1,6 @@
 [build-system]
-requires = ["poetry>=1.0.0"]
+requires = ["poetry>=1.0"]
 build-backend = "poetry.masonry.api"
-
-[tool.black]
-line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.tox
-  | \.venv
-  | _build
-  | build
-  | dist
-)/
-'''
 
 [tool.poetry]
 name = "aiographql-client"
@@ -58,10 +44,66 @@ ujson = "^1.35"
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.1"
 flake8 = "^3.7"
-coverage = "^4.5"
+coverage = { version = "^5.0", extras = ["toml"]}
 black = "^19.10b0"
 tox = "^3.13"
 pytest = "^5.2"
 pytest-asyncio = "^0.10"
-pytest-cov = "^2.7"
+pytest-cov = "^2.8"
 pytest-mock = "^2.0"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.tox
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.coverage.run]
+branch = true
+parallel = true
+data_file = ".coverage/data"
+source = [
+    "aiographql/"
+]
+omit = [
+    "tests/*",
+]
+
+[tool.coverage.report]
+skip_empty = true
+ignore_errors = true
+
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = ".coverage/html"
+
+[tool.coverage.xml]
+output = ".coverage/coverage.xml"
+
+[tool.coverage.json]
+output = ".coverage/coverage.json"
