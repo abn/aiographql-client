@@ -119,5 +119,5 @@ request = GraphQLRequest(
 The default values can be overridden at the time of making the request if required. 
 
 ```py
-await client.query(request=request, variables={"id", 20}, operation="get_bot_created"
+await client.query(request=request, variables={"id", 20}, operation="get_bot_created")
 ```
