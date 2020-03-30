@@ -350,6 +350,7 @@ class GraphQLClient:
         on_data: Optional[CallbackType] = None,
         on_error: Optional[CallbackType] = None,
         session: Optional[aiohttp.ClientSession] = None,
+        wait: bool = False,
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -389,6 +390,8 @@ class GraphQLClient:
         :param session: Optional session to use for connecting the graphql endpoint, if
             one is not provided, a new session is created for the duration of the
             subscription.
+        :param wait: If set to `True`, this method will wait until the subscription
+            is completed, websocket disconnected or async task cancelled.
         :return: The initialised subscription.
         """
         request = self._prepare_request(
@@ -404,6 +407,6 @@ class GraphQLClient:
 
         subscription = GraphQLSubscription(request=request, callbacks=callbacks)
         await subscription.subscribe(
-            endpoint=self.endpoint, session=session or self._session
+            endpoint=self.endpoint, session=session or self._session, wait=wait
         )
         return subscription
