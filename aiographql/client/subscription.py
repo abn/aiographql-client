@@ -247,6 +247,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         endpoint: str,
         force: bool = False,
         session: Optional[aiohttp.ClientSession] = None,
+        wait: bool = False,
     ) -> None:
         """
         Create a websocket subscription and set internal task.
@@ -254,12 +255,20 @@ class GraphQLSubscription(GraphQLRequestContainer):
         :param endpoint: GraphQL endpoint to subscribe to
         :param force: Force re-subscription if already subscribed
         :param session: Optional session to use for requests
+        :param wait: If set to `True`, this method will wait until the subscription
+            is completed, websocket disconnected or async task cancelled.
         """
         if self.active() and not force:
             return
         self.unsubscribe()
         task = asyncio.create_task(self._subscribe(endpoint=endpoint, session=session))
         object.__setattr__(self, "task", task)
+
+        if wait:
+            try:
+                await self.task
+            except asyncio.CancelledError:
+                pass
 
     def unsubscribe(self) -> None:
         """
