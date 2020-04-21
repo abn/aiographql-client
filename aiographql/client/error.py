@@ -12,3 +12,4 @@ class GraphQLError:
     locations: Optional[List[Dict[str, int]]] = field(default=None)
     message: Optional[str] = field(default=None)
     path: Optional[List[Union[str, int]]] = field(default=None)
+    type: Optional[str] = field(default=None)
