@@ -22,7 +22,7 @@ class GraphQLResponse(GraphQLBaseResponse):
         """
         A list of :class:`GraphQLError` objects if server responded with query errors.
         """
-        return [GraphQLError(**error) for error in self.json.get("errors", list())]
+        return [GraphQLError.load(error) for error in self.json.get("errors", list())]
 
     @property
     def data(self) -> Dict[str, Any]:
