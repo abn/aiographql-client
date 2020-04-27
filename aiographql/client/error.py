@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field, fields, make_dataclass
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-T = TypeVar('T', bound='GraphQLError')
+T = TypeVar("T", bound="GraphQLError")
+
 
 @dataclass(frozen=True)
 class GraphQLError:
@@ -17,12 +18,21 @@ class GraphQLError:
     @classmethod
     def load(cls: Type[T], data: Dict[str, Any]) -> T:
         construct_class = cls
-        custom_keys = [key for key in data.keys() if key not in {field.name for field in fields(cls)}]
+        custom_keys = [
+            key
+            for key in data.keys()
+            if key not in {field.name for field in fields(cls)}
+        ]
 
         if custom_keys:
-            custom_fields = [(key, type(data[key]), field(default=None)) for key in custom_keys]
+            custom_fields = [
+                (key, type(data[key]), field(default=None)) for key in custom_keys
+            ]
             construct_class = make_dataclass(
-                'CustomGraphQLError', fields=custom_fields, bases=(GraphQLError,), frozen=True
+                "CustomGraphQLError",
+                fields=custom_fields,
+                bases=(GraphQLError,),
+                frozen=True,
             )
 
         return construct_class(**data)
