@@ -4,8 +4,6 @@ from typing import Dict, Any, List
 from aiographql.client.error import GraphQLError
 from aiographql.client.request import GraphQLRequestContainer
 
-BASE_ERROR_FIELDS = {"extensions", "locations", "message"}
-
 
 @dataclass(frozen=True)
 class GraphQLBaseResponse(GraphQLRequestContainer):
@@ -24,24 +22,7 @@ class GraphQLResponse(GraphQLBaseResponse):
         """
         A list of :class:`GraphQLError` objects if server responded with query errors.
         """
-        errors = self.json.get("errors", list())
-        error_list = []
-        for error in errors:
-            error_fields = {
-                field: value
-                for field, value in error.items()
-                if field in BASE_ERROR_FIELDS
-            }
-            unknown_error_fields = {
-                field: value
-                for field, value in error.items()
-                if field not in BASE_ERROR_FIELDS
-            }
-
-            error_fields.setdefault("extensions", {})["_unknown_fields"] = unknown_error_fields
-            error_list.append(GraphQLError(**error_fields))
-
-        return error_list
+        return [GraphQLError.load(error) for error in self.json.get("errors", list())]
 
     @property
     def data(self) -> Dict[str, Any]:
