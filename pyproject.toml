@@ -48,7 +48,7 @@ coverage = { version = "^5.1", extras = ["toml"]}
 black = "^19.10b0"
 tox = "^3.13"
 pytest = "^5.2"
-pytest-asyncio = "^0.11"
+pytest-asyncio = "^0.12"
 pytest-cov = "^2.8"
 pytest-mock = "^3.0"
 
