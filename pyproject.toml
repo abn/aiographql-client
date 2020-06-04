@@ -39,7 +39,7 @@ python = "^3.7"
 cafeteria-asyncio = "^0.2"
 aiohttp = "^3.5"
 graphql-core = "^3.0"
-ujson = "^2.0"
+ujson = ">=2,<4"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.1"
