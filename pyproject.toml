@@ -44,7 +44,7 @@ ujson = ">=2,<4"
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.1"
 flake8 = "^3.7"
-coverage = { version = "^5.1", extras = ["toml"]}
+coverage = { version = "^5.2", extras = ["toml"]}
 black = "^19.10b0"
 tox = "^3.15"
 pytest = "^5.4"
