@@ -51,9 +51,15 @@ pytest = "^6.0"
 pytest-asyncio = "^0.12"
 pytest-cov = "^2.9"
 pytest-mock = "^3.1"
+isort = "^5.3.2"
 
 [tool.black]
 line-length = 88
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "test"]
+known_first_party = "aiographql"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -3,8 +3,8 @@ from aiographql.client.error import GraphQLError
 from aiographql.client.exceptions import (
     GraphQLClientException,
     GraphQLClientValidationException,
-    GraphQLRequestException,
     GraphQLIntrospectionException,
+    GraphQLRequestException,
 )
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
