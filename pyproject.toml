@@ -54,17 +54,6 @@ pytest-mock = "^3.1"
 
 [tool.black]
 line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.tox
-  | \.venv
-  | _build
-  | build
-  | dist
-)/
-'''
 
 [tool.pytest.ini_options]
 minversion = "6.0"
