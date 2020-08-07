@@ -1,13 +1,20 @@
 name: Test Suite
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
-  test-suite:
-    runs-on: ubuntu-latest
+  tests:
+    name: ${{ matrix.os }} / ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}-latest
     strategy:
-      max-parallel: 4
       matrix:
+        os: [Ubuntu]
         python-version: [3.7, 3.8]
     services:
       postgres:
@@ -16,30 +23,52 @@ jobs:
           POSTGRES_PASSWORD: hasura
           POSTGRES_USER: hasura
           POSTGRES_DB: hasura
-        ports: 
+        ports:
           - 5432:5432
-      hasura: 
+      hasura:
         image: quay.io/twyla-ai/hasura-world-db:latest
         env:
           HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
           HASURA_GRAPHQL_ADMIN_SECRET: secret
-        ports: 
+        ports:
           - 8080:8080
         options: --restart on-failure
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry tox
-    - name: Wait for hasura
-      run: |
-        timeout 300s bash -c \
-          'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:${{ job.services.hasura.ports[8080] }}/healthz)" != "200" ]]; do sleep 5; done' \
-        || false
-    - name: Execute test suite
-      run: |
-        tox -e py -- --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get full Python version
+        id: full-python-version
+        shell: bash
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Install poetry, tox
+        shell: bash
+        run: python -m pip install poetry tox
+
+      - name: Set up cache
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: .tox
+          key: tox-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Setup test environment
+        shell: bash
+        run: tox -e py --notest
+
+      - name: Wait for hasura
+        shell: bash
+        run: |
+          timeout 300s bash -c \
+            'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:${{ job.services.hasura.ports[8080] }}/healthz)" != "200" ]]; do sleep 5; done' \
+          || false
+
+      - name: Execute test suite
+        shell: bash
+        run: |
+          tox -e py -- --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
