@@ -28,4 +28,4 @@ jobs:
     - name: Run Black
       uses: lgeiger/black-action@master
       with:
-        args: --check aiographql/ tests/
+        args: --check src/ tests/
