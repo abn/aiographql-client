@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field, asdict, replace, InitVar
-from typing import Optional, Dict, Any
+from dataclasses import InitVar, asdict, dataclass, field, replace
+from typing import Any, Dict, Optional
 
 import ujson as json
 
