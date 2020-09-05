@@ -16,7 +16,7 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip poetry
+        python -m pip install --upgrade --pre poetry
     - name: Configure pypi credentials
       env:
         PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}

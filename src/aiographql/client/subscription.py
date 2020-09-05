@@ -216,7 +216,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
                         continue
 
                     event = GraphQLSubscriptionEvent(
-                        subscription_id=self.id, request=self.request, json=msg.json(),
+                        subscription_id=self.id,
+                        request=self.request,
+                        json=msg.json(),
                     )
                     await self.handle(event=event)
 
