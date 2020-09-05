@@ -115,7 +115,9 @@ async def test_subscription(
     )
 
     subscription: GraphQLSubscription = await client.subscribe(
-        request=request, callbacks=callbacks, headers=headers,
+        request=request,
+        callbacks=callbacks,
+        headers=headers,
     )
 
     await asyncio.sleep(0.1)
