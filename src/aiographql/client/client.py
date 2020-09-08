@@ -14,7 +14,7 @@ from aiographql.client.exceptions import (
     GraphQLIntrospectionException,
     GraphQLRequestException,
 )
-from aiographql.client.helpers import create_default_connector
+from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.subscription import (
@@ -270,8 +270,7 @@ class GraphQLClient:
                 **kwargs,
             )
 
-        connector = await create_default_connector()
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp_client_session() as session:
             return await self._http_request(
                 session=session, method=method, request=request, **kwargs
             )

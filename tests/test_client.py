@@ -1,6 +1,5 @@
 import asyncio
 
-import aiohttp
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
@@ -13,8 +12,8 @@ from aiographql.client import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
+from aiographql.client.helpers import aiohttp_client_session
 
-# noinspection SpellCheckingInspection
 pytestmark = pytest.mark.asyncio
 
 
@@ -82,7 +81,7 @@ async def test_unsuccessful_request(client, headers, query_city, query_output):
 async def test_external_aiohttp_session(
     mocker, client, headers, query_city, query_output
 ):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp_client_session() as session:
         spy = mocker.spy(session, "request")
         response = await client.post(query_city, headers=headers, session=session)
         assert response.data == query_output
