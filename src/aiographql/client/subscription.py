@@ -13,7 +13,7 @@ from cafeteria.asyncio.callbacks import (
     SimpleTriggerCallback,
 )
 
-from aiographql.client.helpers import create_default_connector
+from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequestContainer
 from aiographql.client.response import GraphQLBaseResponse, GraphQLResponse
 
@@ -240,8 +240,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if session:
             return await self._websocket_connect(endpoint=endpoint, session=session)
 
-        connector = await create_default_connector()
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp_client_session() as session:
             return await self._websocket_connect(endpoint=endpoint, session=session)
 
     async def subscribe(
