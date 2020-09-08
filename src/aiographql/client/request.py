@@ -30,6 +30,10 @@ class GraphQLRequest:
     headers: Dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self, operation: Optional[str] = None):
+        for name in {"headers", "variables"}:
+            if getattr(self, name) is None:
+                object.__setattr__(self, name, dict())
+
         if operation is not None:
             object.__setattr__(self, "operationName", operation)
 
