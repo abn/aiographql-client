@@ -2,4 +2,4 @@ sphinx
 sphinxcontrib-spelling
 sphinx-autodoc-typehints
 readthedocs-sphinx-ext
-furo
+sphinx-material
