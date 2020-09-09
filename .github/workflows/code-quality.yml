@@ -1,9 +1,16 @@
 name: Code Quality Checks
 
 on:
-  pull_request: {}
   push:
-    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+    branches:
+      - '**'
 
 jobs:
   pre-commit:
