@@ -1,11 +1,30 @@
-Async GraphQL Client Documentation
-==================================
+Async GraphQL Client
+====================
 
-An asynchronous GraphQL client built on top of `AIOHTTP`_ and `GraphQL-core 3`_. The client
-by default introspects schemas and validates all queries prior to dispatching to the server.
+.. list-table::
+    :widths: 20 80
+
+    * - .. image:: images/aiographql-client-logo.svg
+           :width: 150
+           :height: 150
+           :align: right
+           :alt: Async GraphQL Client
+
+      - | An asynchronous GraphQL client built on top of `AIOHTTP`_ and `GraphQL-core 3`_.
+        |
+        | **Feature Highlights**
+
+            * client side schema introspection and validation
+            * ``aiohttp`` inspired API
+            * GraphQL query, mutation and subscription support
+
 
 .. _AIOHTTP: https://docs.aiohttp.org/en/stable/
 .. _GraphQL-core 3: https://graphql-core-3.readthedocs.io/en/latest/
+
+
+Documentation Content
+---------------------
 
 .. toctree::
    :caption: Introduction
