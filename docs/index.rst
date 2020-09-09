@@ -2,11 +2,11 @@ Async GraphQL Client
 ====================
 
 .. list-table::
-    :widths: 20 80
+    :widths: 25 75
 
     * - .. image:: images/aiographql-client-logo.svg
-           :width: 150
-           :height: 150
+           :width: 175
+           :height: 175
            :align: right
            :alt: Async GraphQL Client
 
