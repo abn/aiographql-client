@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -----------------------------------------------------
 
-project = "aiographql-client"
+project = "Async GraphQL Client"
 copyright = "2019, Arun Neelicattu, Maria Soulountsi, Josha Inglis"
 author = "Arun Neelicattu, Maria Soulountsi, Josha Inglis"
 
@@ -49,7 +49,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_includes"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -59,25 +59,43 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "sphinx_material"
 
+html_show_sourcelink = False
+html_sidebars = {
+    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
+}
+
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
     # Set the name of the project to appear in the navigation.
     "nav_title": "Async GraphQL Client",
+    "nav_links": [
+        {"href": "introduction", "internal": True, "title": "Introduction"},
+        {"href": "examples", "internal": True, "title": "Usage Examples"},
+        {"href": "api", "internal": True, "title": "Python API"},
+        {"href": "contributing", "internal": True, "title": "Contributing"},
+    ],
+    "heroes": {
+        "index": "An asynchronous GraphQL client for Python and asyncio.",
+    },
     # Specify a base_url used to generate sitemap.xml. If not
     # specified, then no sitemap will be built.
-    # 'base_url': 'https://project.github.io/project',
+    # "base_url": "https://aiographql-client.readthedocs.io/",
     # Set the color and the accent color
-    "color_primary": "#E10098",
-    "color_accent": "#202020",
+    "color_primary": "pink",
+    "color_accent": "black",
     # Set the repo location to get a badge with stats
     "repo_url": "https://github.com/twyla-ai/aiographql-client",
-    "repo_name": "aiographql-client",
+    "repo_name": "Async GraphQL Client",
     # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 3,
+    "globaltoc_depth": 2,
     # If False, expand all TOC entries
-    "globaltoc_collapse": False,
+    "globaltoc_collapse": True,
     # If True, show hidden TOC entries
-    "globaltoc_includehidden": False,
+    "globaltoc_includehidden": True,
+    "master_doc": False,
+    # optimisation
+    "html_minify": True,
+    "css_minify": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
