@@ -1,21 +1,36 @@
-.. aiographql-client documentation master file, created by
-   sphinx-quickstart on Wed Jul 24 12:58:03 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Async GraphQL Client Documentation
+==================================
 
-Asynchronous GraphQL Client Documentation
-=========================================
+An asynchronous GraphQL client built on top of `AIOHTTP`_ and `GraphQL-core 3`_. The client
+by default introspects schemas and validates all queries prior to dispatching to the server.
+
+.. _AIOHTTP: https://docs.aiohttp.org/en/stable/
+.. _GraphQL-core 3: https://graphql-core-3.readthedocs.io/en/latest/
 
 .. toctree::
-   :maxdepth: 3
+   :caption: Introduction
+   :titlesonly:
+   :maxdepth: 1
+
+   introduction
+
+.. toctree::
+   :caption: Reference
+   :titlesonly:
+   :maxdepth: 1
 
    examples
+   transport
    api
 
+.. toctree::
+   :caption: Community
+   :titlesonly:
+   :maxdepth: 1
 
-Indices and tables
-==================
+   contributing
+
+Index
+~~~~~
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
