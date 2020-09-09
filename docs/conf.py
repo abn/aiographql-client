@@ -59,6 +59,27 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "sphinx_material"
 
+# Material theme options (see theme.conf for more information)
+html_theme_options = {
+    # Set the name of the project to appear in the navigation.
+    "nav_title": "Async GraphQL Client",
+    # Specify a base_url used to generate sitemap.xml. If not
+    # specified, then no sitemap will be built.
+    # 'base_url': 'https://project.github.io/project',
+    # Set the color and the accent color
+    "color_primary": "#E10098",
+    "color_accent": "#202020",
+    # Set the repo location to get a badge with stats
+    "repo_url": "https://github.com/twyla-ai/aiographql-client",
+    "repo_name": "aiographql-client",
+    # Visible levels of the global TOC; -1 means unlimited
+    "globaltoc_depth": 3,
+    # If False, expand all TOC entries
+    "globaltoc_collapse": False,
+    # If True, show hidden TOC entries
+    "globaltoc_includehidden": False,
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
