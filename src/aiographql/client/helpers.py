@@ -18,7 +18,11 @@ async def aiohttp_client_session():
         connector = aiohttp.TCPConnector(
             force_close=True, limit=1, enable_cleanup_closed=True
         )
-        yield aiohttp.ClientSession(connector=connector)
+        session = aiohttp.ClientSession(connector=connector)
+        yield session
+
+        # close session explicitly as part of context cleanup
+        await session.close()
 
 
 async def create_default_connector() -> aiohttp.TCPConnector:
