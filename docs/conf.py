@@ -93,7 +93,7 @@ html_theme_options = {
     "color_primary": "pink",
     "color_accent": "black",
     # Set the repo location to get a badge with stats
-    "repo_url": "https://github.com/twyla-ai/aiographql-client",
+    "repo_url": "https://github.com/abn/aiographql-client",
     "repo_name": "Async GraphQL Client",
     # Visible levels of the global TOC; -1 means unlimited
     "globaltoc_depth": 2,
