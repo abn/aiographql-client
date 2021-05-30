@@ -4,8 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/aiographql-client/badge/?version=latest)](https://aiographql-client.readthedocs.io/en/latest/?badge=latest)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=twyla-ai_aiographql-client&metric=alert_status)](https://sonarcloud.io/dashboard?id=twyla-ai_aiographql-client)
-[![](https://github.com/twyla-ai/aiographql-client/workflows/Test%20Suite/badge.svg)](https://github.com/twyla-ai/aiographql-client/actions?query=workflow%3A%22Test+Suite%22)
+[![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=abn_aiographql-client&metric=alert_status)](https://sonarcloud.io/dashboard?id=abn_aiographql-client)
+[![](https://github.com/abn/aiographql-client/workflows/Test%20Suite/badge.svg)](https://github.com/abn/aiographql-client/actions?query=workflow%3A%22Test+Suite%22)
 
 An asynchronous GraphQL client built on top of aiohttp and graphql-core-next. The client by default introspects schemas and validates all queries prior to dispatching to the server.
 
