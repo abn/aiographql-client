@@ -9,7 +9,7 @@ Reporting Issues
 If you are using this package and are encountering issues, please feel free to raise them
 at on our `issue tracker`_.
 
-.. _issue tracker: https://github.com/twyla-ai/aiographql-client/issues
+.. _issue tracker: https://github.com/abn/aiographql-client/issues
 
 Providing Feedback
 ------------------
@@ -25,7 +25,7 @@ Code contributions in the form of bugfixes, improvements or new features are alw
 All that we ask, is that you do make sure the rationale for the change is described if it is
 more than a simple change. The current open change requests can be seen are available `here`_.
 
-.. _here: https://github.com/twyla-ai/aiographql-client/pulls
+.. _here: https://github.com/abn/aiographql-client/pulls
 
 Documentation
 -------------
