@@ -275,7 +275,7 @@ class GraphQLClient:
                 session=session, method=method, request=request, **kwargs
             )
 
-            return res
+        return res
 
     async def post(
         self,
