@@ -271,9 +271,11 @@ class GraphQLClient:
             )
 
         async with aiohttp_client_session() as session:
-            return await self._http_request(
+            res = await self._http_request(
                 session=session, method=method, request=request, **kwargs
             )
+
+            return res
 
     async def post(
         self,
