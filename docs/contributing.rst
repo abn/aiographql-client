@@ -32,4 +32,3 @@ Documentation
 
 Improvements and additions to our documentation are always welcome. From typo fixes, to
 documenting undocumented features, or structural changes. Everything is welcome.
-

@@ -17,8 +17,8 @@ For the most recent project documentation, you can visit https://aiographql-clie
 `pip install aiographql-client`
 
 ## Example Usage
-Here are some example usages of this client implementation. For more examples, and advanced scenarios, 
-see [Usage Examples](https://aiographql-client.readthedocs.io/en/latest/examples.html) section in 
+Here are some example usages of this client implementation. For more examples, and advanced scenarios,
+see [Usage Examples](https://aiographql-client.readthedocs.io/en/latest/examples.html) section in
 the documentation.
 
 ### Simple Query
@@ -116,7 +116,7 @@ request = GraphQLRequest(
 )
 ```
 
-The default values can be overridden at the time of making the request if required. 
+The default values can be overridden at the time of making the request if required.
 
 ```py
 await client.query(request=request, variables={"id": 20}, operation="get_bot_created")
