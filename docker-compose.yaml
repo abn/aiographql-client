@@ -2,7 +2,7 @@ version: '3.6'
 services:
 
   postgres:
-    image: postgres:9.6-alpine
+    image: docker.io/postgres:9.6-alpine
     restart: on-failure
     environment:
       POSTGRES_PASSWORD: hasura
