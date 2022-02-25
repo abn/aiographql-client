@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, NoReturn, Optional, Union
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
 
 import aiohttp
 from cafeteria.asyncio.callbacks import (
@@ -97,6 +97,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
     :param stop_event_types: Events that cause the subscription to stop. By default,
         connection error, query error or connection complete events received are
         considered stop events.
+    :param protocols: GraphQL over WebSocket Sub-protocol used. This is optional, as
+        this is only required for certain servers. When specified, this value is set as
+        the Sec-WebSocket-Protocol header when a WebSocket connection is established.
     """
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
@@ -108,6 +111,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
             GraphQLSubscriptionEventType.COMPLETE,
         ]
     )
+    protocols: Union[str, Iterable[str]] = field(default_factory=tuple)
     task: asyncio.Task = field(default=None, init=False, compare=False)
 
     def __post_init__(
@@ -117,6 +121,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
         variables: Optional[Dict[str, Any]] = None,
     ):
         super().__post_init__(headers, operation, variables)
+
+        if isinstance(self.protocols, str):
+            object.__setattr__(self, "protocols", (self.protocols,))
 
         if self.callbacks is None:
             object.__setattr__(self, "callbacks", CallbackRegistry())
@@ -198,7 +205,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         :param endpoint: Endpoint to use when creating the websocket connection.
         :param session: Session to use when creating the websocket connection.
         """
-        async with session.ws_connect(endpoint) as ws:
+        async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
             await ws.send_json(data=self.connection_init_request())
 
             self.callbacks.register(
