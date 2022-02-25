@@ -11,16 +11,6 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def server(request):
-    return request.config.getoption("--world-server")
-
-
-@pytest.fixture(autouse=True)
-def client(server) -> GraphQLClient:
-    return GraphQLClient(endpoint=server)
-
-
-@pytest.fixture
 def post():
     async def post(client, graphql_request):
         response = await client.post(request=graphql_request)
