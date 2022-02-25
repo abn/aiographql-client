@@ -40,6 +40,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Start test container (apollo-server-v2)
+        shell: bash
+        run: docker-compose up -d apollo-server-v2
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -77,4 +81,6 @@ jobs:
       - name: Execute test suite
         shell: bash
         run: |
-          tox -e py -- --world-server="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
+          tox -e py -- \
+            --server-world-db="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql" \
+            --server-apollo-v2="http://127.0.0.1:4000/graphql"
