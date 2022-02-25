@@ -87,7 +87,7 @@ async def test_apollo_v2_subscription(client, subscription_query):
     await asyncio.sleep(0.1)
 
     try:
-        await asyncio.wait_for(subscription.task, timeout=1)
+        await asyncio.wait_for(subscription.task, timeout=5)
         assert len(m) > 0
     except asyncio.TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
