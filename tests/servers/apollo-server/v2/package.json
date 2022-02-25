@@ -1,0 +1,21 @@
+{
+  "name": "graphql-apollo-server-subscriptions",
+  "description": "Example apollo server implementation",
+  "homepage": "https://codesandbox.io/s/3wqzw",
+  "dependencies": {
+    "apollo-server": "2.9.7",
+    "faker": "4.1.0",
+    "graphql": "14.5.8",
+    "graphql-tag": "^2.10.1"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js localhost 4000"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/graphql": "14.0.1",
+    "nodemon": "1.18.4"
+  }
+}
