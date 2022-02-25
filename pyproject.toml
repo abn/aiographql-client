@@ -41,16 +41,12 @@ ujson = ">=2"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.1"
-flake8 = "^3.7"
-flake8-bugbear = "^21.9.2"
-coverage = { version = "^5.1", extras = ["toml"]}
-black = "^21.5b0"
+coverage = { version = "^6.3", extras = ["toml"]}
 tox = "^3.15"
-pytest = "^6.0"
-pytest-asyncio = "^0.15"
-pytest-cov = "^2.9"
+pytest = "^7.0"
+pytest-asyncio = "^0.18"
+pytest-cov = "^3.0"
 pytest-mock = "^3.1"
-isort = "^5.3"
 
 [tool.black]
 line-length = 88
@@ -62,6 +58,7 @@ known_first_party = "aiographql"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+asyncio_mode = "auto"
 addopts = "--cov --cov-append --cov-report=term"
 testpaths = [
     "tests",
