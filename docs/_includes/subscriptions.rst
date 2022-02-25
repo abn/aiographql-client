@@ -34,6 +34,12 @@ stdout when either :attr:`aiographql.client.GraphQLSubscriptionEventType.DATA` o
     # unsubscribe
     await subscription.unsubscribe_and_wait()
 
+.. hint:: In the case you want to specify the GraphQL over WebSocket sub-protocol to use,
+    you may do so by setting :attr:`aiographql.client.GraphQLSubscription.protocols`.
+    For example, :code:`await client.subscribe(..., protocols="graphql-ws")`. This is
+    required for certain server implementations like `Apollo Server <https://www.apollographql.com/docs/apollo-server/>`_
+    as it supports multiple implementations.
+
 Callback Registry
 *****************
 

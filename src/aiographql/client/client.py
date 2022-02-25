@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import aiohttp
 import graphql
@@ -350,6 +350,7 @@ class GraphQLClient:
         on_error: Optional[CallbackType] = None,
         session: Optional[aiohttp.ClientSession] = None,
         wait: bool = False,
+        protocols: Union[str, Iterable[str]] = (),
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -391,6 +392,7 @@ class GraphQLClient:
             subscription.
         :param wait: If set to `True`, this method will wait until the subscription
             is completed, websocket disconnected or async task cancelled.
+        :param protocols: GraphQL over WebSocket Sub-protocol(s) used.
         :return: The initialised subscription.
         """
         request = self._prepare_request(
@@ -404,7 +406,9 @@ class GraphQLClient:
         if on_error:
             callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
 
-        subscription = GraphQLSubscription(request=request, callbacks=callbacks)
+        subscription = GraphQLSubscription(
+            request=request, callbacks=callbacks, protocols=protocols
+        )
         await subscription.subscribe(
             endpoint=self.endpoint, session=session or self._session, wait=wait
         )
