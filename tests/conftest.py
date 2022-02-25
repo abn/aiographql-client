@@ -9,12 +9,20 @@ from aiographql.client.request import GraphQLRequest
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--world-server",
+        "--server-world-db",
         action="store",
         default=os.environ.get(
-            "WORLD_SERVER_GRAPHQL_ENDPOINT", "http://127.0.0.1:8080/v1/graphql"
+            "GRAPHQL_ENDPOINT_WORLD_SERVER", "http://127.0.0.1:8080/v1/graphql"
         ),
         help="GraphQL server to use for integration tests",
+    )
+    parser.addoption(
+        "--server-apollo-v2",
+        action="store",
+        default=os.environ.get(
+            "GRAPHQL_ENDPOINT_APOLLO_V2", "http://127.0.0.1:4000/graphql"
+        ),
+        help="GraphQL Apollo Server (v2) to use for integration tests",
     )
 
 
@@ -25,7 +33,12 @@ def headers():
 
 @pytest.fixture
 def server(request):
-    return request.config.getoption("--world-server")
+    return request.config.getoption("--server-world-db")
+
+
+@pytest.fixture
+def server_apollo_v2(request):
+    return request.config.getoption("--server-apollo-v2")
 
 
 @pytest.fixture(autouse=True)

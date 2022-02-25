@@ -1,4 +1,4 @@
-version: '3.6'
+version: "3"
 services:
 
   postgres:
@@ -8,11 +8,13 @@ services:
       POSTGRES_PASSWORD: hasura
       POSTGRES_USER: hasura
       POSTGRES_DB: hasura
+    networks:
+      - aiographql-client-test
 
   hasura:
     image: quay.io/twyla-ai/hasura-world-db:latest
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - postgres
     restart: on-failure
@@ -20,3 +22,19 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:hasura@postgres:5432/hasura
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ADMIN_SECRET: secret
+    networks:
+      - aiographql-client-test
+
+  apollo-server-v2:
+    build:
+      dockerfile: Dockerfile
+      context: ./tests/servers/apollo-server/v2
+    ports:
+      - "4000:4000"
+    restart: on-failure
+    networks:
+      - aiographql-client-test
+
+networks:
+  aiographql-client-test:
+    driver: bridge
