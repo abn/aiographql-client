@@ -44,7 +44,7 @@ pre-commit = "^2.1"
 coverage = { version = "^6.3", extras = ["toml"]}
 tox = "^3.15"
 pytest = "^7.0"
-pytest-asyncio = "^0.18"
+pytest-asyncio = "^0.19"
 pytest-cov = "^3.0"
 pytest-mock = "^3.1"
 
