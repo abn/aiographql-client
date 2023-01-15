@@ -85,8 +85,9 @@ class GraphQLClient:
         self, headers: Optional[Dict[str, str]] = None
     ) -> graphql.GraphQLSchema:
         """
-        Introspect the GraphQL endpoint specified for this client and return a `graphql.GraphQLSchema` object
-        specifying the schema associated with this endpoint.
+        Introspect the GraphQL endpoint specified for this client and return a
+        `graphql.GraphQLSchema` object specifying the schema associated with this
+        endpoint.
 
         :return: GraphQL schema for the configured endpoint
         """
@@ -101,16 +102,18 @@ class GraphQLClient:
         except TypeError:
             raise GraphQLIntrospectionException(
                 f"Failed to build schema from introspection data: {introspection.errors}"
-            )
+            ) from None
 
     async def get_schema(
         self, refresh: bool = False, headers: Optional[Dict[str, str]] = None
     ) -> graphql.GraphQLSchema:
         """
-        Get the introspected schema for the endpoint used by this client. If an unexpired cache exists, this is
-        returned unless the `refresh` parameter is set to True.
+        Get the introspected schema for the endpoint used by this client. If an
+        unexpired cache exists, this is returned unless the `refresh` parameter is set
+        to True.
 
-        :param refresh: Refresh the cached schema by forcing an introspection of the GraphQL endpoint.
+        :param refresh: Refresh the cached schema by forcing an introspection of the
+            GraphQL endpoint.
         :param headers: Request headers
         :return: The GraphQL schema as introspected. This maybe a previously cached value.
         """

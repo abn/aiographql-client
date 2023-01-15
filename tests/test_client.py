@@ -73,8 +73,8 @@ async def test_unsuccessful_request(client, headers, query_city, query_output):
     with pytest.raises(GraphQLRequestException) as excinfo:
         _ = await client.get(request)
     assert (
-        'Request failed with response {"path":"$","error":"resource does not exist","code":"not-found"}'
-        in str(excinfo.value)
+        'Request failed with response {"path":"$","error":"resource does not exist",'
+        '"code":"not-found"}' in str(excinfo.value)
     )
 
 

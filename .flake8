@@ -1,7 +1,10 @@
 [flake8]
 ignore = E501, W503
-max-line-length = 80
+max-line-length = 88
+extend-ignore = E203
 max-complexity = 18
 select = B,C,E,F,W,T4,B9
 extend-exclude =
     .venv/
+per-file-ignores =
+    tests/conftest.py: B950, B028

@@ -37,5 +37,5 @@ async def test_helper_implicit_aiohttp_client_session_is_closed(
     # force python to gc unclosed sessions
     gc.collect()
 
-    for exc, context in event_loop_exceptions:
+    for _, context in event_loop_exceptions:
         assert context["message"] != "Unclosed client session"
