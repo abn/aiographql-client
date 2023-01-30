@@ -41,7 +41,7 @@ ujson = ">=2"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.1"
-coverage = { version = "^7.0", extras = ["toml"]}
+coverage = { version = "^7.1", extras = ["toml"]}
 tox = "^4.2"
 pytest = "^7.0"
 pytest-asyncio = "^0.20"
