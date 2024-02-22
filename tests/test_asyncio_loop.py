@@ -1,4 +1,3 @@
-import asyncio
 import gc
 
 import pytest
@@ -6,13 +5,6 @@ import pytest
 from aiographql.client import GraphQLRequest
 
 pytestmark = pytest.mark.asyncio
-
-
-@pytest.fixture
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture
@@ -29,7 +21,7 @@ def event_loop_exceptions(event_loop):
 
 
 async def test_helper_implicit_aiohttp_client_session_is_closed(
-    event_loop, event_loop_exceptions, client, headers, query_city
+    event_loop_exceptions, client, headers, query_city
 ):
     request = GraphQLRequest(query=query_city, headers=headers)
     await client.query(request)
