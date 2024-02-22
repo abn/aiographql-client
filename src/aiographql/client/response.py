@@ -1,16 +1,16 @@
-from dataclasses import dataclass, field
+import dataclasses
 from typing import Any, Dict, List
 
 from aiographql.client.error import GraphQLError
 from aiographql.client.request import GraphQLRequestContainer
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLBaseResponse(GraphQLRequestContainer):
-    json: Dict[str, Any] = field(default_factory=dict)
+    json: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLResponse(GraphQLBaseResponse):
     """
     GraphQL Response object wrapping response data and any errors. This object also

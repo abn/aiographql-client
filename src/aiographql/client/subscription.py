@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import uuid
-from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
 
@@ -41,7 +41,7 @@ CallbacksType = Union[
 ]
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLSubscriptionEvent(GraphQLBaseResponse):
     """
     GraphQL subscription event wrapping the payload received from the server.
@@ -49,7 +49,7 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
     :param subscription_id: The id of the subscription that generated this event.
     """
 
-    subscription_id: Optional[str] = field(default=None)
+    subscription_id: Optional[str] = dataclasses.field(default=None)
 
     @property
     def id(self) -> Optional[str]:
@@ -77,7 +77,7 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
             return payload
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLSubscription(GraphQLRequestContainer):
     """
     Subscription container, with an attached
@@ -102,17 +102,19 @@ class GraphQLSubscription(GraphQLRequestContainer):
         the Sec-WebSocket-Protocol header when a WebSocket connection is established.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
-    callbacks: Optional[CallbacksType] = field(default_factory=CallbackRegistry)
-    stop_event_types: List[GraphQLSubscriptionEventType] = field(
+    id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()), init=False)
+    callbacks: Optional[CallbacksType] = dataclasses.field(
+        default_factory=CallbackRegistry
+    )
+    stop_event_types: List[GraphQLSubscriptionEventType] = dataclasses.field(
         default_factory=lambda: [
             GraphQLSubscriptionEventType.ERROR,
             GraphQLSubscriptionEventType.CONNECTION_ERROR,
             GraphQLSubscriptionEventType.COMPLETE,
         ]
     )
-    protocols: Union[str, Iterable[str]] = field(default_factory=tuple)
-    task: asyncio.Task = field(default=None, init=False, compare=False)
+    protocols: Union[str, Iterable[str]] = dataclasses.field(default_factory=tuple)
+    task: asyncio.Task = dataclasses.field(default=None, init=False, compare=False)
 
     def __post_init__(
         self,

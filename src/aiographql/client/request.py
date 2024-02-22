@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
 from copy import deepcopy
-from dataclasses import InitVar, asdict, dataclass, field, replace
 from typing import Any, Dict, Optional
 
 import ujson as json
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLRequest:
     """
     GraphQL Request object that can be reused or used to store multiple named queries
@@ -23,11 +23,11 @@ class GraphQLRequest:
     """
 
     query: str
-    operation: InitVar[Optional[str]] = field(default=None)
-    operationName: Optional[str] = field(default=None, init=False)
-    variables: Dict[str, Any] = field(default_factory=dict)
-    validate: bool = field(default=True)
-    headers: Dict[str, str] = field(default_factory=dict)
+    operation: dataclasses.InitVar[Optional[str]] = dataclasses.field(default=None)
+    operationName: Optional[str] = dataclasses.field(default=None, init=False)
+    variables: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    validate: bool = dataclasses.field(default=True)
+    headers: Dict[str, str] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self, operation: Optional[str] = None):
         for name in {"headers", "variables"}:
@@ -53,7 +53,7 @@ class GraphQLRequest:
     def payload(self, coerce: bool = False) -> Dict[str, Any]:
         return {
             k: v if not coerce else self._coerce_value(v)
-            for k, v in asdict(self).items()
+            for k, v in dataclasses.asdict(self).items()
             if v is not None and k not in {"schema", "headers", "validate"}
         }
 
@@ -64,7 +64,7 @@ class GraphQLRequest:
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
     ) -> GraphQLRequest:
-        return replace(
+        return dataclasses.replace(
             self,
             operation=operation or self.operationName,
             variables={**deepcopy(self.variables), **(variables or dict())},
@@ -76,12 +76,16 @@ class GraphQLRequest:
         )
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLRequestContainer:
     request: GraphQLRequest
-    headers: InitVar[Optional[Dict[str, str]]] = field(default=None)
-    operation: InitVar[Optional[str]] = field(default=None)
-    variables: InitVar[Optional[Dict[str, Any]]] = field(default=None)
+    headers: dataclasses.InitVar[Optional[Dict[str, str]]] = dataclasses.field(
+        default=None
+    )
+    operation: dataclasses.InitVar[Optional[str]] = dataclasses.field(default=None)
+    variables: dataclasses.InitVar[Optional[Dict[str, Any]]] = dataclasses.field(
+        default=None
+    )
 
     def __post_init__(
         self,

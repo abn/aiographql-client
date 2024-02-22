@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+import dataclasses
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import aiohttp
@@ -24,7 +24,7 @@ from aiographql.client.subscription import (
 )
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class GraphQLQueryMethod:
     post: str = "post"
     get: str = "get"
