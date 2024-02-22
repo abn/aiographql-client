@@ -76,7 +76,6 @@ omit = [
 [tool.coverage.paths]
 source = [
     "src",
-    ".tox/*/site-packages"
 ]
 
 [tool.coverage.report]
@@ -110,40 +109,3 @@ output = ".coverage/coverage.xml"
 
 [tool.coverage.json]
 output = ".coverage/coverage.json"
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-minversion = 3.13.0
-isolated_build = True
-envlist = clean,report,py37,py38,py39,py310,py311
-
-[testenv]
-allowlist_externals =
-    poetry
-setenv =
-    COVERAGE_FILE=.coverage/data.{envname}
-depends =
-    {py37,py38}: clean
-    report: py37,py38
-commands =
-    poetry install -v --no-root
-    pytest {posargs}
-
-[testenv:report]
-deps = coverage[toml]
-skip_install = true
-setenv =
-    COVERAGE_FILE=.coverage/data
-commands =
-    coverage combine
-    coverage report
-    coverage html
-
-[testenv:clean]
-deps = coverage[toml]
-skip_install = true
-setenv =
-    COVERAGE_FILE=.coverage/data
-commands = coverage erase
-"""
