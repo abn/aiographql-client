@@ -11,22 +11,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Get tag
         id: tag
         run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install --upgrade poetry
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        run: pipx install poetry
 
       - name: Build project for distribution
         run: poetry build
@@ -38,7 +35,7 @@ jobs:
             || echo ::set-output name=prerelease::true
 
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.14.0
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}

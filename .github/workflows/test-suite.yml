@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [Ubuntu]
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     services:
       postgres:
         image: docker.io/postgres:9.6-alpine
@@ -37,29 +37,28 @@ jobs:
           - 8080:8080
         options: --restart on-failure
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Start test container (apollo-server-v2)
         shell: bash
         run: docker-compose up -d apollo-server-v2
 
+      - name: Install poetry and tox
+        run: pipx install poetry tox
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: poetry
 
       - name: Get full Python version
         id: full-python-version
         shell: bash
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Install poetry, tox
-        shell: bash
-        run: |
-          python -m pip install --disable-pip-version-check poetry tox
-
       - name: Set up cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: cache
         with:
           path: .tox
