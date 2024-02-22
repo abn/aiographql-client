@@ -33,20 +33,18 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 cafeteria-asyncio = "^0.2"
 aiohttp = "^3.5"
 graphql-core = "^3.0"
 ujson = ">=2"
 
 [tool.poetry.dev-dependencies]
-pre-commit = "^2.1"
-coverage = { version = "^7.0", extras = ["toml"]}
-tox = "^4.2"
-pytest = "^7.0"
-pytest-asyncio = "^0.20"
-pytest-cov = "^4.0"
-pytest-mock = "^3.1"
+coverage = { version = "^7.4", extras = ["toml"]}
+pytest = "^8.0"
+pytest-asyncio = "^0.23"
+pytest-cov = "^4.1"
+pytest-mock = "^3.12"
 
 [tool.black]
 line-length = 88
