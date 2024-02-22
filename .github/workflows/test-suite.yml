@@ -78,6 +78,6 @@ jobs:
       - name: Execute test suite
         shell: bash
         run: |
-          tox -e py -- \
+          pytest \
             --server-world-db="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql" \
             --server-apollo-v2="http://127.0.0.1:4000/graphql"
