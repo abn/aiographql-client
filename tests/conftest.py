@@ -53,15 +53,14 @@ def city_name():
 
 @pytest.fixture
 def subscription_query(city_name):
-    # noqa: B907
     return f"""
         subscription {{
-          city(where: {{name: {{_eq: "{city_name!r}"}}}}) {{
+          city(where: {{name: {{_eq: "{city_name}"}}}}) {{
             name
             id
           }}
         }}
-    """
+    """  # noqa: B907
 
 
 @pytest.fixture
