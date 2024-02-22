@@ -34,7 +34,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-cafeteria-asyncio = "^0.2"
+cafeteria-asyncio = "^0.3"
 aiohttp = "^3.5"
 graphql-core = "^3.0"
 ujson = ">=2"

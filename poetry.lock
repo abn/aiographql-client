@@ -156,17 +156,17 @@ PyYAML = ">=3.13,<5.4.0 || >5.4.0,<5.4.1 || >5.4.1,<6.0.0 || >6.0.0"
 
 [[package]]
 name = "cafeteria-asyncio"
-version = "0.2.1"
+version = "0.3.0"
 description = "An extension to the cafeteria package to enable asyncio specific patterns for python 3.7 and above applications/libraries."
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "cafeteria-asyncio-0.2.1.tar.gz", hash = "sha256:1bb8158b029570154006ad7f0160c45a6de77227a601c60cb3c80d65a878fc97"},
-    {file = "cafeteria_asyncio-0.2.1-py3-none-any.whl", hash = "sha256:b3f5eac4bea103cc8baebb9592bcd3ecf7cf895cd0748d0f7cc16ea60469202e"},
+    {file = "cafeteria_asyncio-0.3.0-py3-none-any.whl", hash = "sha256:7940b14f89e1478b001ea76a72c476267f4a589fd32fa21f855d217ecb4c324a"},
+    {file = "cafeteria_asyncio-0.3.0.tar.gz", hash = "sha256:a57d9a0b1a77352edd1f53ea348ef8f4f7c273f16f715d23ff3bd3b31a97e167"},
 ]
 
 [package.dependencies]
-cafeteria = ">=0,<1"
+cafeteria = ">=0,<0.22.0 || >0.22.0,<1"
 
 [[package]]
 name = "colorama"
@@ -830,4 +830,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "cbd65f95c23a6e753dde81cfe090bac687bb13c0e94cd4fdfc3be4ff756cb559"
+content-hash = "1278c4913eea04dde93d95374b793c2683bf8033790a4e9653c785f34c56eb3a"
