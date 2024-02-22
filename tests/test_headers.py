@@ -48,7 +48,4 @@ async def test_post_headers(server, headers, client, query_city):
 async def test_no_headers(server, client, query_city):
     graphql_request = GraphQLRequest(query=query_city)
     with pytest.raises(GraphQLIntrospectionException):
-        response = await client.post(graphql_request)
-        assert isinstance(response, GraphQLResponse)
-        assert not response.data
-        assert response.errors
+        await client.post(graphql_request)

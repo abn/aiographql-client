@@ -92,9 +92,11 @@ class GraphQLRequestContainer:
         object.__setattr__(
             self,
             "request",
-            GraphQLRequest(query=self.request)
-            if isinstance(self.request, str)
-            else self.request.copy(
-                headers=headers, operation=operation, variables=variables
+            (
+                GraphQLRequest(query=self.request)
+                if isinstance(self.request, str)
+                else self.request.copy(
+                    headers=headers, operation=operation, variables=variables
+                )
             ),
         )
