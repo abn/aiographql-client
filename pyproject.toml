@@ -41,7 +41,7 @@ ujson = ">=2"
 
 [tool.poetry.dev-dependencies]
 coverage = { version = "^7.4", extras = ["toml"]}
-pytest = "^8.0"
+pytest = "^8.1"
 pytest-asyncio = "^0.23"
 pytest-cov = "^4.1"
 pytest-mock = "^3.12"
