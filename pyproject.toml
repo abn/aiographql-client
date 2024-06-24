@@ -40,7 +40,7 @@ graphql-core = "^3.0"
 ujson = ">=2"
 
 [tool.poetry.dev-dependencies]
-coverage = { version = "^7.4", extras = ["toml"]}
+coverage = { version = "^7.5", extras = ["toml"]}
 pytest = "^8.1"
 pytest-asyncio = "^0.23"
 pytest-cov = "^5.0"
