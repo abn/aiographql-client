@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import time
 
 from typing import TYPE_CHECKING
 from typing import Any
@@ -102,6 +103,7 @@ class GraphQLClient:
         codec: GraphQLCodec | None = None,
         transport: GraphQLTransport | None = None,
         subscription_transport: GraphQLSubscriptionTransport | None = None,
+        schema_ttl: int | float | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -117,6 +119,8 @@ class GraphQLClient:
             session=session,
         )
         self._subscription_transport = subscription_transport
+        self._schema_ttl = schema_ttl
+        self._schema_fetched_at: float | None = None
 
     @property
     def transport(self) -> GraphQLTransport:
@@ -190,9 +194,18 @@ class GraphQLClient:
         :param headers: Request headers
         :return: The GraphQL schema as introspected. This maybe a previously cached value.
         """
-        # TODO: consider adding ttl logic for expiring schemas for long running services
+        if (
+            self._schema is not None
+            and self._schema_ttl is not None
+            and self._schema_fetched_at is not None
+        ):
+            elapsed = time.monotonic() - self._schema_fetched_at
+            if elapsed > self._schema_ttl:
+                refresh = True
+
         if self._schema is None or refresh:
             self._schema = await self.introspect(headers=headers)
+            self._schema_fetched_at = time.monotonic()
         return self._schema
 
     async def validate(

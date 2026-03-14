@@ -303,3 +303,34 @@ async def test_query_method_session_override(mocker: MockerFixture) -> None:
             mock_http_request.assert_called_once()
             args = mock_http_request.call_args[0]
             assert args[0] is custom_session
+
+
+async def test_schema_ttl(
+    mocker: Any, client: GraphQLClient, headers: dict[str, str]
+) -> None:
+    client._schema_ttl = 0.1
+
+    import graphql
+
+    mock_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+
+    # We mock introspect because we just want to count how many times it gets called
+    spy = mocker.patch.object(client, "introspect", return_value=mock_schema)
+
+    # First call - should call introspect
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 1
+
+    # Second call immediately after - should use cached schema
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 1
+
+    # Wait for TTL to expire
+    await asyncio.sleep(0.15)
+
+    # Third call after TTL - should call introspect again
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 2
