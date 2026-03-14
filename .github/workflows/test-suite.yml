@@ -41,7 +41,7 @@ jobs:
 
       - name: Start test container (apollo-server-v2)
         shell: bash
-        run: docker-compose up -d apollo-server-v2
+        run: podman compose up -d apollo-server-v2
 
       - name: Install poetry
         run: pipx install poetry
