@@ -11,9 +11,9 @@ async def aiohttp_client_session():
         # Python 3.8, and scheduled for removal in Python 3.10.
         warnings.filterwarnings(
             action="ignore",
+            message=r"The loop argument is deprecated since Python 3.8",
             category=DeprecationWarning,
             module="aiohttp.connector",
-            lineno=964,
         )
         connector = aiohttp.TCPConnector(
             force_close=True, limit=1, enable_cleanup_closed=True
