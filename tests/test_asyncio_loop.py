@@ -1,3 +1,4 @@
+import asyncio
 import gc
 
 import pytest
@@ -8,16 +9,20 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def event_loop_exceptions(event_loop):
+async def event_loop_exceptions():
+    running_loop = asyncio.get_running_loop()
     exceptions = list()
 
-    def exception_handler(exc, context):
+    def exception_handler(_, context):
         nonlocal exceptions
-        exceptions.append((exc, context))
+        exceptions.append((None, context))
 
-    event_loop.set_exception_handler(exception_handler)
+    old_handler = running_loop.get_exception_handler()
+    running_loop.set_exception_handler(exception_handler)
 
-    return exceptions
+    yield exceptions
+
+    running_loop.set_exception_handler(old_handler)
 
 
 async def test_helper_implicit_aiohttp_client_session_is_closed(
