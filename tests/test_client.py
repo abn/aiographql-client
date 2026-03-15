@@ -27,7 +27,7 @@ async def test_introspect_success(mocker, client, headers):
     mock_response = GraphQLResponse(
         request=mocker.Mock(), json={"data": introspection_data}
     )
-    mocker.patch.object(client, "query", return_value=mock_response)
+    mocker.patch.object(client, "query", new_callable=mocker.AsyncMock, return_value=mock_response)
 
     result_schema = await client.introspect(headers=headers)
 
@@ -42,7 +42,7 @@ async def test_introspect_failure(mocker, client, headers):
         request=mocker.Mock(),
         json={"data": None, "errors": [{"message": "Some error"}]},
     )
-    mocker.patch.object(client, "query", return_value=mock_response)
+    mocker.patch.object(client, "query", new_callable=mocker.AsyncMock, return_value=mock_response)
 
     with pytest.raises(GraphQLIntrospectionException) as excinfo:
         await client.introspect(headers=headers)
