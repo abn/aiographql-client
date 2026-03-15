@@ -1,10 +1,10 @@
 import asyncio
 
+import graphql
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
 
-import graphql
 from aiographql.client import (
     GraphQLClientException,
     GraphQLClientValidationException,
@@ -14,8 +14,8 @@ from aiographql.client import (
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
-from aiographql.client.response import GraphQLResponse
 from aiographql.client.helpers import aiohttp_client_session
+from aiographql.client.response import GraphQLResponse
 
 pytestmark = pytest.mark.asyncio
 
