@@ -46,6 +46,7 @@ classifiers = [
 ]
 requires-poetry = ">=2.0"
 
+
 [[tool.poetry.packages]]
 include = "aiographql"
 from = "src"
