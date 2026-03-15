@@ -36,6 +36,9 @@ email = "arun.neelicattu@gmail.com"
 [project.urls]
 repository = "https://github.com/abn/aiographql-client"
 
+[project.optional-dependencies]
+pydantic = ["pydantic>=2.0"]
+
 [tool.poetry]
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -186,6 +189,7 @@ pytest-cov = "^7.0.0"
 pytest-mock = "^3.15.1"
 mypy = "^1.19.1"
 types-orjson = "^3.6.2"
+pydantic = ">=2.0"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"

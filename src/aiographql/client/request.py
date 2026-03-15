@@ -44,11 +44,18 @@ class GraphQLRequest:
         return super().__getattribute__(item)
 
     def payload(self) -> dict[str, Any]:
-        return {
-            k: v
-            for k, v in self.asdict().items()
-            if v is not None and k not in {"schema", "headers", "validate"}
+        from aiographql.client.codec import DefaultGraphQLCodec
+
+        codec = self.codec or DefaultGraphQLCodec()
+        payload = {
+            "query": self.query,
+            "variables": codec.encode(self.variables, include_primitives=False)
+            if self.variables
+            else {},
         }
+        if self.operationName is not None:
+            payload["operationName"] = self.operationName
+        return payload
 
     def asdict(self) -> dict[str, Any]:
         return {
