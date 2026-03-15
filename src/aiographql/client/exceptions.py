@@ -34,3 +34,7 @@ class GraphQLRequestException(GraphQLClientException):
 class GraphQLIntrospectionException(GraphQLClientException):
     def __init__(self, message: str | None = None) -> None:
         super().__init__(message or "Something went wrong during introspection process")
+
+
+class GraphQLCodecException(GraphQLClientException):
+    pass

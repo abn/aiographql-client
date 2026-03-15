@@ -9,8 +9,6 @@ from typing import cast
 
 import graphql
 
-from aiographql.client.serializer import DefaultSerializer
-from aiographql.client.serializer import GraphQLSerializer
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
 
@@ -21,17 +19,21 @@ from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
+from aiographql.client.serializer import DefaultSerializer
+from aiographql.client.serializer import GraphQLSerializer
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from collections.abc import Iterable
     from collections.abc import Mapping
 
     import aiohttp
+
+    from aiographql.client.codec import GraphQLCodec
+    from aiographql.client.codec import T
 
 
 @dataclasses.dataclass(frozen=True)
@@ -78,6 +80,8 @@ class GraphQLClient:
         requests against the schema from the server. This is useful when
         introspection is disabled on the server.
     :param serializer: Custom JSON serializer to use for requests and responses.
+    :param codec: Custom codec to use for encoding request variables and decoding
+        response data.
     """
 
     def __init__(
@@ -89,6 +93,7 @@ class GraphQLClient:
         session: aiohttp.ClientSession | None = None,
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
+        codec: GraphQLCodec | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -98,6 +103,7 @@ class GraphQLClient:
         self._session = session
         self._validate = validate
         self._serializer = serializer or DefaultSerializer()
+        self._codec = codec
 
     async def close(self) -> None:
         """
@@ -209,14 +215,22 @@ class GraphQLClient:
             `operation`, `variables` and `headers` set/merged.
         """
         if isinstance(request, str):
-            request = GraphQLRequest(query=request)
+            request = GraphQLRequest(query=request, codec=self._codec)
 
-        return request.copy(
+        request = request.copy(
             headers=headers,
             headers_fallback=self._headers,
             operation=operation,
             variables=variables,
+            codec=self._codec,
         )
+
+        if request.codec:
+            request = dataclasses.replace(
+                request, variables=request.codec.encode(request.variables)
+            )
+
+        return request
 
     async def _http_request(
         self,
@@ -264,6 +278,41 @@ class GraphQLClient:
                 else serialized
             )
         return value
+
+    async def query_data_as(
+        self,
+        request: GraphQLRequest | str,
+        result_type: type[T],
+        path: str | None = None,
+        method: str | None = None,
+        headers: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        session: aiohttp.ClientSession | None = None,
+    ) -> T:
+        """
+        Execute a query and decode the response data into a Python object of the
+        specified type.
+
+        :param request: Request to send to the GraphQL server.
+        :param result_type: The type to decode the data into.
+        :param path: An optional dot-separated path to the data to decode.
+        :param method: HTTP method to use when submitting request (POST/GET).
+        :param headers: Additional headers to be set when sending HTTP request.
+        :param operation: GraphQL operation name to use.
+        :param variables: Query variables to set for the provided request.
+        :param session: Optional `aiohttp.ClientSession` to use for requests.
+        :return: The decoded data.
+        """
+        response = await self.query(
+            request=request,
+            method=method,
+            headers=headers,
+            operation=operation,
+            variables=variables,
+            session=session,
+        )
+        return response.data_as(result_type, path=path, codec=self._codec)
 
     async def query(
         self,
@@ -313,7 +362,9 @@ class GraphQLClient:
         elif method == GraphQLQueryMethod.get:
             kwargs = {
                 "params": {
-                    k: v if not isinstance(v, (dict, list, bool)) else self._coerce_value(v)
+                    k: v
+                    if not isinstance(v, (dict, list, bool))
+                    else self._coerce_value(v)
                     for k, v in request.payload().items()
                 }
             }

@@ -20,11 +20,13 @@ from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequestContainer
 from aiographql.client.response import GraphQLBaseResponse
 from aiographql.client.response import GraphQLResponse
-from aiographql.client.serializer import GraphQLSerializer
 
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from aiographql.client.codec import GraphQLCodec
+    from aiographql.client.serializer import GraphQLSerializer
 
 
 class GraphQLSubscriptionEventType(Enum):
@@ -134,11 +136,13 @@ class GraphQLSubscription(GraphQLRequestContainer):
         headers: dict[str, str] | None,
         operation: str | None,
         variables: dict[str, Any] | None,
+        codec: GraphQLCodec | None,
     ) -> None:
         super().__post_init__(
             headers=headers,
             operation=operation,
             variables=variables,
+            codec=codec,
         )
 
         if isinstance(self.protocols, str):

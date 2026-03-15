@@ -6,11 +6,9 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Any
 
-import orjson as json
-
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from aiographql.client.codec import GraphQLCodec
 
 
 @dataclasses.dataclass(frozen=True)
@@ -34,6 +32,7 @@ class GraphQLRequest:
     variables: dict[str, Any] = dataclasses.field(default_factory=dict)
     validate: bool = True
     headers: dict[str, str] = dataclasses.field(default_factory=dict)
+    codec: GraphQLCodec | None = dataclasses.field(default=None, compare=False)
 
     def __post_init__(self, operation: str | None) -> None:
         if operation is not None:
@@ -64,6 +63,7 @@ class GraphQLRequest:
         headers_fallback: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        codec: GraphQLCodec | None = None,
     ) -> GraphQLRequest:
         return dataclasses.replace(
             self,
@@ -74,6 +74,7 @@ class GraphQLRequest:
                 **self.headers,
                 **(headers or {}),
             },
+            codec=codec or self.codec,
         )
 
 
@@ -83,21 +84,26 @@ class GraphQLRequestContainer:
     headers: dataclasses.InitVar[dict[str, str] | None] = None
     operation: dataclasses.InitVar[str | None] = None
     variables: dataclasses.InitVar[dict[str, Any] | None] = None
+    codec: dataclasses.InitVar[GraphQLCodec | None] = None
 
     def __post_init__(
         self,
         headers: dict[str, str] | None,
         operation: str | None,
         variables: dict[str, Any] | None,
+        codec: GraphQLCodec | None,
     ) -> None:
         object.__setattr__(
             self,
             "request",
             (
-                GraphQLRequest(query=self.request)
+                GraphQLRequest(query=self.request, codec=codec)
                 if isinstance(self.request, str)
                 else self.request.copy(
-                    headers=headers, operation=operation, variables=variables
+                    headers=headers,
+                    operation=operation,
+                    variables=variables,
+                    codec=codec,
                 )
             ),
         )
