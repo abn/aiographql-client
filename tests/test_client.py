@@ -1,5 +1,6 @@
 import asyncio
 
+import graphql
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
@@ -7,14 +8,51 @@ from graphql import GraphQLSyntaxError
 from aiographql.client import (
     GraphQLClientException,
     GraphQLClientValidationException,
+    GraphQLIntrospectionException,
     GraphQLRequest,
     GraphQLRequestException,
     GraphQLSubscription,
     GraphQLSubscriptionEventType,
 )
 from aiographql.client.helpers import aiohttp_client_session
+from aiographql.client.response import GraphQLResponse
 
 pytestmark = pytest.mark.asyncio
+
+
+async def test_introspect_success(mocker, client, headers):
+    schema = graphql.build_schema("type Query { hello: String }")
+    introspection_data = graphql.introspection_from_schema(schema, descriptions=False)
+
+    mock_response = GraphQLResponse(
+        request=mocker.Mock(), json={"data": introspection_data}
+    )
+    mocker.patch.object(
+        client, "query", new_callable=mocker.AsyncMock, return_value=mock_response
+    )
+
+    result_schema = await client.introspect(headers=headers)
+
+    assert isinstance(result_schema, graphql.GraphQLSchema)
+    assert result_schema.query_type.name == "Query"
+    assert "hello" in result_schema.query_type.fields
+    client.query.assert_called_once()
+
+
+async def test_introspect_failure(mocker, client, headers):
+    mock_response = GraphQLResponse(
+        request=mocker.Mock(),
+        json={"data": None, "errors": [{"message": "Some error"}]},
+    )
+    mocker.patch.object(
+        client, "query", new_callable=mocker.AsyncMock, return_value=mock_response
+    )
+
+    with pytest.raises(GraphQLIntrospectionException) as excinfo:
+        await client.introspect(headers=headers)
+
+    assert "Failed to build schema from introspection data" in str(excinfo.value)
+    client.query.assert_called_once()
 
 
 async def test_simple_anonymous_post(client, headers, query_city, query_output):
