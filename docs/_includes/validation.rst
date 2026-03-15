@@ -56,6 +56,17 @@ the :attr:`aiographql.client.GraphQLRequest.validate` to `False` before making t
     )
     response: GraphQLResponse = await client.query(request=request)
 
+If you are working with a GraphQL server that has introspection disabled, you can disable
+validation globally when initializing the :class:`aiographql.client.GraphQLClient`.
+
+.. code-block:: python
+
+    client = GraphQLClient(
+        endpoint="https://api.github.com/graphql",
+        validate=False
+    )
+    response: GraphQLResponse = await client.query("query { viewer { login } }")
+
 >>> response.data
 {}
 >>> response.errors

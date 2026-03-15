@@ -72,6 +72,9 @@ class GraphQLClient:
         specified `endpoint`.
     :param session: Optional `aiohttp.ClientSession` to use when making requests.
         This is expected to be externally managed.
+    :param validate: If set to `False`, the client will not attempt to validate
+        requests against the schema from the server. This is useful when
+        introspection is disabled on the server.
     """
 
     def __init__(
@@ -81,6 +84,7 @@ class GraphQLClient:
         method: Optional[str] = None,
         schema: Optional[graphql.GraphQLSchema] = None,
         session: Optional[aiohttp.ClientSession] = None,
+        validate: bool = True,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -88,6 +92,7 @@ class GraphQLClient:
         self._headers.update(headers or dict())
         self._schema = schema
         self._session = session
+        self._validate = validate
 
     async def introspect(
         self, headers: Optional[Dict[str, str]] = None
@@ -152,8 +157,8 @@ class GraphQLClient:
         :param force: Force validation even if the provided request has validation
                       disabled.
         """
-        if not request.validate and not force:
-            # skip validation if request validate flag is set to false
+        if not force and (not self._validate or not request.validate):
+            # skip validation if client or request validate flag is set to false
             return
 
         schema = schema or await self.get_schema(headers=headers or request.headers)
