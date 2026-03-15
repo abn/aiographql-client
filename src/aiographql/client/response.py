@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
-from typing import Any, Dict, List
+
+from typing import Any
 
 from aiographql.client.error import GraphQLError
 from aiographql.client.request import GraphQLRequestContainer
@@ -7,7 +10,7 @@ from aiographql.client.request import GraphQLRequestContainer
 
 @dataclasses.dataclass(frozen=True)
 class GraphQLBaseResponse(GraphQLRequestContainer):
-    json: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    json: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -18,7 +21,7 @@ class GraphQLResponse(GraphQLBaseResponse):
     """
 
     @property
-    def errors(self) -> List[GraphQLError]:
+    def errors(self) -> list[GraphQLError]:
         """
         A list of :class:`GraphQLError` objects if server responded with query errors.
         """
@@ -28,10 +31,10 @@ class GraphQLResponse(GraphQLBaseResponse):
         return [GraphQLError.load(error) for error in errors]
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         """The data payload the server responded with."""
         data = self.json.get("data")
-        return data if isinstance(data, dict) else dict()
+        return data if isinstance(data, dict) else {}
 
     @property
     def query(self) -> str:

@@ -1,28 +1,28 @@
-from aiographql.client.client import GraphQLClient, GraphQLQueryMethod
+from __future__ import annotations
+
+from aiographql.client.client import GraphQLClient
+from aiographql.client.client import GraphQLQueryMethod
 from aiographql.client.error import GraphQLError
-from aiographql.client.exceptions import (
-    GraphQLClientException,
-    GraphQLClientValidationException,
-    GraphQLIntrospectionException,
-    GraphQLRequestException,
-)
+from aiographql.client.exceptions import GraphQLClientException
+from aiographql.client.exceptions import GraphQLClientValidationException
+from aiographql.client.exceptions import GraphQLIntrospectionException
+from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
-from aiographql.client.subscription import (
-    GraphQLSubscription,
-    GraphQLSubscriptionEvent,
-    GraphQLSubscriptionEventType,
-)
+from aiographql.client.subscription import GraphQLSubscription
+from aiographql.client.subscription import GraphQLSubscriptionEvent
+from aiographql.client.subscription import GraphQLSubscriptionEventType
+
 
 __all__ = [
     "GraphQLClient",
-    "GraphQLQueryMethod",
-    "GraphQLError",
     "GraphQLClientException",
     "GraphQLClientValidationException",
-    "GraphQLRequestException",
+    "GraphQLError",
     "GraphQLIntrospectionException",
+    "GraphQLQueryMethod",
     "GraphQLRequest",
+    "GraphQLRequestException",
     "GraphQLResponse",
     "GraphQLSubscription",
     "GraphQLSubscriptionEvent",

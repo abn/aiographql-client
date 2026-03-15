@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from aiographql.client import GraphQLRequest
 from aiographql.client.request import GraphQLRequestContainer
 

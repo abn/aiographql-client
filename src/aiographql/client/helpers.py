@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import sys
 import warnings
+
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import TYPE_CHECKING
 
 import aiohttp
+
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 @asynccontextmanager

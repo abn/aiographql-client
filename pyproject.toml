@@ -51,16 +51,51 @@ requires-poetry = ">=2.0"
 include = "aiographql"
 from = "src"
 
-[tool.black]
+[tool.ruff]
+extend-exclude = [
+    "docs/*",
+]
+fix = true
 line-length = 88
 
-[tool.isort]
-profile = "black"
-src_paths = [
-    "src",
-    "test",
+[tool.ruff.lint]
+extend-select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ERA", # flake8-eradicate/eradicate
+    "I",   # isort
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    "PGH", # pygrep
+    "RUF", # ruff checks
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TC",  # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
 ]
-known_first_party = "aiographql"
+ignore = [
+    "B904", # use 'raise ... from err'
+    "B905", # use explicit 'strict=' parameter with 'zip()'
+    "N818", # exception name should be named with an Error suffix
+    "N815", # variable in class scope should not be mixedCase
+]
+extend-safe-fixes = [
+    "TC",  # move import from and to TYPE_CHECKING blocks
+]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+force-single-line = true
+lines-between-types = 1
+lines-after-imports = 2
+known-first-party = ["aiographql"]
+required-imports = ["from __future__ import annotations"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

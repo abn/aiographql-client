@@ -1,30 +1,28 @@
-from typing import (
-    Any,
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Generator,
-    Iterator,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 
-from aiographql.client import (
-    GraphQLClient,
-    GraphQLIntrospectionException,
-    GraphQLRequest,
-    GraphQLResponse,
-)
+from aiographql.client import GraphQLClient
+from aiographql.client import GraphQLIntrospectionException
+from aiographql.client import GraphQLRequest
+from aiographql.client import GraphQLResponse
+
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+    from collections.abc import Callable
+    from collections.abc import Iterator
+
 
 pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def post() -> (
-    Iterator[Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]]]
-):
+def post() -> Iterator[
+    Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]]
+]:
     async def post_func(
         client: GraphQLClient, graphql_request: GraphQLRequest
     ) -> GraphQLResponse:
@@ -37,7 +35,7 @@ def post() -> (
 @pytest.mark.asyncio
 async def test_client_headers(
     server: str,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     post: Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]],
     query_city: str,
 ) -> None:
@@ -50,7 +48,7 @@ async def test_client_headers(
 @pytest.mark.asyncio
 async def test_request_headers(
     server: str,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     post: Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]],
     query_city: str,
 ) -> None:
@@ -62,7 +60,7 @@ async def test_request_headers(
 
 @pytest.mark.asyncio
 async def test_post_headers(
-    server: str, headers: Dict[str, str], client: GraphQLClient, query_city: str
+    server: str, headers: dict[str, str], client: GraphQLClient, query_city: str
 ) -> None:
     graphql_request = GraphQLRequest(query=query_city)
     response = await client.post(graphql_request, headers=headers)

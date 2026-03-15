@@ -1,13 +1,16 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
-from pytest_mock import MockerFixture
 
-from aiographql.client import (
-    GraphQLRequest,
-    GraphQLSubscription,
-    GraphQLSubscriptionEventType,
-)
+from aiographql.client import GraphQLRequest
+from aiographql.client import GraphQLSubscription
+from aiographql.client import GraphQLSubscriptionEventType
+
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 def test_subscription_init_with_callback_default() -> None:

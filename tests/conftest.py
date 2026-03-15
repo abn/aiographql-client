@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import os
 import uuid
-from typing import Any, AsyncGenerator, Dict, Union
+
+from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
 
 from aiographql.client.client import GraphQLClient
 from aiographql.client.request import GraphQLRequest
+
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 def pytest_addoption(parser: Any) -> None:
@@ -28,7 +36,7 @@ def pytest_addoption(parser: Any) -> None:
 
 
 @pytest.fixture
-def headers() -> Dict[str, str]:
+def headers() -> dict[str, str]:
     return {"x-hasura-admin-secret": "secret"}
 
 
@@ -64,7 +72,7 @@ def subscription_query(city_name: str) -> str:
             id
           }}
         }}
-    """  # noqa: B907
+    """
 
 
 @pytest.fixture
@@ -80,7 +88,7 @@ def query_city() -> str:
 
 
 @pytest.fixture
-def query_output() -> Dict[str, Any]:
+def query_output() -> dict[str, Any]:
     return {"city": [{"id": 11, "name": "Groningen"}]}
 
 
@@ -108,7 +116,7 @@ def invalid_query_syntax() -> str:
 
 @pytest.fixture
 async def mutation_city(
-    client: GraphQLClient, headers: Dict[str, str], city_name: str
+    client: GraphQLClient, headers: dict[str, str], city_name: str
 ) -> AsyncGenerator[str, None]:
     yield f"""
         mutation {{
@@ -116,18 +124,18 @@ async def mutation_city(
             affected_rows
           }}
         }}
-    """  # noqa: B907
+    """
     delete_mutation = f"""
         mutation {{
           delete_city(where: {{name: {{_eq: "{city_name}"}}}}) {{
             affected_rows
           }}
         }}
-        """  # noqa: B907
+        """
     request = GraphQLRequest(query=delete_mutation)
     _ = await client.query(request=request, headers=headers)
 
 
 @pytest.fixture
-def mutation_output() -> Dict[str, Any]:
+def mutation_output() -> dict[str, Any]:
     return {"insert_city": {"affected_rows": 1}}

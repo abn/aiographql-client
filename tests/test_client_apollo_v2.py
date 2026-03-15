@@ -1,17 +1,24 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Any, AsyncGenerator, Dict, List
+
+from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
+
 from cafeteria.asyncio.callbacks import CallbackRegistry
 
-from aiographql.client import (
-    GraphQLClient,
-    GraphQLClientValidationException,
-    GraphQLRequest,
-    GraphQLSubscription,
-    GraphQLSubscriptionEvent,
-    GraphQLSubscriptionEventType,
-)
+from aiographql.client import GraphQLClient
+from aiographql.client import GraphQLClientValidationException
+from aiographql.client import GraphQLRequest
+from aiographql.client import GraphQLSubscription
+from aiographql.client import GraphQLSubscriptionEventType
+
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,7 +40,7 @@ def invalid_query_schema() -> str:
 
 
 @pytest.fixture
-def query_output() -> Dict[str, str]:
+def query_output() -> dict[str, str]:
     return {"ping": "pong"}
 
 
@@ -43,7 +50,7 @@ def subscription_query() -> str:
 
 
 async def test_apollo_v2_simple_query(
-    client: GraphQLClient, query: str, query_output: Dict[str, str]
+    client: GraphQLClient, query: str, query_output: dict[str, str]
 ) -> None:
     request = GraphQLRequest(query=query)
     response = await client.query(request)
@@ -51,21 +58,21 @@ async def test_apollo_v2_simple_query(
 
 
 async def test_apollo_v2_invalid_query_schema(
-    client: GraphQLClient, headers: Dict[str, str], invalid_query_schema: str
+    client: GraphQLClient, headers: dict[str, str], invalid_query_schema: str
 ) -> None:
     request = GraphQLRequest(query=invalid_query_schema, headers=headers)
     with pytest.raises(GraphQLClientValidationException) as excinfo:
         _ = await client.query(request)
     message = str(excinfo.value)
     assert (
-        """Query validation failed
+        message
+        == """Query validation failed
 
 Cannot query field 'pinged' on type 'Query'. Did you mean 'ping'?
 
 GraphQL request:1:9
 1 | query { pinged }
   |         ^"""
-        == message
     )
 
 
@@ -73,9 +80,9 @@ async def test_apollo_v2_subscription(
     client: GraphQLClient, subscription_query: str
 ) -> None:
     request = GraphQLRequest(query=subscription_query)
-    m: List[Dict[str, Any]] = []
+    m: list[dict[str, Any]] = []
 
-    def callback(data: Dict[str, Any]) -> None:
+    def callback(data: dict[str, Any]) -> None:
         assert "messageAdded" in data
         m.append(data)
         if len(m) > 1:

@@ -1,21 +1,24 @@
-from typing import Any, Dict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
-from pytest_mock import MockerFixture
 
-from aiographql.client import (
-    GraphQLClient,
-    GraphQLIntrospectionException,
-    GraphQLRequest,
-)
+from aiographql.client import GraphQLClient
+from aiographql.client import GraphQLIntrospectionException
+
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 @pytest.mark.asyncio
 async def test_query_with_introspection_disabled_global(
     mocker: MockerFixture,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ):
     mocker.patch.object(
         GraphQLClient,
@@ -38,7 +41,7 @@ async def test_query_with_introspection_disabled_global(
 
 @pytest.mark.asyncio
 async def test_subscription_with_introspection_disabled_global(
-    mocker: MockerFixture, headers: Dict[str, str], subscription_query: str
+    mocker: MockerFixture, headers: dict[str, str], subscription_query: str
 ):
     mocker.patch.object(
         GraphQLClient,

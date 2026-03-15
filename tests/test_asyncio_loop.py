@@ -1,22 +1,32 @@
+from __future__ import annotations
+
 import asyncio
 import gc
-from typing import Any, AsyncGenerator, Dict, List, Tuple
+
+from typing import TYPE_CHECKING
+from typing import Any
 
 import pytest
 
-from aiographql.client import GraphQLClient, GraphQLRequest
+from aiographql.client import GraphQLClient
+from aiographql.client import GraphQLRequest
+
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
 
 pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def event_loop_exceptions() -> (
-    AsyncGenerator[List[Tuple[None, Dict[str, Any]]], None]
-):
+async def event_loop_exceptions() -> AsyncGenerator[
+    list[tuple[None, dict[str, Any]]], None
+]:
     running_loop = asyncio.get_running_loop()
-    exceptions: List[Tuple[None, Dict[str, Any]]] = list()
+    exceptions: list[tuple[None, dict[str, Any]]] = []
 
-    def exception_handler(_: Any, context: Dict[str, Any]) -> None:
+    def exception_handler(_: Any, context: dict[str, Any]) -> None:
         nonlocal exceptions
         exceptions.append((None, context))
 
@@ -29,9 +39,9 @@ async def event_loop_exceptions() -> (
 
 
 async def test_helper_implicit_aiohttp_client_session_is_closed(
-    event_loop_exceptions: List[Tuple[None, Dict[str, Any]]],
+    event_loop_exceptions: list[tuple[None, dict[str, Any]]],
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)

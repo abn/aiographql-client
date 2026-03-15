@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-import graphql
 import ujson as json
 
+
 if TYPE_CHECKING:
+    import graphql
+
     from aiographql.client.response import GraphQLResponse
 
 
@@ -17,7 +19,7 @@ class GraphQLClientValidationException(GraphQLClientException):
     def __init__(self, *args: graphql.GraphQLError) -> None:
         message = "Query validation failed\n"
         for error in args:
-            message += f"\n{str(error)}"
+            message += f"\n{error!s}"
         super().__init__(message)
 
 
@@ -28,5 +30,5 @@ class GraphQLRequestException(GraphQLClientException):
 
 
 class GraphQLIntrospectionException(GraphQLClientException):
-    def __init__(self, message: Optional[str] = None) -> None:
+    def __init__(self, message: str | None = None) -> None:
         super().__init__(message or "Something went wrong during introspection process")

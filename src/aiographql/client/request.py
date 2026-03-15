@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+
 from copy import deepcopy
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import ujson as json
 
@@ -23,24 +24,20 @@ class GraphQLRequest:
     """
 
     query: str
-    operation: dataclasses.InitVar[Optional[str]] = None
-    operationName: Optional[str] = dataclasses.field(default=None, init=False)
-    variables: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    operation: dataclasses.InitVar[str | None] = None
+    operationName: str | None = dataclasses.field(default=None, init=False)
+    variables: dict[str, Any] = dataclasses.field(default_factory=dict)
     validate: bool = True
-    headers: Dict[str, str] = dataclasses.field(default_factory=dict)
+    headers: dict[str, str] = dataclasses.field(default_factory=dict)
 
-    def __post_init__(self, operation: Optional[str] = None) -> None:
-        for name in {"headers", "variables"}:
-            if getattr(self, name) is None:
-                object.__setattr__(self, name, dict())
-
+    def __post_init__(self, operation: str | None) -> None:
         if operation is not None:
             object.__setattr__(self, "operationName", operation)
 
     def __getattr__(self, item: str) -> Any:
         if item == "operation":
             return self.operationName
-        return super(GraphQLRequest, self).__getattribute__(item)
+        return super().__getattribute__(item)
 
     @staticmethod
     def _coerce_value(value: Any) -> Any:
@@ -50,7 +47,7 @@ class GraphQLRequest:
             return json.dumps(value)
         return value
 
-    def payload(self, coerce: bool = False) -> Dict[str, Any]:
+    def payload(self, coerce: bool = False) -> dict[str, Any]:
         return {
             k: v if not coerce else self._coerce_value(v)
             for k, v in dataclasses.asdict(self).items()
@@ -59,35 +56,35 @@ class GraphQLRequest:
 
     def copy(
         self,
-        headers: Optional[Dict[str, str]] = None,
-        headers_fallback: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
+        headers: dict[str, str] | None = None,
+        headers_fallback: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
     ) -> GraphQLRequest:
         return dataclasses.replace(
             self,
             operation=operation or self.operationName,
-            variables={**deepcopy(self.variables), **(variables or dict())},
+            variables={**deepcopy(self.variables), **(variables or {})},
             headers={
-                **(headers_fallback or dict()),
+                **(headers_fallback or {}),
                 **self.headers,
-                **(headers or dict()),
+                **(headers or {}),
             },
         )
 
 
 @dataclasses.dataclass(frozen=True)
 class GraphQLRequestContainer:
-    request: Union[GraphQLRequest, str]
-    headers: dataclasses.InitVar[Optional[Dict[str, str]]] = None
-    operation: dataclasses.InitVar[Optional[str]] = None
-    variables: dataclasses.InitVar[Optional[Dict[str, Any]]] = None
+    request: GraphQLRequest | str
+    headers: dataclasses.InitVar[dict[str, str] | None] = None
+    operation: dataclasses.InitVar[str | None] = None
+    variables: dataclasses.InitVar[dict[str, Any] | None] = None
 
     def __post_init__(
         self,
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
+        headers: dict[str, str] | None,
+        operation: str | None,
+        variables: dict[str, Any] | None,
     ) -> None:
         object.__setattr__(
             self,

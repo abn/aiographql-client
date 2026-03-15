@@ -1,30 +1,37 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Any, Dict, List, Optional
+
+from typing import TYPE_CHECKING
+from typing import Any
 
 import graphql
 import pytest
+
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
-from pytest_mock import MockerFixture
 
-from aiographql.client import (
-    GraphQLClient,
-    GraphQLClientException,
-    GraphQLClientValidationException,
-    GraphQLIntrospectionException,
-    GraphQLRequest,
-    GraphQLRequestException,
-    GraphQLSubscription,
-    GraphQLSubscriptionEventType,
-)
+from aiographql.client import GraphQLClient
+from aiographql.client import GraphQLClientException
+from aiographql.client import GraphQLClientValidationException
+from aiographql.client import GraphQLIntrospectionException
+from aiographql.client import GraphQLRequest
+from aiographql.client import GraphQLRequestException
+from aiographql.client import GraphQLSubscription
+from aiographql.client import GraphQLSubscriptionEventType
 from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.response import GraphQLResponse
+
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_introspect_success(
-    mocker: MockerFixture, client: GraphQLClient, headers: Dict[str, str]
+    mocker: MockerFixture, client: GraphQLClient, headers: dict[str, str]
 ) -> None:
     schema = graphql.build_schema("type Query { hello: String }")
     introspection_data = graphql.introspection_from_schema(schema, descriptions=False)
@@ -46,7 +53,7 @@ async def test_introspect_success(
 
 
 async def test_introspect_failure(
-    mocker: MockerFixture, client: GraphQLClient, headers: Dict[str, str]
+    mocker: MockerFixture, client: GraphQLClient, headers: dict[str, str]
 ) -> None:
     mock_response = GraphQLResponse(
         request=mocker.Mock(),
@@ -65,9 +72,9 @@ async def test_introspect_failure(
 
 async def test_simple_anonymous_post(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.post(request)
@@ -76,9 +83,9 @@ async def test_simple_anonymous_post(
 
 async def test_simple_anonymous_post_with_string(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ) -> None:
     response = await client.post(
         request=GraphQLRequest(query=query_city), headers=headers
@@ -88,9 +95,9 @@ async def test_simple_anonymous_post_with_string(
 
 async def test_simple_anonymous_query(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.query(request)
@@ -98,14 +105,15 @@ async def test_simple_anonymous_query(
 
 
 async def test_invalid_query_schema(
-    client: GraphQLClient, headers: Dict[str, str], invalid_query_schema: str
+    client: GraphQLClient, headers: dict[str, str], invalid_query_schema: str
 ) -> None:
     request = GraphQLRequest(query=invalid_query_schema, headers=headers)
     with pytest.raises(GraphQLClientValidationException) as excinfo:
         _ = await client.query(request)
     message = str(excinfo.value)
     assert (
-        """Query validation failed
+        message
+        == """Query validation failed
 
 Cannot query field 'citeee' on type 'query_root'. Did you mean 'city'?
 
@@ -114,12 +122,11 @@ GraphQL request:3:11
 3 |           citeee {
   |           ^
 4 |             id"""
-        == message
     )
 
 
 async def test_invalid_query_syntax(
-    client: GraphQLClient, headers: Dict[str, str], invalid_query_syntax: str
+    client: GraphQLClient, headers: dict[str, str], invalid_query_syntax: str
 ) -> None:
     request = GraphQLRequest(query=invalid_query_syntax, headers=headers)
     with pytest.raises(GraphQLSyntaxError):
@@ -127,7 +134,7 @@ async def test_invalid_query_syntax(
 
 
 async def test_invalid_method(
-    client: GraphQLClient, headers: Dict[str, str], query_city: str
+    client: GraphQLClient, headers: dict[str, str], query_city: str
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     with pytest.raises(GraphQLClientException):
@@ -136,9 +143,9 @@ async def test_invalid_method(
 
 async def test_unsuccessful_request(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ) -> None:
     # hasura does not support GET requests, we use this to test this case
     request = GraphQLRequest(query=query_city, headers=headers)
@@ -153,9 +160,9 @@ async def test_unsuccessful_request(
 async def test_external_aiohttp_session(
     mocker: MockerFixture,
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     query_city: str,
-    query_output: Dict[str, Any],
+    query_output: dict[str, Any],
 ) -> None:
     async with aiohttp_client_session() as session:
         spy = mocker.spy(session, "request")
@@ -168,9 +175,9 @@ async def test_external_aiohttp_session(
 
 async def test_mutation(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     mutation_city: str,
-    mutation_output: Dict[str, Any],
+    mutation_output: dict[str, Any],
 ) -> None:
     request = GraphQLRequest(query=mutation_city, headers=headers)
     response = await client.query(request)
@@ -179,15 +186,15 @@ async def test_mutation(
 
 async def test_subscription(
     client: GraphQLClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
     subscription_query: str,
     mutation_city: str,
     city_name: str,
 ) -> None:
     request = GraphQLRequest(query=subscription_query, headers=headers)
-    m: List[Dict[str, Any]] = []
+    m: list[dict[str, Any]] = []
 
-    def callback(data: Dict[str, Any]) -> None:
+    def callback(data: dict[str, Any]) -> None:
         assert "city" in data
         m.append(data)
         if len(m) > 1:
@@ -223,7 +230,7 @@ async def test_subscription(
 
 
 async def test_subscription_on_data_on_error_callbacks(
-    client: GraphQLClient, subscription_query: str, headers: Dict[str, str]
+    client: GraphQLClient, subscription_query: str, headers: dict[str, str]
 ) -> None:
     request = GraphQLRequest(query=subscription_query, headers=headers)
 

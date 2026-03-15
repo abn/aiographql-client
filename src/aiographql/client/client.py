@@ -2,26 +2,33 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-from typing import Any, Dict, Iterable, Mapping, Optional, Union, cast
 
-import aiohttp
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import cast
+
 import graphql
-from cafeteria.asyncio.callbacks import CallbackRegistry, CallbackType
 
-from aiographql.client.exceptions import (
-    GraphQLClientException,
-    GraphQLClientValidationException,
-    GraphQLIntrospectionException,
-    GraphQLRequestException,
-)
+from cafeteria.asyncio.callbacks import CallbackRegistry
+from cafeteria.asyncio.callbacks import CallbackType
+
+from aiographql.client.exceptions import GraphQLClientException
+from aiographql.client.exceptions import GraphQLClientValidationException
+from aiographql.client.exceptions import GraphQLIntrospectionException
+from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
-from aiographql.client.subscription import (
-    CallbacksType,
-    GraphQLSubscription,
-    GraphQLSubscriptionEventType,
-)
+from aiographql.client.subscription import CallbacksType
+from aiographql.client.subscription import GraphQLSubscription
+from aiographql.client.subscription import GraphQLSubscriptionEventType
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from collections.abc import Mapping
+
+    import aiohttp
 
 
 @dataclasses.dataclass(frozen=True)
@@ -72,16 +79,16 @@ class GraphQLClient:
     def __init__(
         self,
         endpoint: str,
-        headers: Optional[Mapping[str, str]] = None,
-        method: Optional[str] = None,
-        schema: Optional[graphql.GraphQLSchema] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        headers: Mapping[str, str] | None = None,
+        method: str | None = None,
+        schema: graphql.GraphQLSchema | None = None,
+        session: aiohttp.ClientSession | None = None,
         validate: bool = True,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
-        self._headers.update(headers or dict())
+        self._headers.update(headers or {})
         self._schema = schema
         self._session = session
         self._validate = validate
@@ -100,7 +107,7 @@ class GraphQLClient:
         await self.close()
 
     async def introspect(
-        self, headers: Optional[Dict[str, str]] = None
+        self, headers: dict[str, str] | None = None
     ) -> graphql.GraphQLSchema:
         """
         Introspect the GraphQL endpoint specified for this client and return a
@@ -117,7 +124,7 @@ class GraphQLClient:
         introspection = await self.query(request)
         try:
             return graphql.build_client_schema(
-                cast(graphql.IntrospectionQuery, introspection.data)
+                cast("graphql.IntrospectionQuery", introspection.data)
             )
         except TypeError:
             raise GraphQLIntrospectionException(
@@ -125,7 +132,7 @@ class GraphQLClient:
             ) from None
 
     async def get_schema(
-        self, refresh: bool = False, headers: Optional[Dict[str, str]] = None
+        self, refresh: bool = False, headers: dict[str, str] | None = None
     ) -> graphql.GraphQLSchema:
         """
         Get the introspected schema for the endpoint used by this client. If an
@@ -145,8 +152,8 @@ class GraphQLClient:
     async def validate(
         self,
         request: GraphQLRequest,
-        schema: Optional[graphql.GraphQLSchema] = None,
-        headers: Optional[Dict[str, str]] = None,
+        schema: graphql.GraphQLSchema | None = None,
+        headers: dict[str, str] | None = None,
         force: bool = False,
     ) -> None:
         """
@@ -175,10 +182,10 @@ class GraphQLClient:
 
     def _prepare_request(
         self,
-        request: Union[GraphQLRequest, str],
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        request: GraphQLRequest | str,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> GraphQLRequest:
         """
         Helper method to ensure that queries handle both string and
@@ -237,12 +244,12 @@ class GraphQLClient:
 
     async def query(
         self,
-        request: Union[GraphQLRequest, str],
-        method: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        request: GraphQLRequest | str,
+        method: str | None = None,
+        headers: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> GraphQLResponse:
         """
         Method to send provided :class:`GraphQLRequest` to the configured endpoint as
@@ -279,15 +286,15 @@ class GraphQLClient:
         method = method or self._method
 
         if method == GraphQLQueryMethod.post:
-            kwargs = dict(json=request.payload())
+            kwargs = {"json": request.payload()}
         elif method == GraphQLQueryMethod.get:
-            kwargs = dict(params=request.payload(coerce=True))
+            kwargs = {"params": request.payload(coerce=True)}
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
         if session or self._session:
             return await self._http_request(
-                session=cast(aiohttp.ClientSession, session or self._session),
+                session=cast("aiohttp.ClientSession", session or self._session),
                 method=method,
                 request=request,
                 **kwargs,
@@ -301,10 +308,10 @@ class GraphQLClient:
     async def post(
         self,
         request: GraphQLRequest,
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        headers: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
@@ -333,10 +340,10 @@ class GraphQLClient:
     async def get(
         self,
         request: GraphQLRequest,
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        headers: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps :method: `GraphQLClient.query` with method explicitly
@@ -365,15 +372,15 @@ class GraphQLClient:
     async def subscribe(
         self,
         request: GraphQLRequest,
-        headers: Optional[Dict[str, str]] = None,
-        operation: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        callbacks: Optional[CallbacksType] = None,
-        on_data: Optional[CallbackType] = None,
-        on_error: Optional[CallbackType] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        headers: dict[str, str] | None = None,
+        operation: str | None = None,
+        variables: dict[str, Any] | None = None,
+        callbacks: CallbacksType | None = None,
+        on_data: CallbackType | None = None,
+        on_error: CallbackType | None = None,
+        session: aiohttp.ClientSession | None = None,
         wait: bool = False,
-        protocols: Union[str, Iterable[str]] = (),
+        protocols: str | Iterable[str] = (),
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -424,12 +431,10 @@ class GraphQLClient:
         await self.validate(request=request)
 
         callbacks = callbacks or CallbackRegistry()
-        if on_data:
-            if isinstance(callbacks, CallbackRegistry):
-                callbacks.register(GraphQLSubscriptionEventType.DATA, on_data)
-        if on_error:
-            if isinstance(callbacks, CallbackRegistry):
-                callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
+        if on_data and isinstance(callbacks, CallbackRegistry):
+            callbacks.register(GraphQLSubscriptionEventType.DATA, on_data)
+        if on_error and isinstance(callbacks, CallbackRegistry):
+            callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
 
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks, protocols=protocols
