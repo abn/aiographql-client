@@ -119,3 +119,35 @@ The default values can be overridden at the time of making the request if requir
 ```py
 await client.query(request=request, variables={"id": 20}, operation="get_bot_created")
 ```
+
+### Typed Usage (Bring Your Own Models)
+The client supports explicit decoding of results into your own models, like `dataclasses` or `Pydantic` models.
+
+```py
+from pydantic import BaseModel
+from aiographql.client import GraphQLClient
+
+class User(BaseModel):
+    id: int
+    name: str
+
+client = GraphQLClient(endpoint="http://localhost/graphql")
+
+# Explicitly decode into a Pydantic model
+user = await client.query_data_as(
+    "{ user(id: 1) { id name } }",
+    User,
+    path="user"
+)
+
+print(user.name) # Alice
+```
+
+Pass models directly into variables:
+```py
+# Model as variable
+user_input = CreateUserInput(name="Alice")
+response = await client.query(query, variables={"input": user_input})
+```
+
+See [Data Models Documentation](https://aiographql-client.readthedocs.io/en/latest/examples.html#data-models) for more information.

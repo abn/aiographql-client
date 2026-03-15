@@ -17,6 +17,7 @@ Async GraphQL Client
             * client side schema introspection and validation
             * ``aiohttp`` inspired API
             * GraphQL query, mutation and subscription support
+            * **Bring Your Own Models**: Explicit decoding to ``dataclasses`` and ``Pydantic``
 
 
 .. _AIOHTTP: https://docs.aiohttp.org/en/stable/
