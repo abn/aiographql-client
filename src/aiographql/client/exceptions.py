@@ -6,7 +6,7 @@ import graphql
 import ujson as json
 
 if TYPE_CHECKING:
-    from aiographql.client import GraphQLResponse
+    from aiographql.client.response import GraphQLResponse
 
 
 class GraphQLClientException(Exception):

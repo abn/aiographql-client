@@ -4,7 +4,17 @@ import asyncio
 import dataclasses
 import uuid
 from enum import Enum
-from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Union,
+    cast,
+)
 
 import aiohttp
 from cafeteria.asyncio.callbacks import (
@@ -62,7 +72,7 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
         try:
             return GraphQLSubscriptionEventType(self.json.get("type"))
         except ValueError:
-            pass
+            return None
 
     @property
     def payload(self) -> Optional[Union[GraphQLResponse, str]]:
@@ -72,9 +82,10 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
             if self.type in (
                 GraphQLSubscriptionEventType.DATA,
                 GraphQLSubscriptionEventType.ERROR,
-            ):
+            ) and isinstance(payload, dict):
                 return GraphQLResponse(request=self.request, json=payload)
-            return payload
+            return cast(str, payload)
+        return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -114,14 +125,16 @@ class GraphQLSubscription(GraphQLRequestContainer):
         ]
     )
     protocols: Union[str, Iterable[str]] = dataclasses.field(default_factory=tuple)
-    task: asyncio.Task = dataclasses.field(default=None, init=False, compare=False)
+    task: Optional[asyncio.Task[Any]] = dataclasses.field(
+        default=None, init=False, compare=False
+    )
 
     def __post_init__(
         self,
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         super().__post_init__(headers, operation, variables)
 
         if isinstance(self.protocols, str):
@@ -150,9 +163,12 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
         :return: Connection initialise payload.
         """
+        headers: Dict[str, str] = {}
+        if not isinstance(self.request, str):
+            headers = self.request.headers
         return {
             "type": GraphQLSubscriptionEventType.CONNECTION_INIT.value,
-            "payload": {"headers": {**self.request.headers}},
+            "payload": {"headers": {**headers}},
         }
 
     def connection_start_request(self) -> Dict[str, Any]:
@@ -161,10 +177,13 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
         :return: Connection start payload.
         """
+        payload: Dict[str, Any] = {}
+        if not isinstance(self.request, str):
+            payload = self.request.payload()
         return {
             "id": self.id,
             "type": GraphQLSubscriptionEventType.START.value,
-            "payload": self.request.payload(),
+            "payload": payload,
         }
 
     def connection_stop_request(self) -> Dict[str, Any]:
@@ -184,14 +203,19 @@ class GraphQLSubscription(GraphQLRequestContainer):
         """
         return event.type in self.stop_event_types
 
-    async def handle(self, event: GraphQLSubscriptionEvent) -> NoReturn:
+    async def handle(self, event: GraphQLSubscriptionEvent) -> None:
         """
         Helper method to dispatch any configured callbacks for the specified event type.
 
         :param event: Event to dispatch callbacks for.
         """
         if event.id is None or event.id == self.id:
-            self.callbacks.dispatch(event.type, event)
+            if self.callbacks is not None:
+                if isinstance(self.callbacks, CallbackRegistry):
+                    self.callbacks.dispatch(event.type, event)
+                elif isinstance(self.callbacks, dict):
+                    # this should not happen due to __post_init__
+                    pass
 
     async def _websocket_connect(
         self, endpoint: str, session: aiohttp.ClientSession
@@ -210,12 +234,13 @@ class GraphQLSubscription(GraphQLRequestContainer):
         async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
             await ws.send_json(data=self.connection_init_request())
 
-            self.callbacks.register(
-                GraphQLSubscriptionEventType.CONNECTION_ACK,
-                SimpleTriggerCallback(
-                    function=ws.send_json, data=self.connection_start_request()
-                ),
-            )
+            if self.callbacks is not None and isinstance(self.callbacks, CallbackRegistry):
+                self.callbacks.register(
+                    GraphQLSubscriptionEventType.CONNECTION_ACK,
+                    SimpleTriggerCallback(
+                        function=ws.send_json, data=self.connection_start_request()
+                    ),
+                )
 
             try:
                 async for msg in ws:  # type:  aiohttp.WSMessage
@@ -275,16 +300,17 @@ class GraphQLSubscription(GraphQLRequestContainer):
         object.__setattr__(self, "task", task)
 
         if wait:
-            try:
-                await self.task
-            except asyncio.CancelledError:
-                pass
+            if self.task is not None:
+                try:
+                    await self.task
+                except asyncio.CancelledError:
+                    pass
 
     def unsubscribe(self) -> None:
         """
         Unsubscribe current websocket subscription if active and clear internal task.
         """
-        if self.active():
+        if self.active() and self.task is not None:
             try:
                 self.task.cancel()
             except asyncio.CancelledError:
@@ -294,7 +320,8 @@ class GraphQLSubscription(GraphQLRequestContainer):
     async def unsubscribe_and_wait(self) -> None:
         task = self.task
         self.unsubscribe()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+        if task is not None:
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass

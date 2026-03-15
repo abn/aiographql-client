@@ -22,14 +22,20 @@ class GraphQLResponse(GraphQLBaseResponse):
         """
         A list of :class:`GraphQLError` objects if server responded with query errors.
         """
-        return [GraphQLError.load(error) for error in self.json.get("errors", list())]
+        errors = self.json.get("errors")
+        if errors is None:
+            return []
+        return [GraphQLError.load(error) for error in errors]
 
     @property
     def data(self) -> Dict[str, Any]:
         """The data payload the server responded with."""
-        return self.json.get("data", dict())
+        data = self.json.get("data")
+        return data if isinstance(data, dict) else dict()
 
     @property
     def query(self) -> str:
         """The query string used to produce this response."""
+        if isinstance(self.request, str):
+            return self.request
         return self.request.query

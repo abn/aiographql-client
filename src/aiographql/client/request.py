@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import ujson as json
 
@@ -23,13 +23,13 @@ class GraphQLRequest:
     """
 
     query: str
-    operation: dataclasses.InitVar[Optional[str]] = dataclasses.field(default=None)
+    operation: dataclasses.InitVar[Optional[str]] = None
     operationName: Optional[str] = dataclasses.field(default=None, init=False)
     variables: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    validate: bool = dataclasses.field(default=True)
+    validate: bool = True
     headers: Dict[str, str] = dataclasses.field(default_factory=dict)
 
-    def __post_init__(self, operation: Optional[str] = None):
+    def __post_init__(self, operation: Optional[str] = None) -> None:
         for name in {"headers", "variables"}:
             if getattr(self, name) is None:
                 object.__setattr__(self, name, dict())
@@ -37,7 +37,7 @@ class GraphQLRequest:
         if operation is not None:
             object.__setattr__(self, "operationName", operation)
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         if item == "operation":
             return self.operationName
         return super(GraphQLRequest, self).__getattribute__(item)
@@ -78,21 +78,17 @@ class GraphQLRequest:
 
 @dataclasses.dataclass(frozen=True)
 class GraphQLRequestContainer:
-    request: GraphQLRequest
-    headers: dataclasses.InitVar[Optional[Dict[str, str]]] = dataclasses.field(
-        default=None
-    )
-    operation: dataclasses.InitVar[Optional[str]] = dataclasses.field(default=None)
-    variables: dataclasses.InitVar[Optional[Dict[str, Any]]] = dataclasses.field(
-        default=None
-    )
+    request: Union[GraphQLRequest, str]
+    headers: dataclasses.InitVar[Optional[Dict[str, str]]] = None
+    operation: dataclasses.InitVar[Optional[str]] = None
+    variables: dataclasses.InitVar[Optional[Dict[str, Any]]] = None
 
     def __post_init__(
         self,
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         object.__setattr__(
             self,
             "request",

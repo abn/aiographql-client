@@ -15,20 +15,16 @@ from aiographql.client.subscription import (
 )
 
 __all__ = [
-    i.__name__
-    for i in [
-        GraphQLClient,
-        GraphQLQueryMethod,
-        GraphQLError,
-        GraphQLClientException,
-        GraphQLClientValidationException,
-        GraphQLRequestException,
-        GraphQLIntrospectionException,
-        GraphQLRequest,
-        GraphQLResponse,
-        GraphQLSubscription,
-        GraphQLSubscriptionEvent,
-        GraphQLSubscriptionEventType,
-        GraphQLQueryMethod,
-    ]
+    "GraphQLClient",
+    "GraphQLQueryMethod",
+    "GraphQLError",
+    "GraphQLClientException",
+    "GraphQLClientValidationException",
+    "GraphQLRequestException",
+    "GraphQLIntrospectionException",
+    "GraphQLRequest",
+    "GraphQLResponse",
+    "GraphQLSubscription",
+    "GraphQLSubscriptionEvent",
+    "GraphQLSubscriptionEventType",
 ]

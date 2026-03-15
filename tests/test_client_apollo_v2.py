@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 import asyncio
 
 import pytest
@@ -8,6 +10,7 @@ from aiographql.client import (
     GraphQLClientValidationException,
     GraphQLRequest,
     GraphQLSubscription,
+    GraphQLSubscriptionEvent,
     GraphQLSubscriptionEventType,
 )
 
@@ -15,37 +18,41 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def client(server_apollo_v2) -> GraphQLClient:
+def client(server_apollo_v2: str) -> GraphQLClient:
     return GraphQLClient(endpoint=server_apollo_v2)
 
 
 @pytest.fixture
-def query():
+def query() -> str:
     return "query { ping }"
 
 
 @pytest.fixture
-def invalid_query_schema():
+def invalid_query_schema() -> str:
     return "query { pinged }"
 
 
 @pytest.fixture
-def query_output():
+def query_output() -> Dict[str, str]:
     return {"ping": "pong"}
 
 
 @pytest.fixture
-def subscription_query():
+def subscription_query() -> str:
     return "subscription { messageAdded }"
 
 
-async def test_apollo_v2_simple_query(client, query, query_output):
+async def test_apollo_v2_simple_query(
+    client: GraphQLClient, query: str, query_output: Dict[str, str]
+) -> None:
     request = GraphQLRequest(query=query)
     response = await client.query(request)
     assert response.data == query_output
 
 
-async def test_apollo_v2_invalid_query_schema(client, headers, invalid_query_schema):
+async def test_apollo_v2_invalid_query_schema(
+    client: GraphQLClient, headers: Dict[str, str], invalid_query_schema: str
+) -> None:
     request = GraphQLRequest(query=invalid_query_schema, headers=headers)
     with pytest.raises(GraphQLClientValidationException) as excinfo:
         _ = await client.query(request)
@@ -62,21 +69,25 @@ GraphQL request:1:9
     )
 
 
-async def test_apollo_v2_subscription(client, subscription_query):
+async def test_apollo_v2_subscription(
+    client: GraphQLClient, subscription_query: str
+) -> None:
     request = GraphQLRequest(query=subscription_query)
-    m = []
+    m: List[Dict[str, Any]] = []
 
-    def callback(data):
+    def callback(data: Dict[str, Any]) -> None:
         assert "messageAdded" in data
         m.append(data)
         if len(m) > 1:
             message = data.get("messageAdded")
+            assert message is not None
             assert len(message) > 0
             subscription.unsubscribe()
 
     callbacks = CallbackRegistry()
     callbacks.register(
-        GraphQLSubscriptionEventType.DATA, lambda event: callback(event.payload.data)
+        GraphQLSubscriptionEventType.DATA,
+        lambda event: callback(event.payload.data),
     )
 
     # apollo-server v2 requires the sub-protocol to be configured
@@ -87,7 +98,8 @@ async def test_apollo_v2_subscription(client, subscription_query):
     await asyncio.sleep(0.1)
 
     try:
-        await asyncio.wait_for(subscription.task, timeout=5)
+        if subscription.task is not None:
+            await asyncio.wait_for(subscription.task, timeout=5)
         assert len(m) > 0
-    except asyncio.TimeoutError:
+    except (asyncio.TimeoutError, asyncio.CancelledError):
         pytest.fail("Subscriptions timed out before receiving expected messages")

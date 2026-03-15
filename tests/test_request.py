@@ -2,14 +2,14 @@ from aiographql.client import GraphQLRequest
 from aiographql.client.request import GraphQLRequestContainer
 
 
-def test_request_container():
+def test_request_container() -> None:
     request = GraphQLRequest(query="{}")
     container = GraphQLRequestContainer(request=request)
     assert container.request == request
     assert id(container.request) != id(request)
 
 
-def test_request_container_init_string():
+def test_request_container_init_string() -> None:
     request = GraphQLRequest(query="{}")
     # noinspection PyTypeChecker
     container = GraphQLRequestContainer(request="{}")
@@ -17,7 +17,7 @@ def test_request_container_init_string():
     assert id(container.request) != id(request)
 
 
-def test_request_container_overrides():
+def test_request_container_overrides() -> None:
     request = GraphQLRequest(query="{}")
     headers = {"Authorization": "Bearer token"}
     operation = "operationName"
@@ -26,12 +26,13 @@ def test_request_container_overrides():
         request=request, headers=headers, operation=operation, variables=variables
     )
     assert container.request != request
+    assert isinstance(container.request, GraphQLRequest)
     assert container.request.headers == headers
     assert container.request.operationName == operation
     assert container.request.variables == variables
 
 
-def test_request_payload_coerce():
+def test_request_payload_coerce() -> None:
     assert GraphQLRequest._coerce_value(True) == 1
     assert GraphQLRequest._coerce_value({}) == "{}"
 

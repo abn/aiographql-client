@@ -1,11 +1,13 @@
 import warnings
 from contextlib import asynccontextmanager
 
+from typing import AsyncGenerator
+
 import aiohttp
 
 
 @asynccontextmanager
-async def aiohttp_client_session():
+async def aiohttp_client_session() -> AsyncGenerator[aiohttp.ClientSession, None]:
     with warnings.catch_warnings():
         # ignore:  DeprecationWarning: The loop argument is deprecated since
         # Python 3.8, and scheduled for removal in Python 3.10.

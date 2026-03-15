@@ -75,7 +75,7 @@ branch = true
 parallel = true
 data_file = ".coverage/data"
 source = [
-    "aiographql",
+    "aiographql.client",
 ]
 omit = [
     "tests/*",
@@ -118,11 +118,35 @@ output = ".coverage/coverage.xml"
 [tool.coverage.json]
 output = ".coverage/coverage.json"
 
+[tool.mypy]
+files = "src, tests"
+mypy_path = "src"
+explicit_package_bases = true
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+show_error_codes = true
+namespace_packages = true
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+exclude = [
+    "tests/fixtures",
+    "tests/masonry/builders/fixtures",
+    "tests/utils/fixtures",
+]
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
 pytest-asyncio = "^1.3.0"
 pytest-cov = "^7.0.0"
 pytest-mock = "^3.15.1"
+mypy = "^1.19.1"
+types-ujson = "^5.10.0"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"

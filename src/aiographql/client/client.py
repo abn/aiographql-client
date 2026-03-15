@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+)
 
 import aiohttp
 import graphql
@@ -94,11 +102,13 @@ class GraphQLClient:
         request = GraphQLRequest(
             query=graphql.get_introspection_query(descriptions=False),
             validate=False,
-            headers=headers,
+            headers=headers or {},
         )
         introspection = await self.query(request)
         try:
-            return graphql.build_client_schema(introspection=introspection.data)
+            return graphql.build_client_schema(
+                cast(graphql.IntrospectionQuery, introspection.data)
+            )
         except TypeError:
             raise GraphQLIntrospectionException(
                 f"Failed to build schema from introspection data: {introspection.errors}"
@@ -191,7 +201,7 @@ class GraphQLClient:
         method: str,
         request: GraphQLRequest,
         **kwargs: Any,
-    ):
+    ) -> GraphQLResponse:
         """
         Helper method to make an http request using the provided *session*.
 
@@ -218,7 +228,7 @@ class GraphQLClient:
     async def query(
         self,
         request: Union[GraphQLRequest, str],
-        method: str = None,
+        method: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         operation: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
@@ -267,7 +277,7 @@ class GraphQLClient:
 
         if session or self._session:
             return await self._http_request(
-                session=session or self._session,
+                session=cast(aiohttp.ClientSession, session or self._session),
                 method=method,
                 request=request,
                 **kwargs,
@@ -405,9 +415,11 @@ class GraphQLClient:
 
         callbacks = callbacks or CallbackRegistry()
         if on_data:
-            callbacks.register(GraphQLSubscriptionEventType.DATA, on_data)
+            if isinstance(callbacks, CallbackRegistry):
+                callbacks.register(GraphQLSubscriptionEventType.DATA, on_data)
         if on_error:
-            callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
+            if isinstance(callbacks, CallbackRegistry):
+                callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
 
         subscription = GraphQLSubscription(
             request=request, callbacks=callbacks, protocols=protocols

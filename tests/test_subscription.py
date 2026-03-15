@@ -1,4 +1,7 @@
+from typing import Any
+
 from cafeteria.asyncio.callbacks import CallbackRegistry
+from pytest_mock import MockerFixture
 
 from aiographql.client import (
     GraphQLRequest,
@@ -7,13 +10,13 @@ from aiographql.client import (
 )
 
 
-def test_subscription_init_with_callback_default():
+def test_subscription_init_with_callback_default() -> None:
     subscription = GraphQLSubscription(request=GraphQLRequest(query="{}"))
     assert isinstance(subscription.callbacks, CallbackRegistry)
     assert not subscription.callbacks.callbacks()
 
 
-def test_subscription_init_with_callback_none():
+def test_subscription_init_with_callback_none() -> None:
     subscription = GraphQLSubscription(
         request=GraphQLRequest(query="{}"), callbacks=None
     )
@@ -21,7 +24,7 @@ def test_subscription_init_with_callback_none():
     assert not subscription.callbacks.callbacks()
 
 
-def test_subscription_init_with_callback_dict(mocker):
+def test_subscription_init_with_callback_dict(mocker: MockerFixture) -> None:
     subscription = GraphQLSubscription(
         request=GraphQLRequest(query="{}"),
         callbacks={

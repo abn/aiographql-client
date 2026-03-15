@@ -1,11 +1,15 @@
+from typing import Any, Dict, List, Optional
+
 import asyncio
 
 import graphql
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
+from pytest_mock import MockerFixture
 
 from aiographql.client import (
+    GraphQLClient,
     GraphQLClientException,
     GraphQLClientValidationException,
     GraphQLIntrospectionException,
@@ -20,7 +24,9 @@ from aiographql.client.response import GraphQLResponse
 pytestmark = pytest.mark.asyncio
 
 
-async def test_introspect_success(mocker, client, headers):
+async def test_introspect_success(
+    mocker: MockerFixture, client: GraphQLClient, headers: Dict[str, str]
+) -> None:
     schema = graphql.build_schema("type Query { hello: String }")
     introspection_data = graphql.introspection_from_schema(schema, descriptions=False)
 
@@ -34,12 +40,15 @@ async def test_introspect_success(mocker, client, headers):
     result_schema = await client.introspect(headers=headers)
 
     assert isinstance(result_schema, graphql.GraphQLSchema)
+    assert result_schema.query_type is not None
     assert result_schema.query_type.name == "Query"
     assert "hello" in result_schema.query_type.fields
-    client.query.assert_called_once()
+    client.query.assert_called_once()  # type: ignore[attr-defined]
 
 
-async def test_introspect_failure(mocker, client, headers):
+async def test_introspect_failure(
+    mocker: MockerFixture, client: GraphQLClient, headers: Dict[str, str]
+) -> None:
     mock_response = GraphQLResponse(
         request=mocker.Mock(),
         json={"data": None, "errors": [{"message": "Some error"}]},
@@ -52,29 +61,35 @@ async def test_introspect_failure(mocker, client, headers):
         await client.introspect(headers=headers)
 
     assert "Failed to build schema from introspection data" in str(excinfo.value)
-    client.query.assert_called_once()
+    client.query.assert_called_once()  # type: ignore[attr-defined]
 
 
-async def test_simple_anonymous_post(client, headers, query_city, query_output):
+async def test_simple_anonymous_post(
+    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.post(request)
     assert response.data == query_output
 
 
 async def test_simple_anonymous_post_with_string(
-    client, headers, query_city, query_output
-):
-    response = await client.post(request=query_city, headers=headers)
+    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+) -> None:
+    response = await client.post(request=GraphQLRequest(query=query_city), headers=headers)
     assert response.data == query_output
 
 
-async def test_simple_anonymous_query(client, headers, query_city, query_output):
+async def test_simple_anonymous_query(
+    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.query(request)
     assert response.data == query_output
 
 
-async def test_invalid_query_schema(client, headers, invalid_query_schema):
+async def test_invalid_query_schema(
+    client: GraphQLClient, headers: Dict[str, str], invalid_query_schema: str
+) -> None:
     request = GraphQLRequest(query=invalid_query_schema, headers=headers)
     with pytest.raises(GraphQLClientValidationException) as excinfo:
         _ = await client.query(request)
@@ -93,19 +108,25 @@ GraphQL request:3:11
     )
 
 
-async def test_invalid_query_syntax(client, headers, invalid_query_syntax):
+async def test_invalid_query_syntax(
+    client: GraphQLClient, headers: Dict[str, str], invalid_query_syntax: str
+) -> None:
     request = GraphQLRequest(query=invalid_query_syntax, headers=headers)
     with pytest.raises(GraphQLSyntaxError):
         _ = await client.query(request)
 
 
-async def test_invalid_method(client, headers, query_city):
+async def test_invalid_method(
+    client: GraphQLClient, headers: Dict[str, str], query_city: str
+) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     with pytest.raises(GraphQLClientException):
         _ = await client.query(method="PUT", request=request)
 
 
-async def test_unsuccessful_request(client, headers, query_city, query_output):
+async def test_unsuccessful_request(
+    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+) -> None:
     # hasura does not support GET requests, we use this to test this case
     request = GraphQLRequest(query=query_city, headers=headers)
     with pytest.raises(GraphQLRequestException) as excinfo:
@@ -117,38 +138,54 @@ async def test_unsuccessful_request(client, headers, query_city, query_output):
 
 
 async def test_external_aiohttp_session(
-    mocker, client, headers, query_city, query_output
-):
+    mocker: MockerFixture,
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    query_city: str,
+    query_output: Dict[str, Any],
+) -> None:
     async with aiohttp_client_session() as session:
         spy = mocker.spy(session, "request")
-        response = await client.post(query_city, headers=headers, session=session)
+        response = await client.post(GraphQLRequest(query=query_city), headers=headers, session=session)
         assert response.data == query_output
         spy.assert_called_once()
 
 
-async def test_mutation(client, headers, mutation_city, mutation_output):
+async def test_mutation(
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    mutation_city: str,
+    mutation_output: Dict[str, Any],
+) -> None:
     request = GraphQLRequest(query=mutation_city, headers=headers)
     response = await client.query(request)
     assert response.data == mutation_output
 
 
 async def test_subscription(
-    client, headers, subscription_query, mutation_city, city_name
-):
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    subscription_query: str,
+    mutation_city: str,
+    city_name: str,
+) -> None:
     request = GraphQLRequest(query=subscription_query, headers=headers)
-    m = []
+    m: List[Dict[str, Any]] = []
 
-    def callback(data):
+    def callback(data: Dict[str, Any]) -> None:
         assert "city" in data
         m.append(data)
         if len(m) > 1:
-            city = data.get("city")[0]
+            city_list = data.get("city")
+            assert isinstance(city_list, list)
+            city = city_list[0]
             assert city.get("name") == city_name
             subscription.unsubscribe()
 
     callbacks = CallbackRegistry()
     callbacks.register(
-        GraphQLSubscriptionEventType.DATA, lambda event: callback(event.payload.data)
+        GraphQLSubscriptionEventType.DATA,
+        lambda event: callback(event.payload.data),
     )
 
     subscription: GraphQLSubscription = await client.subscribe(
@@ -163,21 +200,22 @@ async def test_subscription(
     _ = await client.query(request)
 
     try:
-        await asyncio.wait_for(subscription.task, timeout=1)
+        if subscription.task is not None:
+            await asyncio.wait_for(subscription.task, timeout=1)
         assert len(m) == 2
     except asyncio.TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
 
 
 async def test_subscription_on_data_on_error_callbacks(
-    client, subscription_query, headers
-):
+    client: GraphQLClient, subscription_query: str, headers: Dict[str, str]
+) -> None:
     request = GraphQLRequest(query=subscription_query, headers=headers)
 
-    async def event_on_data(_):
+    async def event_on_data(_: Any) -> None:
         pass
 
-    def event_on_error(_):
+    def event_on_error(_: Any) -> None:
         pass
 
     subscription: GraphQLSubscription = await client.subscribe(
@@ -187,6 +225,7 @@ async def test_subscription_on_data_on_error_callbacks(
         on_error=event_on_error,
     )
     registry = subscription.callbacks
+    assert isinstance(registry, CallbackRegistry)
     assert registry.exists(GraphQLSubscriptionEventType.DATA, event_on_data)
     assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
     await subscription.unsubscribe_and_wait()
