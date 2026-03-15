@@ -1,5 +1,7 @@
 [build-system]
-requires = [ "poetry-core>=2.0.0,<3.0.0",]
+requires = [
+    "poetry-core>=2.0.0,<3.0.0",
+]
 build-backend = "poetry.core.masonry.api"
 
 [project]
@@ -9,9 +11,24 @@ description = "An asyncio GraphQL client built on top of aiohttp and graphql-cor
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-keywords = [ "aiohttp", "asyncio", "client", "graphql", "graphql-core", "graphql-core-next",]
-dynamic = [ "classifiers",]
-dependencies = [ "cafeteria-asyncio >=0.3,<0.4", "aiohttp >=3.5,<4.0", "graphql-core >=3.0,<4.0", "ujson >=2",]
+keywords = [
+    "aiohttp",
+    "asyncio",
+    "client",
+    "graphql",
+    "graphql-core",
+    "graphql-core-next",
+]
+dynamic = [
+    "classifiers",
+]
+dependencies = [
+    "cafeteria-asyncio >=0.3,<0.4",
+    "aiohttp >=3.5,<4.0",
+    "graphql-core >=3.0,<4.0",
+    "ujson >=2",
+]
+
 [[project.authors]]
 name = "Arun Neelicattu"
 email = "arun.neelicattu@gmail.com"
@@ -20,7 +37,13 @@ email = "arun.neelicattu@gmail.com"
 repository = "https://github.com/abn/aiographql-client"
 
 [tool.poetry]
-classifiers = [ "Topic :: Software Development :: Libraries :: Python Modules", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3 :: Only", "Framework :: AsyncIO",]
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Framework :: AsyncIO",
+]
 requires-poetry = ">=2.0"
 [[tool.poetry.packages]]
 include = "aiographql"
@@ -31,29 +54,49 @@ line-length = 88
 
 [tool.isort]
 profile = "black"
-src_paths = [ "src", "test",]
+src_paths = [
+    "src",
+    "test",
+]
 known_first_party = "aiographql"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 asyncio_mode = "auto"
 addopts = "--cov --cov-append --cov-report=term"
-testpaths = [ "tests",]
+testpaths = [
+    "tests",
+]
 
 [tool.coverage.run]
 branch = true
 parallel = true
 data_file = ".coverage/data"
-source = [ "aiographql",]
-omit = [ "tests/*",]
+source = [
+    "aiographql",
+]
+omit = [
+    "tests/*",
+]
 
 [tool.coverage.paths]
-source = [ "src",]
+source = [
+    "src",
+]
 
 [tool.coverage.report]
 skip_empty = true
 ignore_errors = true
-exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "if TYPE_CHECKING:",]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
 
 [tool.coverage.html]
 directory = ".coverage/html"
@@ -72,4 +115,6 @@ pytest-mock = "^3.14"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"
-extras = [ "toml",]
+extras = [
+    "toml",
+]
