@@ -1,7 +1,6 @@
-from typing import Any, AsyncGenerator, Dict, List, Tuple
-
 import asyncio
 import gc
+from typing import Any, AsyncGenerator, Dict, List, Tuple
 
 import pytest
 
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def event_loop_exceptions() -> AsyncGenerator[List[Tuple[None, Dict[str, Any]]], None]:
+async def event_loop_exceptions() -> (
+    AsyncGenerator[List[Tuple[None, Dict[str, Any]]], None]
+):
     running_loop = asyncio.get_running_loop()
     exceptions: List[Tuple[None, Dict[str, Any]]] = list()
 
@@ -40,4 +41,6 @@ async def test_helper_implicit_aiohttp_client_session_is_closed(
     gc.collect()
 
     for _, context in event_loop_exceptions:
-        assert context["message"] != "Unclosed client session"
+        # we check the message and that it is not related to any persistent session
+        if context["message"] == "Unclosed client session":
+            pytest.fail(f"Found unclosed client session: {context}")

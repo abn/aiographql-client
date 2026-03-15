@@ -69,6 +69,10 @@ addopts = "--cov --cov-append --cov-report=term"
 testpaths = [
     "tests",
 ]
+filterwarnings = [
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",
+    "ignore:Unclosed client session:ResourceWarning",
+]
 
 [tool.coverage.run]
 branch = true

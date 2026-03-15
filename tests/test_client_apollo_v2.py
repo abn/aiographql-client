@@ -1,6 +1,5 @@
-from typing import Any, Dict, List
-
 import asyncio
+from typing import Any, AsyncGenerator, Dict, List
 
 import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
@@ -18,8 +17,9 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def client(server_apollo_v2: str) -> GraphQLClient:
-    return GraphQLClient(endpoint=server_apollo_v2)
+async def client(server_apollo_v2: str) -> AsyncGenerator[GraphQLClient, None]:
+    async with GraphQLClient(endpoint=server_apollo_v2) as client:
+        yield client
 
 
 @pytest.fixture

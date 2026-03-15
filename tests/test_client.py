@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional
-
 import asyncio
+from typing import Any, Dict, List, Optional
 
 import graphql
 import pytest
@@ -65,7 +64,10 @@ async def test_introspect_failure(
 
 
 async def test_simple_anonymous_post(
-    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    query_city: str,
+    query_output: Dict[str, Any],
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.post(request)
@@ -73,14 +75,22 @@ async def test_simple_anonymous_post(
 
 
 async def test_simple_anonymous_post_with_string(
-    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    query_city: str,
+    query_output: Dict[str, Any],
 ) -> None:
-    response = await client.post(request=GraphQLRequest(query=query_city), headers=headers)
+    response = await client.post(
+        request=GraphQLRequest(query=query_city), headers=headers
+    )
     assert response.data == query_output
 
 
 async def test_simple_anonymous_query(
-    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    query_city: str,
+    query_output: Dict[str, Any],
 ) -> None:
     request = GraphQLRequest(query=query_city, headers=headers)
     response = await client.query(request)
@@ -125,7 +135,10 @@ async def test_invalid_method(
 
 
 async def test_unsuccessful_request(
-    client: GraphQLClient, headers: Dict[str, str], query_city: str, query_output: Dict[str, Any]
+    client: GraphQLClient,
+    headers: Dict[str, str],
+    query_city: str,
+    query_output: Dict[str, Any],
 ) -> None:
     # hasura does not support GET requests, we use this to test this case
     request = GraphQLRequest(query=query_city, headers=headers)
@@ -146,7 +159,9 @@ async def test_external_aiohttp_session(
 ) -> None:
     async with aiohttp_client_session() as session:
         spy = mocker.spy(session, "request")
-        response = await client.post(GraphQLRequest(query=query_city), headers=headers, session=session)
+        response = await client.post(
+            GraphQLRequest(query=query_city), headers=headers, session=session
+        )
         assert response.data == query_output
         spy.assert_called_once()
 
@@ -224,8 +239,8 @@ async def test_subscription_on_data_on_error_callbacks(
         on_data=event_on_data,
         on_error=event_on_error,
     )
-    registry = subscription.callbacks
-    assert isinstance(registry, CallbackRegistry)
-    assert registry.exists(GraphQLSubscriptionEventType.DATA, event_on_data)
-    assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
-    await subscription.unsubscribe_and_wait()
+    async with subscription:
+        registry = subscription.callbacks
+        assert isinstance(registry, CallbackRegistry)
+        assert registry.exists(GraphQLSubscriptionEventType.DATA, event_on_data)
+        assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)

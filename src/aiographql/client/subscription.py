@@ -234,7 +234,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
         async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
             await ws.send_json(data=self.connection_init_request())
 
-            if self.callbacks is not None and isinstance(self.callbacks, CallbackRegistry):
+            if self.callbacks is not None and isinstance(
+                self.callbacks, CallbackRegistry
+            ):
                 self.callbacks.register(
                     GraphQLSubscriptionEventType.CONNECTION_ACK,
                     SimpleTriggerCallback(
@@ -325,3 +327,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
                 await task
             except asyncio.CancelledError:
                 pass
+
+    async def __aenter__(self) -> GraphQLSubscription:
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.unsubscribe_and_wait()

@@ -1,12 +1,12 @@
 from typing import (
     Any,
     AsyncGenerator,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
     Generator,
     Iterator,
-    AsyncIterator,
 )
 
 import pytest
@@ -41,10 +41,10 @@ async def test_client_headers(
     post: Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]],
     query_city: str,
 ) -> None:
-    client = GraphQLClient(endpoint=server, headers=headers)
-    graphql_request = GraphQLRequest(query=query_city)
-    response = await post(client, graphql_request)
-    assert isinstance(response, GraphQLResponse)
+    async with GraphQLClient(endpoint=server, headers=headers) as client:
+        graphql_request = GraphQLRequest(query=query_city)
+        response = await post(client, graphql_request)
+        assert isinstance(response, GraphQLResponse)
 
 
 @pytest.mark.asyncio
@@ -54,10 +54,10 @@ async def test_request_headers(
     post: Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]],
     query_city: str,
 ) -> None:
-    client = GraphQLClient(endpoint=server)
-    graphql_request = GraphQLRequest(query=query_city, headers=headers)
-    response = await post(client, graphql_request)
-    assert isinstance(response, GraphQLResponse)
+    async with GraphQLClient(endpoint=server) as client:
+        graphql_request = GraphQLRequest(query=query_city, headers=headers)
+        response = await post(client, graphql_request)
+        assert isinstance(response, GraphQLResponse)
 
 
 @pytest.mark.asyncio

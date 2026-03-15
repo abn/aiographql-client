@@ -1,8 +1,5 @@
 import os
 import uuid
-
-import pytest
-
 from typing import Any, AsyncGenerator, Dict, Union
 
 import pytest
@@ -48,8 +45,9 @@ def server_apollo_v2(request: Any) -> str:
 
 
 @pytest.fixture(autouse=True)
-def client(server: str) -> GraphQLClient:
-    return GraphQLClient(endpoint=server)
+async def client(server: str) -> AsyncGenerator[GraphQLClient, None]:
+    async with GraphQLClient(endpoint=server) as client:
+        yield client
 
 
 @pytest.fixture(scope="module")

@@ -1,6 +1,6 @@
+import sys
 import warnings
 from contextlib import asynccontextmanager
-
 from typing import AsyncGenerator
 
 import aiohttp
@@ -17,9 +17,11 @@ async def aiohttp_client_session() -> AsyncGenerator[aiohttp.ClientSession, None
             category=DeprecationWarning,
             module="aiohttp.connector",
         )
-        connector = aiohttp.TCPConnector(
-            force_close=True, limit=1, enable_cleanup_closed=True
-        )
+        connector_kwargs = {"force_close": True, "limit": 1}
+        if sys.version_info < (3, 14):
+            connector_kwargs["enable_cleanup_closed"] = True
+
+        connector = aiohttp.TCPConnector(**connector_kwargs)
         session = aiohttp.ClientSession(connector=connector)
         yield session
 
@@ -28,4 +30,8 @@ async def aiohttp_client_session() -> AsyncGenerator[aiohttp.ClientSession, None
 
 
 async def create_default_connector() -> aiohttp.TCPConnector:
-    return aiohttp.TCPConnector(force_close=True, limit=1, enable_cleanup_closed=True)
+    connector_kwargs = {"force_close": True, "limit": 1}
+    if sys.version_info < (3, 14):
+        connector_kwargs["enable_cleanup_closed"] = True
+
+    return aiohttp.TCPConnector(**connector_kwargs)

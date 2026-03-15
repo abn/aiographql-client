@@ -2,15 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Iterable, Mapping, Optional, Union, cast
 
 import aiohttp
 import graphql
@@ -93,6 +85,19 @@ class GraphQLClient:
         self._schema = schema
         self._session = session
         self._validate = validate
+
+    async def close(self) -> None:
+        """
+        Close the underlying `aiohttp.ClientSession` if one was created by the client.
+        """
+        if self._session is not None:
+            await self._session.close()
+
+    async def __aenter__(self) -> GraphQLClient:
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()
 
     async def introspect(
         self, headers: Optional[Dict[str, str]] = None
