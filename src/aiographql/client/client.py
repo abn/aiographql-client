@@ -9,6 +9,8 @@ from typing import cast
 
 import graphql
 
+from aiographql.client.serializer import DefaultSerializer
+from aiographql.client.serializer import GraphQLSerializer
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
 
@@ -25,6 +27,7 @@ from aiographql.client.subscription import GraphQLSubscriptionEventType
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from collections.abc import Iterable
     from collections.abc import Mapping
 
@@ -74,6 +77,7 @@ class GraphQLClient:
     :param validate: If set to `False`, the client will not attempt to validate
         requests against the schema from the server. This is useful when
         introspection is disabled on the server.
+    :param serializer: Custom JSON serializer to use for requests and responses.
     """
 
     def __init__(
@@ -84,6 +88,7 @@ class GraphQLClient:
         schema: graphql.GraphQLSchema | None = None,
         session: aiohttp.ClientSession | None = None,
         validate: bool = True,
+        serializer: GraphQLSerializer | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -92,6 +97,7 @@ class GraphQLClient:
         self._schema = schema
         self._session = session
         self._validate = validate
+        self._serializer = serializer or DefaultSerializer()
 
     async def close(self) -> None:
         """
@@ -234,13 +240,30 @@ class GraphQLClient:
         async with session.request(
             method=method, url=self.endpoint, headers=request.headers, **kwargs
         ) as resp:
-            body = await resp.json()
+            resp_data = await resp.read()
+            try:
+                body = self._serializer.loads(resp_data)
+            except Exception:
+                body = None
+
             response = GraphQLResponse(request=request, json=body)
 
             if 200 <= resp.status < 300:
                 return response
 
             raise GraphQLRequestException(response)
+
+    def _coerce_value(self, value: Any) -> Any:
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (dict, list)):
+            serialized = self._serializer.dumps(value)
+            return (
+                serialized.decode("utf-8")
+                if isinstance(serialized, bytes)
+                else serialized
+            )
+        return value
 
     async def query(
         self,
@@ -286,9 +309,14 @@ class GraphQLClient:
         method = method or self._method
 
         if method == GraphQLQueryMethod.post:
-            kwargs = {"json": request.payload()}
+            kwargs = {"data": self._serializer.dumps(request.payload())}
         elif method == GraphQLQueryMethod.get:
-            kwargs = {"params": request.payload(coerce=True)}
+            kwargs = {
+                "params": {
+                    k: v if not isinstance(v, (dict, list, bool)) else self._coerce_value(v)
+                    for k, v in request.payload().items()
+                }
+            }
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
@@ -437,7 +465,10 @@ class GraphQLClient:
             callbacks.register(GraphQLSubscriptionEventType.ERROR, on_error)
 
         subscription = GraphQLSubscription(
-            request=request, callbacks=callbacks, protocols=protocols
+            request=request,
+            callbacks=callbacks,
+            protocols=protocols,
+            serializer=self._serializer,
         )
         await subscription.subscribe(
             endpoint=self.endpoint, session=session or self._session, wait=wait

@@ -34,16 +34,11 @@ def test_request_container_overrides() -> None:
     assert container.request.variables == variables
 
 
-def test_request_payload_coerce() -> None:
-    assert GraphQLRequest._coerce_value(True) == 1
-    assert GraphQLRequest._coerce_value({}) == "{}"
+def test_request_payload() -> None:
+    request = GraphQLRequest(query="{}")
 
     request = GraphQLRequest(query="{}", variables={"foo": "bar", "baz": False})
-    assert request.payload(coerce=True) == {
-        "query": "{}",
-        "variables": '{"foo":"bar","baz":false}',
-    }
-    assert request.payload(coerce=False) == {
+    assert request.payload() == {
         "query": "{}",
         "variables": {"baz": False, "foo": "bar"},
     }

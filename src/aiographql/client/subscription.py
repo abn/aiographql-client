@@ -20,6 +20,7 @@ from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequestContainer
 from aiographql.client.response import GraphQLBaseResponse
 from aiographql.client.response import GraphQLResponse
+from aiographql.client.serializer import GraphQLSerializer
 
 
 if TYPE_CHECKING:
@@ -123,13 +124,10 @@ class GraphQLSubscription(GraphQLRequestContainer):
         ]
     )
     protocols: str | Iterable[str] = dataclasses.field(default_factory=tuple)
+    serializer: GraphQLSerializer | None = dataclasses.field(default=None)
     task: asyncio.Task[Any] | None = dataclasses.field(
         default=None, init=False, compare=False
     )
-
-    headers: dataclasses.InitVar[dict[str, str] | None] = None
-    operation: dataclasses.InitVar[str | None] = None
-    variables: dataclasses.InitVar[dict[str, Any] | None] = None
 
     def __post_init__(
         self,
@@ -137,7 +135,11 @@ class GraphQLSubscription(GraphQLRequestContainer):
         operation: str | None,
         variables: dict[str, Any] | None,
     ) -> None:
-        super().__post_init__(headers, operation, variables)
+        super().__post_init__(
+            headers=headers,
+            operation=operation,
+            variables=variables,
+        )
 
         if isinstance(self.protocols, str):
             object.__setattr__(self, "protocols", (self.protocols,))
@@ -232,8 +234,23 @@ class GraphQLSubscription(GraphQLRequestContainer):
         :param endpoint: Endpoint to use when creating the websocket connection.
         :param session: Session to use when creating the websocket connection.
         """
+        if self.serializer is None:
+            # This should ideally be passed from client, but for safety:
+            from aiographql.client.serializer import DefaultSerializer
+
+            object.__setattr__(self, "serializer", DefaultSerializer())
+
         async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
-            await ws.send_json(data=self.connection_init_request())
+
+            def _serialize(value: Any) -> str:
+                serialized = self.serializer.dumps(value)
+                return (
+                    serialized.decode("utf-8")
+                    if isinstance(serialized, bytes)
+                    else serialized
+                )
+
+            await ws.send_str(_serialize(self.connection_init_request()))
 
             if self.callbacks is not None and isinstance(
                 self.callbacks, CallbackRegistry
@@ -241,7 +258,8 @@ class GraphQLSubscription(GraphQLRequestContainer):
                 self.callbacks.register(
                     GraphQLSubscriptionEventType.CONNECTION_ACK,
                     SimpleTriggerCallback(
-                        function=ws.send_json, data=self.connection_start_request()
+                        function=ws.send_str,
+                        data=_serialize(self.connection_start_request()),
                     ),
                 )
 
@@ -255,14 +273,14 @@ class GraphQLSubscription(GraphQLRequestContainer):
                     event = GraphQLSubscriptionEvent(
                         subscription_id=self.id,
                         request=self.request,
-                        json=msg.json(),
+                        json=self.serializer.loads(msg.data),
                     )
                     await self.handle(event=event)
 
                     if self.is_stop_event(event):
                         break
             except (asyncio.CancelledError, KeyboardInterrupt):
-                await ws.send_json(data=self.connection_stop_request())
+                await ws.send_str(_serialize(self.connection_stop_request()))
 
     async def _subscribe(
         self, endpoint: str, session: aiohttp.ClientSession | None = None

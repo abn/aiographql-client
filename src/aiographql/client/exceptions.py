@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import ujson as json
+import orjson as json
 
 
 if TYPE_CHECKING:
@@ -25,7 +25,9 @@ class GraphQLClientValidationException(GraphQLClientException):
 
 class GraphQLRequestException(GraphQLClientException):
     def __init__(self, response: GraphQLResponse) -> None:
-        super().__init__(f"Request failed with response {json.dumps(response.json)}")
+        super().__init__(
+            f"Request failed with response {json.dumps(response.json).decode('utf-8')}"
+        )
         self.response = response
 
 

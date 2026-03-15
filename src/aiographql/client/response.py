@@ -12,6 +12,18 @@ from aiographql.client.request import GraphQLRequestContainer
 class GraphQLBaseResponse(GraphQLRequestContainer):
     json: dict[str, Any] = dataclasses.field(default_factory=dict)
 
+    def __post_init__(
+        self,
+        headers: dict[str, str] | None,
+        operation: str | None,
+        variables: dict[str, Any] | None,
+    ) -> None:
+        super().__post_init__(
+            headers=headers,
+            operation=operation,
+            variables=variables,
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class GraphQLResponse(GraphQLBaseResponse):

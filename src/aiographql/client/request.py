@@ -3,9 +3,14 @@ from __future__ import annotations
 import dataclasses
 
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from typing import Any
 
-import ujson as json
+import orjson as json
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @dataclasses.dataclass(frozen=True)
@@ -39,19 +44,18 @@ class GraphQLRequest:
             return self.operationName
         return super().__getattribute__(item)
 
-    @staticmethod
-    def _coerce_value(value: Any) -> Any:
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, dict):
-            return json.dumps(value)
-        return value
-
-    def payload(self, coerce: bool = False) -> dict[str, Any]:
+    def payload(self) -> dict[str, Any]:
         return {
-            k: v if not coerce else self._coerce_value(v)
-            for k, v in dataclasses.asdict(self).items()
+            k: v
+            for k, v in self.asdict().items()
             if v is not None and k not in {"schema", "headers", "validate"}
+        }
+
+    def asdict(self) -> dict[str, Any]:
+        return {
+            "query": self.query,
+            "operationName": self.operationName,
+            "variables": self.variables,
         }
 
     def copy(
