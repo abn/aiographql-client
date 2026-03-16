@@ -112,6 +112,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
     :param protocols: GraphQL over WebSocket Sub-protocol used. This is optional, as
         this is only required for certain servers. When specified, this value is set as
         the Sec-WebSocket-Protocol header when a WebSocket connection is established.
+    :param connection_init_payload: Extra fields for the `connection_init` payload.
     """
 
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()), init=False)
@@ -126,6 +127,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         ]
     )
     protocols: str | Iterable[str] = dataclasses.field(default_factory=tuple)
+    connection_init_payload: dict[str, Any] | None = dataclasses.field(default=None)
     serializer: GraphQLSerializer | None = dataclasses.field(default=None)
     task: asyncio.Task[Any] | None = dataclasses.field(
         default=None, init=False, compare=False
@@ -174,9 +176,17 @@ class GraphQLSubscription(GraphQLRequestContainer):
         headers: dict[str, str] = {}
         if not isinstance(self.request, str):
             headers = self.request.headers
+
+        payload = {**(self.connection_init_payload or {})}
+        payload_headers = payload.get("headers")
+        if not isinstance(payload_headers, dict):
+            payload_headers = {}
+
+        payload["headers"] = {**payload_headers, **headers}
+
         return {
             "type": GraphQLSubscriptionEventType.CONNECTION_INIT.value,
-            "payload": {"headers": {**headers}},
+            "payload": payload,
         }
 
     def connection_start_request(self) -> dict[str, Any]:

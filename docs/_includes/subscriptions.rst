@@ -40,6 +40,23 @@ stdout when either :attr:`aiographql.client.GraphQLSubscriptionEventType.DATA` o
     required for certain server implementations like `Apollo Server <https://www.apollographql.com/docs/apollo-server/>`_
     as it supports multiple implementations.
 
+    Similarly, if your server requires additional fields in the `connection_init` payload
+    (for example, an `authToken` or `headers`), you can provide them using the
+    `connection_init_payload` parameter.
+
+    .. code-block:: python
+
+        subscription = await client.subscribe(
+            request=request,
+            connection_init_payload={
+                "authToken": "my-secret-token",
+                "headers": {"X-Custom-Auth": "value"}
+            }
+        )
+
+    Note that headers provided in the `GraphQLRequest` will be merged with and take
+    precedence over headers in `connection_init_payload`.
+
 Callback Registry
 *****************
 

@@ -460,6 +460,7 @@ class GraphQLClient:
         session: aiohttp.ClientSession | None = None,
         wait: bool = False,
         protocols: str | Iterable[str] = (),
+        connection_init_payload: dict[str, Any] | None = None,
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -502,6 +503,7 @@ class GraphQLClient:
         :param wait: If set to `True`, this method will wait until the subscription
             is completed, websocket disconnected or async task cancelled.
         :param protocols: GraphQL over WebSocket Sub-protocol(s) used.
+        :param connection_init_payload: Extra fields for the `connection_init` payload.
         :return: The initialised subscription.
         """
         request = self._prepare_request(
@@ -519,6 +521,7 @@ class GraphQLClient:
             request=request,
             callbacks=callbacks,
             protocols=protocols,
+            connection_init_payload=connection_init_payload,
             serializer=self._serializer,
         )
         await subscription.subscribe(

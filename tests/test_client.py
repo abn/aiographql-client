@@ -251,3 +251,18 @@ async def test_subscription_on_data_on_error_callbacks(
         assert isinstance(registry, CallbackRegistry)
         assert registry.exists(GraphQLSubscriptionEventType.DATA, event_on_data)
         assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
+
+
+async def test_subscription_connection_init_payload(
+    client: GraphQLClient, subscription_query: str, headers: dict[str, str]
+) -> None:
+    request = GraphQLRequest(query=subscription_query, headers=headers)
+    connection_init_payload = {"authToken": "secret"}
+
+    subscription: GraphQLSubscription = await client.subscribe(
+        request=request,
+        headers=headers,
+        connection_init_payload=connection_init_payload,
+    )
+    async with subscription:
+        assert subscription.connection_init_payload == connection_init_payload
