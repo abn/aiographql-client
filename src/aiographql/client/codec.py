@@ -12,6 +12,8 @@ from typing import Any
 from typing import Protocol
 from typing import TypeVar
 from typing import Union
+from typing import cast
+from typing import get_args
 from typing import get_type_hints
 from typing import runtime_checkable
 
@@ -36,7 +38,7 @@ T = TypeVar("T")
 
 @runtime_checkable
 class GraphQLCodec(Protocol):
-    def encode(self, value: Any) -> Any: ...
+    def encode(self, value: Any, include_primitives: bool = True) -> Any: ...
 
     def decode(self, value: Any, target_type: type[T]) -> T: ...
 
@@ -82,15 +84,10 @@ class DefaultGraphQLCodec:
                 for f in dataclasses.fields(value)
             }
 
-        if pydantic is not None and isinstance(value, BaseModel):
-            if hasattr(value, "model_dump"):
-                # Pydantic v2
-                return self.encode(
-                    value.model_dump(), include_primitives=include_primitives
-                )
-            if hasattr(value, "dict"):
-                # Pydantic v1
-                return self.encode(value.dict(), include_primitives=include_primitives)
+        if isinstance(value, BaseModel):
+            return self.encode(
+                value.model_dump(), include_primitives=include_primitives
+            )
 
         if isinstance(value, (list, tuple, set)):
             return [
@@ -118,35 +115,36 @@ class DefaultGraphQLCodec:
 
         origin = getattr(target_type, "__origin__", None)
         if origin is not None:
+            args = get_args(target_type)
             if origin is list or origin is Iterable:
-                item_type = target_type.__args__[0]
+                item_type = args[0]
                 return [self.decode(item, item_type) for item in value]  # type: ignore[return-value]
             if origin is dict:
-                key_type, val_type = target_type.__args__
+                key_type, val_type = args
                 return {
                     self.decode(k, key_type): self.decode(v, val_type)
                     for k, v in value.items()
                 }  # type: ignore[return-value]
             if origin is Union:
                 # Simple Union support: try each type until one works
-                for arg in target_type.__args__:
+                for arg in args:
                     if arg is type(None) and value is None:
-                        return None  # type: ignore[return-value]
+                        return cast("T", None)
                     try:
-                        return self.decode(value, arg)
+                        return self.decode(value, arg)  # type: ignore[no-any-return]
                     except (ValueError, TypeError, GraphQLCodecException):
                         continue
                 raise GraphQLCodecException(f"Cannot decode {value} to {target_type}")
 
         if target_type in self._decoders:
             try:
-                return self._decoders[target_type](value)
+                return cast("T", self._decoders[target_type](value))
             except Exception as e:
                 raise GraphQLCodecException(
                     f"Failed to decode {value} to {target_type}: {e}"
                 ) from e
 
-        if isinstance(target_type, type) and issubclass(target_type, enum.Enum):
+        if isinstance(target_type, type) and issubclass(target_type, enum.Enum):  # type: ignore[redundant-expr]
             return target_type(value)
 
         if dataclasses.is_dataclass(target_type):
@@ -163,22 +161,13 @@ class DefaultGraphQLCodec:
                     kwargs[k] = v
             return target_type(**kwargs)
 
-        if (
-            pydantic is not None
-            and isinstance(target_type, type)
-            and issubclass(target_type, BaseModel)
-        ):
+        if issubclass(target_type, BaseModel):
             if not isinstance(value, dict):
                 raise GraphQLCodecException(
                     f"Cannot decode non-dict value {value} to Pydantic model {target_type}"
                 )
             try:
-                if hasattr(target_type, "model_validate"):
-                    # Pydantic v2
-                    return target_type.model_validate(value)
-                if hasattr(target_type, "parse_obj"):
-                    # Pydantic v1
-                    return target_type.parse_obj(value)
+                return target_type.model_validate(value)
             except Exception as e:
                 raise GraphQLCodecException(
                     f"Failed to validate Pydantic model {target_type}: {e}"
@@ -188,7 +177,7 @@ class DefaultGraphQLCodec:
             if isinstance(target_type, type):
                 if isinstance(value, target_type):
                     return value
-                return target_type(value)
+                return target_type(value)  # type: ignore[call-arg]
             return value
         except (ValueError, TypeError):
             raise

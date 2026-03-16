@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 
+from typing import Any
+
 import orjson
 import pytest
 
@@ -10,15 +12,15 @@ from aiographql.client import GraphQLRequest
 
 
 @pytest.mark.asyncio
-async def test_custom_serializer_uuid():
+async def test_custom_serializer_uuid() -> None:
     # Example from the issue: serialization of uuid.UUIDs
     user_id = uuid.uuid4()
 
     class CustomSerializer:
-        def loads(self, data):
+        def loads(self, data: str | bytes) -> Any:
             return orjson.loads(data)
 
-        def dumps(self, obj):
+        def dumps(self, obj: Any) -> str:
             return orjson.dumps(obj, option=orjson.OPT_INDENT_2).decode("utf-8")
 
     client = GraphQLClient(
@@ -40,14 +42,14 @@ async def test_custom_serializer_uuid():
 
 
 @pytest.mark.asyncio
-async def test_custom_serializer_deserialization():
+async def test_custom_serializer_deserialization() -> None:
     # Custom load function that adds a prefix to keys (just for testing)
     class CustomSerializer:
-        def loads(self, data):
+        def loads(self, data: str | bytes) -> dict[str, Any]:
             obj = orjson.loads(data)
             return {"custom_" + k: v for k, v in obj.items()}
 
-        def dumps(self, obj):
+        def dumps(self, obj: Any) -> bytes:
             return orjson.dumps(obj)
 
     client = GraphQLClient(
@@ -58,13 +60,13 @@ async def test_custom_serializer_deserialization():
     class MockResponse:
         status = 200
 
-        async def read(self):
+        async def read(self) -> bytes:
             return b'{"data": {"user": {"name": "John"}}}'
 
-        async def __aenter__(self):
+        async def __aenter__(self) -> MockResponse:
             return self
 
-        async def __aexit__(self, *args):
+        async def __aexit__(self, *args: Any) -> None:
             pass
 
     from unittest.mock import MagicMock

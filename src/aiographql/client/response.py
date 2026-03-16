@@ -5,6 +5,7 @@ import dataclasses
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
+from typing import cast
 
 from aiographql.client.error import GraphQLError
 from aiographql.client.request import GraphQLRequestContainer
@@ -81,7 +82,7 @@ class GraphQLResponse(GraphQLBaseResponse):
         """
         from aiographql.client.codec import DefaultGraphQLCodec
 
-        data = self.data
+        data: Any = self.data
         if path:
             for key in path.split("."):
                 if not isinstance(data, dict):
@@ -89,4 +90,4 @@ class GraphQLResponse(GraphQLBaseResponse):
                 data = data.get(key)
 
         codec = codec or getattr(self.request, "codec", None) or DefaultGraphQLCodec()
-        return codec.decode(data, result_type)
+        return cast("T", codec.decode(data, result_type))

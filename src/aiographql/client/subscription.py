@@ -24,6 +24,7 @@ from aiographql.client.response import GraphQLResponse
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import TypeAlias
 
     from aiographql.client.codec import GraphQLCodec
     from aiographql.client.serializer import GraphQLSerializer
@@ -46,10 +47,13 @@ class GraphQLSubscriptionEventType(Enum):
     KEEP_ALIVE = "ka"
 
 
-CallbacksType = (
-    CallbackRegistry
-    | dict[GraphQLSubscriptionEventType, CallbackType | list[CallbackType]]
-)
+if TYPE_CHECKING:
+    CallbacksType: TypeAlias = (
+        CallbackRegistry
+        | dict[GraphQLSubscriptionEventType, CallbackType | list[CallbackType]]
+    )
+else:
+    CallbacksType = Any
 
 
 @dataclasses.dataclass(frozen=True)
@@ -257,7 +261,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
 
             def _serialize(value: Any) -> str:
-                serialized = self.serializer.dumps(value)
+                serialized = cast("GraphQLSerializer", self.serializer).dumps(value)
                 return (
                     serialized.decode("utf-8")
                     if isinstance(serialized, bytes)
@@ -287,7 +291,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
                     event = GraphQLSubscriptionEvent(
                         subscription_id=self.id,
                         request=self.request,
-                        json=self.serializer.loads(msg.data),
+                        json=cast("GraphQLSerializer", self.serializer).loads(msg.data),
                     )
                     await self.handle(event=event)
 

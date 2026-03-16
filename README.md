@@ -121,7 +121,7 @@ await client.query(request=request, variables={"id": 20}, operation="get_bot_cre
 ```
 
 ### Typed Usage (Bring Your Own Models)
-The client supports explicit decoding of results into your own models, like `dataclasses` or `Pydantic` models.
+The client supports explicit decoding of results into your own models, like `dataclasses` or `Pydantic` (v2) models.
 
 ```py
 from pydantic import BaseModel

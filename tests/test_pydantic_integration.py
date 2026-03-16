@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from pydantic import BaseModel
@@ -17,7 +19,7 @@ class CreateUserInput(BaseModel):
 
 
 @pytest.mark.asyncio
-async def test_client_pydantic_variables(mocker):
+async def test_client_pydantic_variables(mocker: Any) -> None:
     # Mock aiohttp session to avoid actual network requests
     mock_session = mocker.Mock()
     mock_response = mocker.AsyncMock()
@@ -55,7 +57,7 @@ async def test_client_pydantic_variables(mocker):
 
 
 @pytest.mark.asyncio
-async def test_client_pydantic_decode(mocker):
+async def test_client_pydantic_decode(mocker: Any) -> None:
     mock_session = mocker.Mock()
     mock_response = mocker.AsyncMock()
     type(mock_response).status = mocker.PropertyMock(return_value=200)

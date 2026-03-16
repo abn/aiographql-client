@@ -13,7 +13,7 @@ Supported Model Types
 The client includes a default codec that supports:
 
 * **Standard Python Dataclasses**: Both for input and output.
-* **Pydantic Models**: Support for both Pydantic v1 and v2.
+* **Pydantic Models**: Support for Pydantic v2 (Pydantic >= 2.0 is required).
 * **Externally Generated Models**: Any models generated from tools like ``datamodel-code-generator`` (which typically generates Pydantic models) work seamlessly.
 
 Dataclasses

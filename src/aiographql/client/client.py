@@ -360,14 +360,13 @@ class GraphQLClient:
         if method == GraphQLQueryMethod.post:
             kwargs = {"data": self._serializer.dumps(request.payload())}
         elif method == GraphQLQueryMethod.get:
-            kwargs = {
-                "params": {
-                    k: v
-                    if not isinstance(v, (dict, list, bool))
-                    else self._coerce_value(v)
-                    for k, v in request.payload().items()
-                }
+            params = {
+                k: str(v)
+                if not isinstance(v, (dict, list, bool))
+                else self._coerce_value(v)
+                for k, v in request.payload().items()
             }
+            kwargs = {"params": params}  # type: ignore[dict-item]
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 

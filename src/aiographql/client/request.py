@@ -5,6 +5,7 @@ import dataclasses
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 
 if TYPE_CHECKING:
@@ -49,7 +50,9 @@ class GraphQLRequest:
         codec = self.codec or DefaultGraphQLCodec()
         payload = {
             "query": self.query,
-            "variables": codec.encode(self.variables, include_primitives=False)
+            "variables": cast("DefaultGraphQLCodec", codec).encode(
+                self.variables, include_primitives=False
+            )
             if self.variables
             else {},
         }

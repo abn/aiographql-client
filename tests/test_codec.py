@@ -28,7 +28,7 @@ class User:
     metadata: dict[str, str] | None = None
 
 
-def test_codec_encode_primitives():
+def test_codec_encode_primitives() -> None:
     codec = DefaultGraphQLCodec()
     assert codec.encode(1) == 1
     assert codec.encode("test") == "test"
@@ -36,7 +36,7 @@ def test_codec_encode_primitives():
     assert codec.encode(None) is None
 
 
-def test_codec_encode_complex():
+def test_codec_encode_complex() -> None:
     codec = DefaultGraphQLCodec()
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
     u = uuid.uuid4()
@@ -48,7 +48,7 @@ def test_codec_encode_complex():
     assert codec.encode(Color.RED) == "red"
 
 
-def test_codec_encode_dataclass():
+def test_codec_encode_dataclass() -> None:
     codec = DefaultGraphQLCodec()
     u_id = uuid.uuid4()
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
@@ -73,14 +73,14 @@ def test_codec_encode_dataclass():
     }
 
 
-def test_codec_decode_primitives():
+def test_codec_decode_primitives() -> None:
     codec = DefaultGraphQLCodec()
     assert codec.decode(1, int) == 1
     assert codec.decode("test", str) == "test"
     assert codec.decode("10.5", decimal.Decimal) == decimal.Decimal("10.5")
 
 
-def test_codec_decode_dataclass():
+def test_codec_decode_dataclass() -> None:
     codec = DefaultGraphQLCodec()
     u_id = uuid.uuid4()
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
@@ -102,7 +102,7 @@ def test_codec_decode_dataclass():
     assert user.color == Color.GREEN
 
 
-def test_codec_decode_nested_list():
+def test_codec_decode_nested_list() -> None:
     codec = DefaultGraphQLCodec()
     data = [
         {"id": str(uuid.uuid4()), "name": "A"},
@@ -120,25 +120,26 @@ def test_codec_decode_nested_list():
     assert isinstance(users[0].id, uuid.UUID)
 
 
-def test_codec_registration():
+def test_codec_registration() -> None:
     codec = DefaultGraphQLCodec()
+    from typing import Any
 
     class Custom:
-        def __init__(self, val):
+        def __init__(self, val: str) -> None:
             self.val = val
 
     codec.register_encoder(Custom, lambda x: f"custom:{x.val}")
     codec.register_decoder(Custom, lambda x: Custom(x.split(":")[1]))
 
     c = Custom("hello")
-    encoded = codec.encode(c)
+    encoded: Any = codec.encode(c)
     assert encoded == "custom:hello"
 
-    decoded = codec.decode(encoded, Custom)
+    decoded: Custom = codec.decode(encoded, Custom)
     assert decoded.val == "hello"
 
 
-def test_codec_decode_failure():
+def test_codec_decode_failure() -> None:
     codec = DefaultGraphQLCodec()
     with pytest.raises(GraphQLCodecException):
         codec.decode("not-a-uuid", uuid.UUID)

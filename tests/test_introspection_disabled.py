@@ -19,7 +19,7 @@ async def test_query_with_introspection_disabled_global(
     headers: dict[str, str],
     query_city: str,
     query_output: dict[str, Any],
-):
+) -> None:
     mocker.patch.object(
         GraphQLClient,
         "introspect",
@@ -42,7 +42,7 @@ async def test_query_with_introspection_disabled_global(
 @pytest.mark.asyncio
 async def test_subscription_with_introspection_disabled_global(
     mocker: MockerFixture, headers: dict[str, str], subscription_query: str
-):
+) -> None:
     mocker.patch.object(
         GraphQLClient,
         "introspect",
@@ -59,5 +59,9 @@ async def test_subscription_with_introspection_disabled_global(
             new_callable=mocker.AsyncMock,
         )
 
-        subscription = await client.subscribe(subscription_query, headers=headers)
+        from aiographql.client import GraphQLRequest
+
+        subscription = await client.subscribe(
+            GraphQLRequest(query=subscription_query), headers=headers
+        )
         assert subscription is not None

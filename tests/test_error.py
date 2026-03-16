@@ -24,4 +24,4 @@ def test_handles_extra_fields_in_error(
     assert isinstance(error, GraphQLError)
     assert error.message == "some error"
     assert error.extensions == {"some_field": "foobar"}
-    assert error.type == "NOT_FOUND"
+    assert error.type == "NOT_FOUND"  # type: ignore[attr-defined]

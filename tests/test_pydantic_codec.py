@@ -34,14 +34,14 @@ class User(BaseModel):
     metadata: dict[str, str] | None = None
 
 
-def test_pydantic_encode_simple():
+def test_pydantic_encode_simple() -> None:
     codec = DefaultGraphQLCodec()
     profile = UserProfile(bio="Developer", website="https://example.com")
     encoded = codec.encode(profile)
     assert encoded == {"bio": "Developer", "website": "https://example.com"}
 
 
-def test_pydantic_encode_nested():
+def test_pydantic_encode_nested() -> None:
     codec = DefaultGraphQLCodec()
     u_id = uuid.uuid4()
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
@@ -64,7 +64,7 @@ def test_pydantic_encode_nested():
     assert encoded["tags"] == ["admin"]
 
 
-def test_pydantic_encode_list_dict():
+def test_pydantic_encode_list_dict() -> None:
     codec = DefaultGraphQLCodec()
     profiles = [UserProfile(bio="A"), UserProfile(bio="B")]
     encoded_list = codec.encode(profiles)
@@ -78,7 +78,7 @@ def test_pydantic_encode_list_dict():
     assert encoded_dict == {"u1": {"bio": "A", "website": None}}
 
 
-def test_pydantic_decode_simple():
+def test_pydantic_decode_simple() -> None:
     codec = DefaultGraphQLCodec()
     data = {"bio": "Developer", "website": "https://example.com"}
     profile = codec.decode(data, UserProfile)
@@ -87,7 +87,7 @@ def test_pydantic_decode_simple():
     assert profile.website == "https://example.com"
 
 
-def test_pydantic_decode_nested():
+def test_pydantic_decode_nested() -> None:
     codec = DefaultGraphQLCodec()
     u_id = uuid.uuid4()
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
@@ -104,11 +104,12 @@ def test_pydantic_decode_nested():
     user = codec.decode(data, User)
     assert isinstance(user, User)
     assert user.id == u_id
+    assert user.profile is not None
     assert user.profile.bio == "Developer"
     assert user.balance == decimal.Decimal("100.00")
 
 
-def test_pydantic_decode_list():
+def test_pydantic_decode_list() -> None:
     codec = DefaultGraphQLCodec()
     data = [{"bio": "A"}, {"bio": "B"}]
     profiles = codec.decode(data, list[UserProfile])
@@ -117,7 +118,7 @@ def test_pydantic_decode_list():
     assert profiles[0].bio == "A"
 
 
-def test_pydantic_decode_invalid_data():
+def test_pydantic_decode_invalid_data() -> None:
     codec = DefaultGraphQLCodec()
     with pytest.raises(GraphQLCodecException) as excinfo:
         # bio is required
@@ -125,7 +126,7 @@ def test_pydantic_decode_invalid_data():
     assert "Failed to validate Pydantic model" in str(excinfo.value)
 
 
-def test_pydantic_decode_non_dict():
+def test_pydantic_decode_non_dict() -> None:
     codec = DefaultGraphQLCodec()
     with pytest.raises(GraphQLCodecException) as excinfo:
         codec.decode("not-a-dict", UserProfile)

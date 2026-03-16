@@ -3,6 +3,8 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
+from typing import Any
+
 import pytest
 
 from aiographql.client import GraphQLClient
@@ -15,7 +17,7 @@ class City:
 
 
 @pytest.mark.asyncio
-async def test_client_query_data_as(mocker):
+async def test_client_query_data_as(mocker: Any) -> None:
     client = GraphQLClient(
         endpoint="http://test", codec=DefaultGraphQLCodec(), validate=False
     )
@@ -47,7 +49,7 @@ async def test_client_query_data_as(mocker):
 
 
 @pytest.mark.asyncio
-async def test_client_encode_variables(mocker):
+async def test_client_encode_variables(mocker: Any) -> None:
     codec = DefaultGraphQLCodec()
     client = GraphQLClient(endpoint="http://test", codec=codec, validate=False)
 
@@ -85,7 +87,7 @@ async def test_client_encode_variables(mocker):
 
 
 @pytest.mark.asyncio
-async def test_response_data_as():
+async def test_response_data_as() -> None:
     from aiographql.client.request import GraphQLRequest
     from aiographql.client.response import GraphQLResponse
 

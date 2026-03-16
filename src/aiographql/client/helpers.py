@@ -5,6 +5,7 @@ import warnings
 
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
+from typing import Any
 
 import aiohttp
 
@@ -24,7 +25,7 @@ async def aiohttp_client_session() -> AsyncGenerator[aiohttp.ClientSession, None
             category=DeprecationWarning,
             module="aiohttp.connector",
         )
-        connector_kwargs = {"force_close": True, "limit": 1}
+        connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 1}
         if sys.version_info < (3, 14):
             connector_kwargs["enable_cleanup_closed"] = True
 
@@ -37,7 +38,7 @@ async def aiohttp_client_session() -> AsyncGenerator[aiohttp.ClientSession, None
 
 
 async def create_default_connector() -> aiohttp.TCPConnector:
-    connector_kwargs = {"force_close": True, "limit": 1}
+    connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 1}
     if sys.version_info < (3, 14):
         connector_kwargs["enable_cleanup_closed"] = True
 
