@@ -160,7 +160,7 @@ def test_codec_encode_dict() -> None:
         "nested_dict": {
             "nested_enum": Color.RED,
             "nested_list": [1, dt, Color.GREEN],
-        }
+        },
     }
 
     encoded = codec.encode(input_dict)
@@ -175,5 +175,5 @@ def test_codec_encode_dict() -> None:
         "nested_dict": {
             "nested_enum": "red",
             "nested_list": [1, dt.isoformat(), "green"],
-        }
+        },
     }
