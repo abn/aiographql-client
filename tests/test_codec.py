@@ -143,3 +143,37 @@ def test_codec_decode_failure() -> None:
     codec = DefaultGraphQLCodec()
     with pytest.raises(GraphQLCodecException):
         codec.decode("not-a-uuid", uuid.UUID)
+
+
+def test_codec_encode_dict() -> None:
+    codec = DefaultGraphQLCodec()
+    dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
+    d = decimal.Decimal("10.50")
+
+    input_dict = {
+        "string_val": "test",
+        "int_val": 42,
+        "bool_val": True,
+        "enum_val": Color.GREEN,
+        "datetime_val": dt,
+        "decimal_val": d,
+        "nested_dict": {
+            "nested_enum": Color.RED,
+            "nested_list": [1, dt, Color.GREEN],
+        },
+    }
+
+    encoded = codec.encode(input_dict)
+
+    assert encoded == {
+        "string_val": "test",
+        "int_val": 42,
+        "bool_val": True,
+        "enum_val": "green",
+        "datetime_val": dt.isoformat(),
+        "decimal_val": "10.50",
+        "nested_dict": {
+            "nested_enum": "red",
+            "nested_list": [1, dt.isoformat(), "green"],
+        },
+    }
