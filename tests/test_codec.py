@@ -222,3 +222,13 @@ def test_codec_extra_coverage() -> None:
 
     my_uuid = MyUUID(int=1)
     assert codec.encode(my_uuid) == str(my_uuid)
+
+
+def test_codec_decode_dataclass_failure_non_dict() -> None:
+    codec = DefaultGraphQLCodec()
+    with pytest.raises(
+        GraphQLCodecException,
+        match=f"Cannot decode non-dict value not-a-dict to dataclass {User}",
+    ):
+        codec.decode("not-a-dict", User)
+
