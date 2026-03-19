@@ -281,3 +281,13 @@ async def test_subscription_routing_aiohttp(mocker: MockerFixture) -> None:
         mock_get_sub.assert_called_once()
         _, kwargs = mock_get_sub.call_args
         assert kwargs["session"] is aiohttp_session
+
+
+def test_subscription_connection_stop_request() -> None:
+    subscription = GraphQLSubscription(request=GraphQLRequest(query="{}"))
+    stop_request = subscription.connection_stop_request()
+    assert stop_request == {
+        "id": subscription.id,
+        "type": GraphQLSubscriptionEventType.STOP.value,
+    }
+
