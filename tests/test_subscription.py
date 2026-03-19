@@ -107,3 +107,17 @@ def test_subscription_connection_init_request_string_request() -> None:
     assert init_request["payload"]["authToken"] == "token"
     # Default headers for a new GraphQLRequest is {}
     assert init_request["payload"]["headers"] == {}
+
+
+async def test_subscription_context_manager(mocker: MockerFixture) -> None:
+    mock_unsubscribe = mocker.patch(
+        "aiographql.client.subscription.GraphQLSubscription.unsubscribe_and_wait",
+        new_callable=mocker.AsyncMock,
+    )
+    subscription = GraphQLSubscription(request=GraphQLRequest(query="{}"))
+
+    async with subscription as sub:
+        assert sub is subscription
+        mock_unsubscribe.assert_not_called()
+
+    mock_unsubscribe.assert_awaited_once()
