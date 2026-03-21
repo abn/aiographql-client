@@ -107,7 +107,7 @@ This can be done so by passing in the session/client when doing any of the follo
 
 3. creating a subscription
 
-Note: Subscriptions are currently only supported via :class:`aiographql.client.transport.http.AiohttpSubscriptionTransport`.
+Note: Subscriptions are currently only supported via :class:`aiographql.client.transport.websocket.AiohttpSubscriptionTransport`.
 This transport is automatically selected when you call :meth:`aiographql.client.GraphQLClient.subscribe`
 if ``aiohttp`` is available.
 

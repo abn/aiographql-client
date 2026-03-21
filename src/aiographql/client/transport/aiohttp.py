@@ -8,6 +8,7 @@ from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
+from aiographql.client.transport.base import GraphQLWebSocketResponse
 
 
 if TYPE_CHECKING:
@@ -40,7 +41,7 @@ class AiohttpTransport(GraphQLTransport):
         self._owns_session = False
 
     @staticmethod
-    async def _create_default_connector() -> aiohttp.TCPConnector:
+    async def create_default_connector() -> aiohttp.TCPConnector:
         import sys
 
         import aiohttp
@@ -59,7 +60,7 @@ class AiohttpTransport(GraphQLTransport):
 
         if self._session is None:
             self._session = aiohttp.ClientSession(
-                connector=await self._create_default_connector()
+                connector=await self.create_default_connector()
             )
             self._owns_session = True
 
@@ -110,7 +111,10 @@ class AiohttpTransport(GraphQLTransport):
 
         try:
             async with session.request(
-                method=method, url=self.endpoint, headers=request.headers, **kwargs
+                method=method,
+                url=self.endpoint,
+                headers=request.headers,
+                **kwargs,
             ) as resp:
                 resp_data = await resp.read()
                 try:
@@ -127,7 +131,8 @@ class AiohttpTransport(GraphQLTransport):
         except aiohttp.ClientError as exc:
             raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
 
-    def _coerce_value(self, value: Any, serializer: GraphQLSerializer) -> Any:
+    @staticmethod
+    def _coerce_value(value: Any, serializer: GraphQLSerializer) -> Any:
         if isinstance(value, bool):
             return int(value)
         if isinstance(value, (dict, list)):
@@ -168,7 +173,7 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
 
         if self._session is None:
             self._session = aiohttp.ClientSession(
-                connector=await AiohttpTransport._create_default_connector()
+                connector=await AiohttpTransport.create_default_connector()
             )
             self._owns_session = True
 
@@ -180,7 +185,7 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         request: GraphQLRequest,
         serializer: GraphQLSerializer,
         **kwargs: Any,
-    ) -> Any:
+    ) -> GraphQLWebSocketResponse:
         """
         Execute a GraphQL subscription using aiohttp websockets.
         """
@@ -202,7 +207,7 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
             self._owns_session = False
 
 
-class AiohttpWebSocketResponse:
+class AiohttpWebSocketResponse(GraphQLWebSocketResponse):
     def __init__(self, ws: aiohttp.ClientWebSocketResponse) -> None:
         self.ws = ws
 

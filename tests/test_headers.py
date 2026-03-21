@@ -24,9 +24,9 @@ def post() -> Iterator[
     Callable[[GraphQLClient, GraphQLRequest], Awaitable[GraphQLResponse]]
 ]:
     async def post_func(
-        client: GraphQLClient, graphql_request: GraphQLRequest
+        client: GraphQLClient, request: GraphQLRequest
     ) -> GraphQLResponse:
-        response = await client.post(request=graphql_request)
+        response = await client.post(request=request)
         return response
 
     yield post_func
@@ -40,8 +40,8 @@ async def test_client_headers(
     query_city: str,
 ) -> None:
     async with GraphQLClient(endpoint=server, headers=headers) as client:
-        graphql_request = GraphQLRequest(query=query_city)
-        response = await post(client, graphql_request)
+        request = GraphQLRequest(query=query_city)
+        response = await post(client, request)
         assert isinstance(response, GraphQLResponse)
 
 
@@ -53,8 +53,8 @@ async def test_request_headers(
     query_city: str,
 ) -> None:
     async with GraphQLClient(endpoint=server) as client:
-        graphql_request = GraphQLRequest(query=query_city, headers=headers)
-        response = await post(client, graphql_request)
+        request = GraphQLRequest(query=query_city, headers=headers)
+        response = await post(client, request)
         assert isinstance(response, GraphQLResponse)
 
 
@@ -62,8 +62,8 @@ async def test_request_headers(
 async def test_post_headers(
     server: str, headers: dict[str, str], client: GraphQLClient, query_city: str
 ) -> None:
-    graphql_request = GraphQLRequest(query=query_city)
-    response = await client.post(graphql_request, headers=headers)
+    request = GraphQLRequest(query=query_city)
+    response = await client.post(request, headers=headers)
     assert isinstance(response, GraphQLResponse)
     assert response.data
     assert not response.errors
@@ -71,6 +71,6 @@ async def test_post_headers(
 
 @pytest.mark.asyncio
 async def test_no_headers(server: str, client: GraphQLClient, query_city: str) -> None:
-    graphql_request = GraphQLRequest(query=query_city)
+    request = GraphQLRequest(query=query_city)
     with pytest.raises(GraphQLIntrospectionException):
-        await client.post(graphql_request)
+        await client.post(request)

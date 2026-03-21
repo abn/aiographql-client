@@ -25,6 +25,12 @@ To use `httpx` as the transport:
 pip install aiographql-client[httpx]
 ```
 
+To use `websockets` for subscriptions (alternative to `aiohttp`):
+
+```bash
+pip install aiographql-client[websockets]
+```
+
 To install the client with the default `aiohttp` transport and `pydantic` support:
 
 ```bash
@@ -35,15 +41,24 @@ pip install aiographql-client[all]
 
 The client supports multiple HTTP backends. You can choose which one to use during installation via extras.
 
-- **`aiohttp`**: The default asynchronous HTTP client for the library.
-- **`httpx`**: A modern, feature-rich HTTP client.
+- **`aiohttp`**: The default asynchronous HTTP client for the library. Supports both queries and subscriptions.
+- **`httpx`**: A modern, feature-rich HTTP client. Supports queries only.
+- **`websockets`**: A standalone WebSocket client. Can be used for subscriptions when `aiohttp` is not available.
 
 ### Auto-detection
 
 When you initialize a `GraphQLClient` without specifying a transport, it will try to automatically detect an available backend:
 
+#### HTTP Transport (Queries/Mutations)
+
 1. It first checks if `aiohttp` is installed.
 2. If not, it checks if `httpx` is installed.
+3. If neither is found, it raises a `RuntimeError`.
+
+#### Subscription Transport
+
+1. It first checks if `aiohttp` is installed.
+2. If not, it checks if `websockets` is installed.
 3. If neither is found, it raises a `RuntimeError`.
 
 ```python
@@ -59,7 +74,7 @@ You can also explicitly specify which transport to use by providing a transport 
 
 ```python
 from aiographql.client import GraphQLClient
-from aiographql.client.transport import HttpxTransport, AiohttpTransport
+from aiographql.client.transport import HttpxTransport, AiohttpTransport, WebsocketSubscriptionTransport
 
 # Explicitly use httpx
 transport = HttpxTransport(endpoint="https://api.github.com/graphql")
@@ -73,6 +88,13 @@ transport = AiohttpTransport(endpoint="https://api.github.com/graphql")
 client = GraphQLClient(
     endpoint="https://api.github.com/graphql",
     transport=transport
+)
+
+# Explicitly use websockets for subscriptions
+subscription_transport = WebsocketSubscriptionTransport(endpoint="wss://your-api.com/graphql")
+client = GraphQLClient(
+    endpoint="https://your-api.com/graphql",
+    subscription_transport=subscription_transport
 )
 ```
 

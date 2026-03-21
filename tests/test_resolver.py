@@ -33,6 +33,10 @@ def test_resolver_no_transport_available() -> None:
             "aiographql.client.transport.resolver._is_httpx_available",
             return_value=False,
         ),
+        patch(
+            "aiographql.client.transport.resolver._is_websockets_available",
+            return_value=False,
+        ),
     ):
         with pytest.raises(RuntimeError, match="No suitable transport found"):
             get_default_transport("http://test")

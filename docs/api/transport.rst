@@ -10,17 +10,27 @@ GraphQLTransport
 
 AiohttpTransport
 ----------------
-.. autoclass:: aiographql.client.transport.http.AiohttpTransport
+.. autoclass:: aiographql.client.transport.aiohttp.AiohttpTransport
     :members:
 
 HttpxTransport
 --------------
-.. autoclass:: aiographql.client.transport.http.HttpxTransport
+.. autoclass:: aiographql.client.transport.httpx.HttpxTransport
     :members:
 
 AiohttpSubscriptionTransport
 ----------------------------
-.. autoclass:: aiographql.client.transport.http.AiohttpSubscriptionTransport
+.. autoclass:: aiographql.client.transport.aiohttp.AiohttpSubscriptionTransport
+    :members:
+
+WebsocketSubscriptionTransport
+------------------------------
+.. autoclass:: aiographql.client.transport.websocket.WebsocketSubscriptionTransport
+    :members:
+
+GraphQLWebSocketResponse
+------------------------
+.. autoclass:: aiographql.client.transport.base.GraphQLWebSocketResponse
     :members:
 
 get_default_transport

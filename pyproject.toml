@@ -39,6 +39,7 @@ repository = "https://github.com/abn/aiographql-client"
 pydantic = ["pydantic>=2.0"]
 aiohttp = ["aiohttp >=3.5,<4.0"]
 httpx = ["httpx >=0.24.0,<1.0.0"]
+websockets = ["websockets>=13.0"]
 subscriptions = ["aiohttp >=3.5,<4.0"]
 all = [
     "aiohttp >=3.5,<4.0",
