@@ -31,12 +31,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Mapping
 
-    import aiohttp
-    import httpx
-
     from aiographql.client.codec import GraphQLCodec
     from aiographql.client.codec import T
     from aiographql.client.response import GraphQLResponse
+    from aiographql.client.transport import GraphQLSession
     from aiographql.client.transport import GraphQLTransport
 
 
@@ -97,7 +95,7 @@ class GraphQLClient:
         headers: Mapping[str, str] | None = None,
         method: str | None = None,
         schema: graphql.GraphQLSchema | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
@@ -121,14 +119,14 @@ class GraphQLClient:
     def transport(self) -> GraphQLTransport:
         return self._transport
 
-    def _session(self) -> aiohttp.ClientSession | httpx.AsyncClient | None:
+    def _session(self) -> GraphQLSession | None:
         if hasattr(self._transport, "_session"):
-            return cast("aiohttp.ClientSession | None", self._transport._session)
+            return cast("GraphQLSession | None", self._transport._session)
         if hasattr(self._transport, "_client"):
-            return cast("httpx.AsyncClient | None", self._transport._client)
+            return cast("GraphQLSession | None", self._transport._client)
         return None
 
-    def _aiohttp_session(self) -> aiohttp.ClientSession | None:
+    def _aiohttp_session(self) -> Any | None:
         try:
             import aiohttp
 
@@ -274,7 +272,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
     ) -> T:
         """
         Execute a query and decode the response data into a Python object of the
@@ -307,7 +305,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
         Method to send provided :class:`GraphQLRequest` to the configured endpoint as
@@ -356,7 +354,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
@@ -388,7 +386,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps :method: `GraphQLClient.query` with method explicitly
@@ -423,7 +421,7 @@ class GraphQLClient:
         callbacks: CallbacksType | None = None,
         on_data: CallbackType | None = None,
         on_error: CallbackType | None = None,
-        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
+        session: GraphQLSession | None = None,
         wait: bool = False,
         protocols: str | Iterable[str] = (),
         connection_init_payload: dict[str, Any] | None = None,

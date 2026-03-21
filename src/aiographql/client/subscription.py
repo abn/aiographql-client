@@ -12,9 +12,8 @@ from typing import cast
 
 
 if TYPE_CHECKING:
-    import aiohttp
-
     from aiographql.client.request import GraphQLRequest
+    from aiographql.client.transport.base import GraphQLSession
     from aiographql.client.transport.base import GraphQLSubscriptionTransport
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
@@ -248,7 +247,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         self,
         endpoint: str,
         transport: GraphQLSubscriptionTransport,
-        session: aiohttp.ClientSession | None = None,
+        session: GraphQLSession | None = None,
     ) -> None:
         """
         Helper method to create websocket connection with specified *endpoint*
@@ -334,7 +333,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         self,
         endpoint: str,
         transport: GraphQLSubscriptionTransport | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: GraphQLSession | None = None,
     ) -> None:
         """
         Helper method wrapping :method:`GraphQLSubscription._websocket_connect` handling
@@ -358,7 +357,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
         endpoint: str,
         force: bool = False,
         transport: GraphQLSubscriptionTransport | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: GraphQLSession | None = None,
         wait: bool = False,
     ) -> None:
         """
