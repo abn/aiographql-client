@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/aiographql-client/badge/?version=latest)](https://aiographql-client.readthedocs.io/en/latest/?badge=latest)
 [![](https://github.com/abn/aiographql-client/workflows/Test%20Suite/badge.svg)](https://github.com/abn/aiographql-client/actions?query=workflow%3A%22Test+Suite%22)
 
-An asynchronous GraphQL client built on top of aiohttp and graphql-core-next. The client by default introspects schemas and validates all queries prior to dispatching to the server.
+An asynchronous GraphQL client built on top of aiohttp and graphql-core-next. It supports multiple transports, including `aiohttp` (default) and `httpx`. The client by default introspects schemas and validates all queries prior to dispatching to the server.
 
 ## Documentation
 

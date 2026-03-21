@@ -191,6 +191,8 @@ mypy = "^1.19.1"
 types-orjson = "^3.6.2"
 pydantic = ">=2.0"
 ruff = "^0.15.7"
+httpx = "^0.28.1"
+respx = "^0.22.0"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"

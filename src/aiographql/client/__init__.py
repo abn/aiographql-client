@@ -15,9 +15,13 @@ from aiographql.client.response import GraphQLResponse
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEvent
 from aiographql.client.subscription import GraphQLSubscriptionEventType
+from aiographql.client.transport import AiohttpTransport
+from aiographql.client.transport import GraphQLTransport
+from aiographql.client.transport import HttpxTransport
 
 
 __all__ = [
+    "AiohttpTransport",
     "DefaultGraphQLCodec",
     "GraphQLClient",
     "GraphQLClientException",
@@ -33,4 +37,6 @@ __all__ = [
     "GraphQLSubscription",
     "GraphQLSubscriptionEvent",
     "GraphQLSubscriptionEventType",
+    "GraphQLTransport",
+    "HttpxTransport",
 ]

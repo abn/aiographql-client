@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 import aiohttp
 import pytest
-
-from pytest_mock import MockerFixture
 
 from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.transport import AiohttpTransport
+
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 @pytest.mark.asyncio
