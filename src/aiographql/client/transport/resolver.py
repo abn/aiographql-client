@@ -60,7 +60,7 @@ def get_default_transport(
     :param endpoint: The GraphQL endpoint URL.
     :param transport: The transport to use. Can be "auto", "httpx", "aiohttp", or a
         GraphQLTransport instance. Defaults to "auto".
-    :param session: An optional aiohttp.ClientSession or httpx.AsyncClient.
+    :param session: An optional `GraphQLSession`.
     :param client: An optional httpx.AsyncClient.
     :param kwargs: Additional arguments to pass to the transport constructor.
     :return: A GraphQLTransport instance.
@@ -158,7 +158,7 @@ def get_default_subscription_transport(
     :param endpoint: The GraphQL endpoint URL.
     :param transport: The transport to use. Can be "auto", "aiohttp", or a
         GraphQLSubscriptionTransport instance. Defaults to "auto".
-    :param session: An optional aiohttp.ClientSession.
+    :param session: An optional `GraphQLSession`.
     :param kwargs: Additional arguments to pass to the transport constructor.
     :return: A GraphQLSubscriptionTransport instance.
     :raises ImportError: If the requested transport is not available.

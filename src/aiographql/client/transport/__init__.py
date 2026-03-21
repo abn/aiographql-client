@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from typing import Any
 
+from aiographql.client.transport.base import GraphQLSession
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
 from aiographql.client.transport.resolver import get_default_subscription_transport
@@ -34,6 +35,7 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "AiohttpSubscriptionTransport",
     "AiohttpTransport",
+    "GraphQLSession",
     "GraphQLSubscriptionTransport",
     "GraphQLTransport",
     "HttpxTransport",
