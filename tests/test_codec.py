@@ -6,9 +6,13 @@ import decimal
 import enum
 import uuid
 
+from typing import Any
+from typing import cast
+
 import pytest
 
 from aiographql.client.codec import DefaultGraphQLCodec
+from aiographql.client.codec import pydantic
 from aiographql.client.exceptions import GraphQLCodecException
 
 
@@ -122,7 +126,6 @@ def test_codec_decode_nested_list() -> None:
 
 def test_codec_registration() -> None:
     codec = DefaultGraphQLCodec()
-    from typing import Any
 
     class Custom:
         def __init__(self, val: str) -> None:
@@ -177,3 +180,42 @@ def test_codec_encode_dict() -> None:
             "nested_list": [1, dt.isoformat(), "green"],
         },
     }
+
+
+def test_codec_extra_coverage() -> None:
+    codec = DefaultGraphQLCodec()
+
+    # Test Union support
+    assert codec.decode("1", cast("Any", int | str)) == 1
+    assert codec.decode("test", cast("Any", int | str)) == "test"
+    with pytest.raises(GraphQLCodecException):
+        codec.decode({"a": 1}, cast("Any", int | float))
+
+    # Test dataclass decode with non-dict
+    @dataclasses.dataclass
+    class MyData:
+        a: int
+
+    with pytest.raises(GraphQLCodecException):
+        codec.decode("not a dict", MyData)
+
+    # Test pydantic model decode with non-dict
+    if pydantic is not None:
+        from pydantic import BaseModel
+
+        class MyModel(BaseModel):
+            a: int
+
+        with pytest.raises(GraphQLCodecException):
+            codec.decode("not a dict", MyModel)
+
+    # Test fallback decode
+    assert codec.decode(1, int) == 1
+    assert codec.decode("1", int) == 1
+
+    # Test encoder fallback
+    class MyUUID(uuid.UUID):
+        pass
+
+    my_uuid = MyUUID(int=1)
+    assert codec.encode(my_uuid) == str(my_uuid)

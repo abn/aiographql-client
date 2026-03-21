@@ -28,6 +28,8 @@ except ImportError:
     pydantic = None  # type: ignore[assignment]
     BaseModel = None  # type: ignore[assignment, misc]
 
+__all__ = ["DefaultGraphQLCodec", "GraphQLCodec", "pydantic"]
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -132,7 +134,7 @@ class DefaultGraphQLCodec:
                         return cast("T", None)
                     try:
                         return self.decode(value, arg)  # type: ignore[no-any-return]
-                    except (ValueError, TypeError, GraphQLCodecException):
+                    except (ValueError, TypeError, GraphQLCodecException, RuntimeError):
                         continue
                 raise GraphQLCodecException(f"Cannot decode {value} to {target_type}")
 
@@ -159,7 +161,12 @@ class DefaultGraphQLCodec:
                     kwargs[k] = self.decode(v, field_types[k])
                 else:
                     kwargs[k] = v
-            return target_type(**kwargs)
+            try:
+                return target_type(**kwargs)
+            except Exception as e:
+                raise GraphQLCodecException(
+                    f"Failed to decode {value} to {target_type}: {e}"
+                ) from e
 
         if issubclass(target_type, BaseModel):
             if not isinstance(value, dict):
@@ -179,7 +186,7 @@ class DefaultGraphQLCodec:
                     return value
                 return target_type(value)  # type: ignore[call-arg]
             return value
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, GraphQLCodecException):
             raise
         except Exception as e:
             raise GraphQLCodecException(

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from aiographql.client import GraphQLRequest
 from aiographql.client.request import GraphQLRequestContainer
 
@@ -42,3 +44,31 @@ def test_request_payload() -> None:
         "query": "{}",
         "variables": {"baz": False, "foo": "bar"},
     }
+
+
+def test_graphql_request_asdict() -> None:
+    request = GraphQLRequest(query="{ city { name } }", operation="GetCity")
+
+    # Test property 'operation' via __getattribute__
+    assert request.operation == "GetCity"
+
+    with pytest.raises(AttributeError):
+        _ = request.non_existent
+
+    # Test asdict
+    expected_dict = {
+        "query": "{ city { name } }",
+        "operationName": "GetCity",
+        "variables": {},
+    }
+    assert request.asdict() == expected_dict
+
+
+def test_request_payload_extra() -> None:
+    # Test payload without variables
+    req = GraphQLRequest(query="{ test }")
+    assert req.payload() == {"query": "{ test }", "variables": {}}
+
+    # Test payload with operation name
+    req_op = GraphQLRequest(query="query Q { test }", operation="Q")
+    assert req_op.payload()["operationName"] == "Q"
