@@ -5,10 +5,15 @@ Transport
 
 GraphQLTransport
 ----------------
-.. autoclass:: aiographql.client.transport.GraphQLTransport
+.. autoclass:: aiographql.client.transport.base.GraphQLTransport
     :members:
 
 AiohttpTransport
 ----------------
-.. autoclass:: aiographql.client.transport.AiohttpTransport
+.. autoclass:: aiographql.client.transport.http.AiohttpTransport
+    :members:
+
+HttpxTransport
+--------------
+.. autoclass:: aiographql.client.transport.http.HttpxTransport
     :members:
