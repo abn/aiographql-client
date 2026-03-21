@@ -11,22 +11,22 @@ from aiographql.client.transport.resolver import get_default_transport
 
 
 if TYPE_CHECKING:
-    from aiographql.client.transport.http import AiohttpSubscriptionTransport
-    from aiographql.client.transport.http import AiohttpTransport
-    from aiographql.client.transport.http import HttpxTransport
+    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+    from aiographql.client.transport.httpx import HttpxTransport
 
 
 def __getattr__(name: str) -> Any:
     if name == "AiohttpTransport":
-        from aiographql.client.transport.http import AiohttpTransport
+        from aiographql.client.transport.aiohttp import AiohttpTransport
 
         return AiohttpTransport
     if name == "HttpxTransport":
-        from aiographql.client.transport.http import HttpxTransport
+        from aiographql.client.transport.httpx import HttpxTransport
 
         return HttpxTransport
     if name == "AiohttpSubscriptionTransport":
-        from aiographql.client.transport.http import AiohttpSubscriptionTransport
+        from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
         return AiohttpSubscriptionTransport
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

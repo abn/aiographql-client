@@ -78,7 +78,7 @@ def get_default_transport(
             import httpx
 
             if isinstance(_session, httpx.AsyncClient):
-                from aiographql.client.transport.http import HttpxTransport
+                from aiographql.client.transport.httpx import HttpxTransport
 
                 return HttpxTransport(endpoint=endpoint, client=_session, **kwargs)
         except ImportError:
@@ -88,14 +88,14 @@ def get_default_transport(
             import aiohttp
 
             if isinstance(_session, aiohttp.ClientSession):
-                from aiographql.client.transport.http import AiohttpTransport
+                from aiographql.client.transport.aiohttp import AiohttpTransport
 
                 return AiohttpTransport(endpoint=endpoint, session=_session, **kwargs)
         except ImportError:
             pass
 
     if _is_aiohttp_available():
-        from aiographql.client.transport.http import AiohttpTransport
+        from aiographql.client.transport.aiohttp import AiohttpTransport
 
         return AiohttpTransport(
             endpoint=endpoint,
@@ -104,7 +104,7 @@ def get_default_transport(
         )
 
     if _is_httpx_available():
-        from aiographql.client.transport.http import HttpxTransport
+        from aiographql.client.transport.httpx import HttpxTransport
 
         return HttpxTransport(
             endpoint=endpoint,
@@ -143,7 +143,7 @@ def get_default_subscription_transport(
 
     # auto or None
     if _is_aiohttp_available():
-        from aiographql.client.transport.http import AiohttpSubscriptionTransport
+        from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
         return AiohttpSubscriptionTransport(
             endpoint=endpoint,

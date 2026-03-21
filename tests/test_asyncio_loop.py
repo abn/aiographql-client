@@ -107,7 +107,7 @@ async def test_ownership_internal_aiohttp() -> None:
     """
     Internally created aiohttp sessions are closed exactly once.
     """
-    from aiographql.client.transport.http import AiohttpTransport
+    from aiographql.client.transport.aiohttp import AiohttpTransport
 
     endpoint = "http://example.com/graphql"
     with patch(
@@ -132,7 +132,7 @@ async def test_ownership_internal_httpx() -> None:
     """
     Internally created httpx clients are closed exactly once.
     """
-    from aiographql.client.transport.http import HttpxTransport
+    from aiographql.client.transport.httpx import HttpxTransport
 
     endpoint = "http://example.com/graphql"
     with patch(
@@ -157,7 +157,7 @@ async def test_subscription_internal_session_cleanup() -> None:
     """
     Verify that an internally created session for a subscription is cleaned up when the subscription transport is closed.
     """
-    from aiographql.client.transport.http import AiohttpSubscriptionTransport
+    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
     endpoint = "http://example.com/graphql"
     # When GraphQLClient.subscribe is called without a session, it passes None to get_default_subscription_transport
@@ -177,8 +177,8 @@ async def test_no_unclosed_session_warnings(recwarn: pytest.WarningsRecorder) ->
     """
     Run a simple client lifecycle and check for ResourceWarning related to unclosed sessions.
     """
-    from aiographql.client.transport.http import AiohttpTransport
-    from aiographql.client.transport.http import HttpxTransport
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+    from aiographql.client.transport.httpx import HttpxTransport
 
     endpoint = "http://example.com/graphql"
 

@@ -12,8 +12,8 @@ from aiographql.client import GraphQLClient
 
 
 if TYPE_CHECKING:
-    from aiographql.client.transport.http import AiohttpTransport
-    from aiographql.client.transport.http import HttpxTransport
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+    from aiographql.client.transport.httpx import HttpxTransport
 
 pytestmark = pytest.mark.asyncio
 
