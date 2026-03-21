@@ -14,8 +14,8 @@ from typing import cast
 if TYPE_CHECKING:
     import aiohttp
 
-    from aiographql.client.transport.base import GraphQLSubscriptionTransport
     from aiographql.client.request import GraphQLRequest
+    from aiographql.client.transport.base import GraphQLSubscriptionTransport
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
@@ -276,56 +276,59 @@ class GraphQLSubscription(GraphQLRequestContainer):
             session=session,
         )
 
-        async with ws:
+        try:
+            async with ws:
 
-            def _serialize(value: Any) -> str:
-                serialized = cast("GraphQLSerializer", self.serializer).dumps(value)
-                return (
-                    serialized.decode("utf-8")
-                    if isinstance(serialized, bytes)
-                    else serialized
-                )
-
-            await ws.send_str(_serialize(self.connection_init_request()))
-
-            if self.callbacks is not None and isinstance(
-                self.callbacks, CallbackRegistry
-            ):
-                self.callbacks.register(
-                    GraphQLSubscriptionEventType.CONNECTION_ACK,
-                    SimpleTriggerCallback(
-                        function=ws.send_str,
-                        data=_serialize(self.connection_start_request()),
-                    ),
-                )
-
-            try:
-                async for msg in ws:
-                    # We assume the message type check is still relevant if it's aiohttp-like
-                    # but different transports might have different message objects.
-                    # For now, we maintain compatibility with aiohttp's WSMessage.
-                    if hasattr(msg, "type"):
-                        import aiohttp
-
-                        if msg.type != aiohttp.WSMsgType.TEXT:
-                            if msg.type == aiohttp.WSMsgType.ERROR:
-                                break
-                            continue
-                        data = msg.data
-                    else:
-                        data = msg
-
-                    event = GraphQLSubscriptionEvent(
-                        subscription_id=self.id,
-                        request=self.request,
-                        json=cast("GraphQLSerializer", self.serializer).loads(data),
+                def _serialize(value: Any) -> str:
+                    serialized = cast("GraphQLSerializer", self.serializer).dumps(value)
+                    return (
+                        serialized.decode("utf-8")
+                        if isinstance(serialized, bytes)
+                        else serialized
                     )
-                    await self.handle(event=event)
 
-                    if self.is_stop_event(event):
-                        break
-            except (asyncio.CancelledError, KeyboardInterrupt):
-                await ws.send_str(_serialize(self.connection_stop_request()))
+                await ws.send_str(_serialize(self.connection_init_request()))
+
+                if self.callbacks is not None and isinstance(
+                    self.callbacks, CallbackRegistry
+                ):
+                    self.callbacks.register(
+                        GraphQLSubscriptionEventType.CONNECTION_ACK,
+                        SimpleTriggerCallback(
+                            function=ws.send_str,
+                            data=_serialize(self.connection_start_request()),
+                        ),
+                    )
+
+                try:
+                    async for msg in ws:
+                        # We assume the message type check is still relevant if it's aiohttp-like
+                        # but different transports might have different message objects.
+                        # For now, we maintain compatibility with aiohttp's WSMessage.
+                        if hasattr(msg, "type"):
+                            import aiohttp
+
+                            if msg.type != aiohttp.WSMsgType.TEXT:
+                                if msg.type == aiohttp.WSMsgType.ERROR:
+                                    break
+                                continue
+                            data = msg.data
+                        else:
+                            data = msg
+
+                        event = GraphQLSubscriptionEvent(
+                            subscription_id=self.id,
+                            request=self.request,
+                            json=cast("GraphQLSerializer", self.serializer).loads(data),
+                        )
+                        await self.handle(event=event)
+
+                        if self.is_stop_event(event):
+                            break
+                except (asyncio.CancelledError, KeyboardInterrupt):
+                    await ws.send_str(_serialize(self.connection_stop_request()))
+        finally:
+            await transport.close()
 
     async def _subscribe(
         self,

@@ -45,6 +45,8 @@ def _is_aiohttp_available() -> bool:
 def get_default_transport(
     endpoint: str,
     transport: Literal["auto", "httpx", "aiohttp"] | GraphQLTransport | None = "auto",
+    session: Any | None = None,
+    client: Any | None = None,
     **kwargs: Any,
 ) -> GraphQLTransport:
     """
@@ -53,6 +55,8 @@ def get_default_transport(
     :param endpoint: The GraphQL endpoint URL.
     :param transport: The transport to use. Can be "auto", "httpx", "aiohttp", or a
         GraphQLTransport instance. Defaults to "auto".
+    :param session: An optional aiohttp.ClientSession or httpx.AsyncClient.
+    :param client: An optional httpx.AsyncClient.
     :param kwargs: Additional arguments to pass to the transport constructor.
     :return: A GraphQLTransport instance.
     :raises ImportError: If the requested transport is not available.
@@ -69,7 +73,7 @@ def get_default_transport(
             raise ImportError(
                 "httpx is not installed. Install it with `pip install aiographql-client[httpx]`."
             )
-        return HttpxTransport(endpoint=endpoint, **kwargs)
+        return HttpxTransport(endpoint=endpoint, client=client or session, **kwargs)
 
     if transport == "aiohttp":
         from aiographql.client.transport.http import AiohttpTransport
@@ -78,18 +82,40 @@ def get_default_transport(
             raise ImportError(
                 "aiohttp is not installed. Install it with `pip install aiographql-client[aiohttp]`."
             )
-        return AiohttpTransport(endpoint=endpoint, **kwargs)
+        return AiohttpTransport(endpoint=endpoint, session=session, **kwargs)
 
     # auto or None
+    _session = client or session
+    if _session is not None:
+        try:
+            import httpx
+
+            if isinstance(_session, httpx.AsyncClient):
+                from aiographql.client.transport.http import HttpxTransport
+
+                return HttpxTransport(endpoint=endpoint, client=_session, **kwargs)
+        except ImportError:
+            pass
+
+        try:
+            import aiohttp
+
+            if isinstance(_session, aiohttp.ClientSession):
+                from aiographql.client.transport.http import AiohttpTransport
+
+                return AiohttpTransport(endpoint=endpoint, session=_session, **kwargs)
+        except ImportError:
+            pass
+
     if _is_aiohttp_available():
         from aiographql.client.transport.http import AiohttpTransport
 
-        return AiohttpTransport(endpoint=endpoint, **kwargs)
+        return AiohttpTransport(endpoint=endpoint, session=session, **kwargs)
 
     if _is_httpx_available():
         from aiographql.client.transport.http import HttpxTransport
 
-        return HttpxTransport(endpoint=endpoint, **kwargs)
+        return HttpxTransport(endpoint=endpoint, client=client or session, **kwargs)
 
     raise RuntimeError(
         "No suitable transport found. Please install either `aiohttp` or `httpx>=0.24.0` via extras, "
@@ -102,6 +128,7 @@ def get_default_subscription_transport(
     transport: Literal["auto", "aiohttp"]
     | GraphQLSubscriptionTransport
     | None = "auto",
+    session: Any | None = None,
     **kwargs: Any,
 ) -> GraphQLSubscriptionTransport:
     """
@@ -110,6 +137,7 @@ def get_default_subscription_transport(
     :param endpoint: The GraphQL endpoint URL.
     :param transport: The transport to use. Can be "auto", "aiohttp", or a
         GraphQLSubscriptionTransport instance. Defaults to "auto".
+    :param session: An optional aiohttp.ClientSession.
     :param kwargs: Additional arguments to pass to the transport constructor.
     :return: A GraphQLSubscriptionTransport instance.
     :raises ImportError: If the requested transport is not available.
@@ -126,13 +154,17 @@ def get_default_subscription_transport(
             raise ImportError(
                 "aiohttp is not installed. Install it with `pip install aiographql-client[aiohttp]`."
             )
-        return AiohttpSubscriptionTransport(endpoint=endpoint, **kwargs)
+        return AiohttpSubscriptionTransport(
+            endpoint=endpoint, session=session, **kwargs
+        )
 
     # auto or None
     if _is_aiohttp_available():
         from aiographql.client.transport.http import AiohttpSubscriptionTransport
 
-        return AiohttpSubscriptionTransport(endpoint=endpoint, **kwargs)
+        return AiohttpSubscriptionTransport(
+            endpoint=endpoint, session=session, **kwargs
+        )
 
     raise RuntimeError(
         "No suitable subscription transport found. Please install `aiohttp` via extras, "

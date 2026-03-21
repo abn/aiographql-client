@@ -5,7 +5,6 @@ from typing import Any
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLRequestException
-from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
@@ -40,7 +39,19 @@ class HttpxTransport(GraphQLTransport):
 
         self.endpoint = endpoint
         self._client = client or session
-        self._internal_client = False
+        self._owns_client = False
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """
+        Get or create the internal httpx client.
+        """
+        import httpx
+
+        if self._client is None:
+            self._client = httpx.AsyncClient()
+            self._owns_client = True
+
+        return self._client
 
     async def request(
         self,
@@ -52,8 +63,6 @@ class HttpxTransport(GraphQLTransport):
         """
         Execute a GraphQL request using httpx.
         """
-        import httpx
-
         # Remove 'session' from kwargs if it exists, as httpx doesn't support it
         # and we already handled it in __init__
         kwargs.pop("session", None)
@@ -72,16 +81,11 @@ class HttpxTransport(GraphQLTransport):
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        actual_client = kwargs.pop("client", self._client)
-        if actual_client:
-            return await self._http_request(
-                actual_client, method, request, serializer, **kwargs
-            )
-
-        async with httpx.AsyncClient() as temp_client:
-            return await self._http_request(
-                temp_client, method, request, serializer, **kwargs
-            )
+        # use provided client, or internal client, or create a temporary one
+        actual_client = kwargs.pop("client", None) or await self._get_client()
+        return await self._http_request(
+            actual_client, method, request, serializer, **kwargs
+        )
 
     async def _http_request(
         self,
@@ -131,8 +135,10 @@ class HttpxTransport(GraphQLTransport):
         return value
 
     async def close(self) -> None:
-        if self._client is not None:
+        if self._client is not None and self._owns_client:
             await self._client.aclose()
+            self._client = None
+            self._owns_client = False
 
 
 class AiohttpTransport(GraphQLTransport):
@@ -155,6 +161,19 @@ class AiohttpTransport(GraphQLTransport):
 
         self.endpoint = endpoint
         self._session = session
+        self._owns_session = False
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """
+        Get or create the internal aiohttp session.
+        """
+        import aiohttp
+
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
+            self._owns_session = True
+
+        return self._session
 
     async def request(
         self,
@@ -166,6 +185,9 @@ class AiohttpTransport(GraphQLTransport):
         """
         Execute a GraphQL request using aiohttp.
         """
+        # Remove 'client' from kwargs if it exists, as aiohttp doesn't support it
+        kwargs.pop("client", None)
+
         method = method.lower()
         if method == "post":
             kwargs.setdefault("data", serializer.dumps(request.payload()))
@@ -180,17 +202,11 @@ class AiohttpTransport(GraphQLTransport):
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        # use provided session, or internal session, or create a temporary one
-        actual_session = kwargs.pop("session", self._session)
-        if actual_session:
-            return await self._http_request(
-                actual_session, method, request, serializer, **kwargs
-            )
-
-        async with aiohttp_client_session() as temp_session:
-            return await self._http_request(
-                temp_session, method, request, serializer, **kwargs
-            )
+        # use provided session, or internal session
+        actual_session = kwargs.pop("session", None) or await self._get_session()
+        return await self._http_request(
+            actual_session, method, request, serializer, **kwargs
+        )
 
     async def _http_request(
         self,
@@ -234,8 +250,10 @@ class AiohttpTransport(GraphQLTransport):
         return value
 
     async def close(self) -> None:
-        if self._session is not None:
+        if self._session is not None and self._owns_session:
             await self._session.close()
+            self._session = None
+            self._owns_session = False
 
 
 class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
@@ -258,6 +276,19 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
 
         self.endpoint = endpoint
         self._session = session
+        self._owns_session = False
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """
+        Get or create the internal aiohttp session.
+        """
+        import aiohttp
+
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
+            self._owns_session = True
+
+        return self._session
 
     async def subscribe(
         self,
@@ -269,24 +300,12 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         Execute a GraphQL subscription using aiohttp websockets.
         """
-
-        actual_session = kwargs.pop("session", self._session)
-        if actual_session:
-            return await actual_session.ws_connect(endpoint, **kwargs)
-
-        # If no session is provided, we need to manage one.
-        # However, aiohttp.ClientSession as a context manager will close the session
-        # and all its connections (including the websocket) when the context exits.
-        # For subscriptions, the connection needs to stay open.
-        # The existing helper 'aiohttp_client_session' might be used, but we need
-        # to ensure the session is closed eventually.
-        session = await aiohttp_client_session().__aenter__()
-        try:
-            return await session.ws_connect(endpoint, **kwargs)
-        except Exception:
-            await session.close()
-            raise
+        # use provided session, or internal session
+        actual_session = kwargs.pop("session", None) or await self._get_session()
+        return await actual_session.ws_connect(endpoint, **kwargs)
 
     async def close(self) -> None:
-        if self._session is not None:
+        if self._session is not None and self._owns_session:
             await self._session.close()
+            self._session = None
+            self._owns_session = False

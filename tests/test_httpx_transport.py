@@ -130,9 +130,8 @@ async def test_httpx_transport_external_client() -> None:
             assert response.data == {"hello": "world"}
 
         await transport.close()
-        # httpx client should still be usable if we didn't close it, but we did call close()
-        # on transport which calls client.aclose()
-        assert client.is_closed
+        # httpx client should NOT be closed if it was provided by the user
+        assert not client.is_closed
 
 
 @pytest.mark.asyncio
