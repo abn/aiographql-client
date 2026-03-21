@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     import aiohttp
+    import httpx
 
     from aiographql.client.codec import GraphQLCodec
     from aiographql.client.codec import T
@@ -96,7 +97,7 @@ class GraphQLClient:
         headers: Mapping[str, str] | None = None,
         method: str | None = None,
         schema: graphql.GraphQLSchema | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
@@ -111,15 +112,20 @@ class GraphQLClient:
         self._serializer = serializer or DefaultSerializer()
         self._codec = codec
         self._transport = get_default_transport(
-            endpoint=self.endpoint, transport=transport, session=session
+            endpoint=self.endpoint,
+            transport=transport,
+            session=session,
         )
 
     @property
-    def _session(self) -> aiohttp.ClientSession | None:
+    def transport(self) -> GraphQLTransport:
+        return self._transport
+
+    def _session(self) -> aiohttp.ClientSession | httpx.AsyncClient | None:
         if hasattr(self._transport, "_session"):
             return cast("aiohttp.ClientSession | None", self._transport._session)
-        if hasattr(self._transport, "session"):
-            return cast("aiohttp.ClientSession | None", self._transport.session)
+        if hasattr(self._transport, "_client"):
+            return cast("httpx.AsyncClient | None", self._transport._client)
         return None
 
     async def close(self) -> None:
@@ -257,7 +263,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
     ) -> T:
         """
         Execute a query and decode the response data into a Python object of the
@@ -290,7 +296,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
     ) -> GraphQLResponse:
         """
         Method to send provided :class:`GraphQLRequest` to the configured endpoint as
@@ -339,7 +345,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps `GraphQLClient.query` with method explicitly set as
@@ -371,7 +377,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
     ) -> GraphQLResponse:
         """
         Helper method that wraps :method: `GraphQLClient.query` with method explicitly
@@ -406,7 +412,7 @@ class GraphQLClient:
         callbacks: CallbacksType | None = None,
         on_data: CallbackType | None = None,
         on_error: CallbackType | None = None,
-        session: aiohttp.ClientSession | None = None,
+        session: aiohttp.ClientSession | httpx.AsyncClient | None = None,
         wait: bool = False,
         protocols: str | Iterable[str] = (),
         connection_init_payload: dict[str, Any] | None = None,
@@ -478,10 +484,10 @@ class GraphQLClient:
             connection_init_payload=connection_init_payload,
             serializer=self._serializer,
             transport=get_default_subscription_transport(
-                endpoint=self.endpoint, transport=transport
+                endpoint=self.endpoint,
+                transport=transport,
+                session=session or self._session(),
             ),
         )
-        await subscription.subscribe(
-            endpoint=self.endpoint, session=session or self._session, wait=wait
-        )
+        await subscription.subscribe(endpoint=self.endpoint, wait=wait)
         return subscription

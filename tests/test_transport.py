@@ -96,9 +96,26 @@ async def test_aiohttp_transport_non_200_raises_exception(
 
 
 @pytest.mark.asyncio
-async def test_aiohttp_transport_close_session(mocker: MockerFixture) -> None:
+async def test_aiohttp_transport_close_session_user_owned(
+    mocker: MockerFixture,
+) -> None:
     mock_session = mocker.AsyncMock(spec=aiohttp.ClientSession)
     transport = AiohttpTransport(endpoint="http://example.com", session=mock_session)
 
     await transport.close()
+    # User-provided session should NOT be closed
+    mock_session.close.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_aiohttp_transport_close_session_library_owned(
+    mocker: MockerFixture,
+) -> None:
+    mock_session = mocker.AsyncMock(spec=aiohttp.ClientSession)
+    transport = AiohttpTransport(endpoint="http://example.com")
+    transport._session = mock_session
+    transport._owns_session = True
+
+    await transport.close()
+    # Library-owned session SHOULD be closed
     mock_session.close.assert_called_once()

@@ -5,6 +5,7 @@ import asyncio
 from typing import TYPE_CHECKING
 from typing import Any
 
+import aiohttp
 import graphql
 import pytest
 
@@ -19,7 +20,6 @@ from aiographql.client import GraphQLRequest
 from aiographql.client import GraphQLRequestException
 from aiographql.client import GraphQLSubscription
 from aiographql.client import GraphQLSubscriptionEventType
-from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.response import GraphQLResponse
 
 
@@ -164,7 +164,7 @@ async def test_external_aiohttp_session(
     query_city: str,
     query_output: dict[str, Any],
 ) -> None:
-    async with aiohttp_client_session() as session:
+    async with aiohttp.ClientSession() as session:
         client = GraphQLClient(endpoint=server, transport="aiohttp", session=session)
         # Patching the ClientSession.request globally
         mock_request = mocker.patch(

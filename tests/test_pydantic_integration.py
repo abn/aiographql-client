@@ -21,9 +21,8 @@ class CreateUserInput(BaseModel):
 @pytest.mark.asyncio
 async def test_client_pydantic_variables(mocker: Any) -> None:
     # Mock aiohttp session to avoid actual network requests
-    mock_session = mocker.Mock()
+    mock_session = mocker.MagicMock()
     mock_response = mocker.AsyncMock()
-    # Use a non-AsyncMock for status if it's accessed as an attribute
     type(mock_response).status = mocker.PropertyMock(return_value=200)
 
     import json
@@ -32,11 +31,9 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
     mock_response.read.return_value = json.dumps(response_json).encode("utf-8")
 
     # aiohttp context manager: async with session.request(...) as resp
-    mock_context_manager = mocker.MagicMock()
-    mock_context_manager.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-    mock_request = mocker.patch(
-        "aiohttp.ClientSession.request", return_value=mock_context_manager
-    )
+    mock_request_ctx = mocker.MagicMock()
+    mock_request_ctx.__aenter__ = mocker.AsyncMock(return_value=mock_response)
+    mock_session.request.return_value = mock_request_ctx
 
     client = GraphQLClient(
         endpoint="http://localhost/graphql",
@@ -54,7 +51,7 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
     assert response.data["createUser"]["name"] == "Alice"
 
     # Check that variables were encoded correctly before being sent
-    call_args = mock_request.call_args
+    call_args = mock_session.request.call_args
     # payload is in 'data' as JSON bytes or string
     sent_data = json.loads(call_args.kwargs["data"])
     assert sent_data["variables"]["input"] == {"name": "Alice"}
@@ -62,7 +59,7 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
 
 @pytest.mark.asyncio
 async def test_client_pydantic_decode(mocker: Any) -> None:
-    mock_session = mocker.Mock()
+    mock_session = mocker.MagicMock()
     mock_response = mocker.AsyncMock()
     type(mock_response).status = mocker.PropertyMock(return_value=200)
 
@@ -70,9 +67,9 @@ async def test_client_pydantic_decode(mocker: Any) -> None:
 
     response_json = {"data": {"user": {"id": 1, "name": "Alice"}}}
     mock_response.read.return_value = json.dumps(response_json).encode("utf-8")
-    mock_context_manager = mocker.MagicMock()
-    mock_context_manager.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-    mocker.patch("aiohttp.ClientSession.request", return_value=mock_context_manager)
+    mock_request_ctx = mocker.MagicMock()
+    mock_request_ctx.__aenter__ = mocker.AsyncMock(return_value=mock_response)
+    mock_session.request.return_value = mock_request_ctx
 
     client = GraphQLClient(
         endpoint="http://localhost/graphql",
