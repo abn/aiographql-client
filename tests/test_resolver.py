@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import importlib.metadata
+
 from unittest.mock import patch
 
 import pytest
 
-from aiographql.client.transport.resolver import (
-    _is_httpx_available,
-    get_default_subscription_transport,
-    get_default_transport,
-)
+from aiographql.client.transport.resolver import _is_httpx_available
+from aiographql.client.transport.resolver import get_default_subscription_transport
+from aiographql.client.transport.resolver import get_default_transport
 
 
 def test_resolver_is_httpx_available_version_check() -> None:
