@@ -268,3 +268,25 @@ async def test_subscription_connection_init_payload(
     )
     async with subscription:
         assert subscription.connection_init_payload == connection_init_payload
+
+
+async def test_query_method_session_override(mocker: MockerFixture) -> None:
+    from aiographql.client.transport.http import AiohttpTransport
+
+    endpoint = "http://example.com/graphql"
+    # Disable validation to avoid introspection in this test
+    client = GraphQLClient(endpoint=endpoint, validate=False)
+
+    async with aiohttp.ClientSession() as custom_session:
+        # We want to verify that custom_session is used
+        if isinstance(client.transport, AiohttpTransport):
+            mock_http_request = mocker.patch.object(
+                client.transport, "_http_request", new_callable=mocker.AsyncMock
+            )
+            mock_http_request.return_value = mocker.MagicMock()
+
+            await client.query("{ hello }", session=custom_session)
+
+            mock_http_request.assert_called_once()
+            args = mock_http_request.call_args[0]
+            assert args[0] is custom_session

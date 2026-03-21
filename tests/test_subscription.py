@@ -1,16 +1,28 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import cast
+from unittest.mock import MagicMock
+
+import pytest
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 
 from aiographql.client import GraphQLRequest
 from aiographql.client import GraphQLSubscription
 from aiographql.client import GraphQLSubscriptionEventType
+from aiographql.client.subscription import GraphQLSubscriptionEvent
+from aiographql.client.transport.base import GraphQLSubscriptionTransport
+from aiographql.client.transport.base import GraphQLTransport
+from aiographql.client.transport.http import AiohttpSubscriptionTransport
+from aiographql.client.transport.http import HttpxTransport
 
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
+    from aiographql.client.response import GraphQLResponse
 
 
 def test_subscription_init_with_callback_default() -> None:
@@ -121,3 +133,142 @@ async def test_subscription_context_manager(mocker: MockerFixture) -> None:
         mock_unsubscribe.assert_not_called()
 
     mock_unsubscribe.assert_awaited_once()
+
+
+def test_transport_base_abstracts() -> None:
+    with pytest.raises(TypeError):
+        GraphQLTransport()  # type: ignore[misc]
+    with pytest.raises(TypeError):
+        GraphQLSubscriptionTransport()  # type: ignore[misc]
+
+
+@pytest.mark.asyncio
+async def test_subscription_id_none_payload() -> None:
+    req = GraphQLRequest(query="{ city { name } }")
+    event = GraphQLSubscriptionEvent(
+        request=req, json={"type": "data", "payload": {"data": {}}}
+    )
+    assert event.id is None
+    assert event.type == GraphQLSubscriptionEventType.DATA
+    assert cast("GraphQLResponse", event.payload).json == {"data": {}}
+
+
+@pytest.mark.asyncio
+async def test_subscription_connection_requests_minimal() -> None:
+    sub = GraphQLSubscription(request="{ city { name } }")
+    # request is string, so headers and payload logic changes
+    init_req = sub.connection_init_request()
+    assert init_req["type"] == "connection_init"
+    assert init_req["payload"]["headers"] == {}
+
+    start_req = sub.connection_start_request()
+    assert start_req["type"] == "start"
+    # When request is string, it's converted to GraphQLRequest, so it has payload
+    assert start_req["payload"]["query"] == "{ city { name } }"
+
+
+@pytest.mark.asyncio
+async def test_subscription_handle_mismatch_id() -> None:
+    mock_callbacks = MagicMock(spec=CallbackRegistry)
+    req = GraphQLRequest(query="{ city { name } }")
+    sub = GraphQLSubscription(request=req, callbacks=mock_callbacks)
+    event = GraphQLSubscriptionEvent(
+        request=req, json={"id": "other-id", "type": "data", "payload": {}}
+    )
+    await sub.handle(event)
+    mock_callbacks.dispatch.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_subscription_serializer_lazy_init() -> None:
+    sub = GraphQLSubscription(request="{ city { name } }")
+    object.__setattr__(sub, "serializer", None)
+
+    mock_ws = MagicMock()
+
+    async def mock_ws_aclose(*args: Any) -> None:
+        pass
+
+    mock_ws.__aexit__ = mock_ws_aclose
+
+    async def mock_ws_aenter() -> Any:
+        return mock_ws
+
+    mock_ws.__aenter__ = mock_ws_aenter
+
+    mock_transport = MagicMock()
+    mock_transport.subscribe.return_value = mock_ws
+
+    # This will trigger the lazy init of serializer in _websocket_connect
+    # We need to mock more to make it not fail later, or just test the part
+    import contextlib
+
+    with contextlib.suppress(Exception):
+        await sub._websocket_connect("http://test", mock_transport)
+
+    assert sub.serializer is not None
+
+
+@pytest.mark.asyncio
+async def test_subscription_routing_httpx(mocker: MockerFixture) -> None:
+    """
+    Verify that when the HTTP transport is httpx, subscription logic does NOT receive the httpx.AsyncClient.
+    Instead, it should receive None (causing a new internal aiohttp session to be created).
+    """
+    import httpx
+
+    from aiographql.client.client import GraphQLClient
+
+    endpoint = "http://example.com/graphql"
+    async with httpx.AsyncClient() as httpx_client:
+        client = GraphQLClient(endpoint=endpoint, session=httpx_client, validate=False)
+        assert isinstance(client.transport, HttpxTransport)
+
+        mock_get_sub = mocker.patch(
+            "aiographql.client.client.get_default_subscription_transport"
+        )
+        mock_get_sub.return_value = mocker.MagicMock(spec=AiohttpSubscriptionTransport)
+
+        # We don't need to actually call subscribe()'s internal logic, just check what's passed to get_default_subscription_transport
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            await client.subscribe(GraphQLRequest("{ notifications { id } }"))
+
+        mock_get_sub.assert_called_once()
+        _, kwargs = mock_get_sub.call_args
+        assert kwargs["session"] is None
+        assert kwargs["session"] is not httpx_client
+
+
+@pytest.mark.asyncio
+async def test_subscription_routing_aiohttp(mocker: MockerFixture) -> None:
+    """
+    Verify that when the HTTP transport is aiohttp, subscription logic receives the same aiohttp.ClientSession.
+    """
+    import aiohttp
+
+    from aiographql.client.client import GraphQLClient
+
+    endpoint = "http://example.com/graphql"
+    async with aiohttp.ClientSession() as aiohttp_session:
+        client = GraphQLClient(
+            endpoint=endpoint, session=aiohttp_session, validate=False
+        )
+        from aiographql.client.transport.http import AiohttpTransport
+
+        assert isinstance(client.transport, AiohttpTransport)
+
+        mock_get_sub = mocker.patch(
+            "aiographql.client.client.get_default_subscription_transport"
+        )
+        mock_get_sub.return_value = mocker.MagicMock(spec=AiohttpSubscriptionTransport)
+
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            await client.subscribe(GraphQLRequest("{ notifications { id } }"))
+
+        mock_get_sub.assert_called_once()
+        _, kwargs = mock_get_sub.call_args
+        assert kwargs["session"] is aiohttp_session

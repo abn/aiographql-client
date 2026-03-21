@@ -5,7 +5,11 @@ import gc
 
 from typing import TYPE_CHECKING
 from typing import Any
+from unittest.mock import AsyncMock
+from unittest.mock import patch
 
+import aiohttp
+import httpx
 import pytest
 
 from aiographql.client import GraphQLClient
@@ -54,3 +58,136 @@ async def test_helper_implicit_aiohttp_client_session_is_closed(
         # we check the message and that it is not related to any persistent session
         if context["message"] == "Unclosed client session":
             pytest.fail(f"Found unclosed client session: {context}")
+
+
+async def test_client_closes_internal_transport_on_exit() -> None:
+    endpoint = "http://example.com/graphql"
+    client = GraphQLClient(endpoint=endpoint)
+    transport = client.transport
+
+    # Mock the close method of the transport
+    with patch.object(transport, "close", new_callable=AsyncMock) as mock_close:
+        async with client:
+            pass
+
+        mock_close.assert_called_once()
+
+
+async def test_ownership_external_aiohttp() -> None:
+    """
+    User-provided aiohttp.ClientSession instances are not closed by the library.
+    """
+    endpoint = "http://example.com/graphql"
+    session = aiohttp.ClientSession()
+    try:
+        client = GraphQLClient(endpoint=endpoint, session=session)
+        async with client:
+            pass
+        assert not session.closed
+    finally:
+        await session.close()
+
+
+async def test_ownership_external_httpx() -> None:
+    """
+    User-provided httpx.AsyncClient instances are not closed by the library.
+    """
+    endpoint = "http://example.com/graphql"
+    client_httpx = httpx.AsyncClient()
+    try:
+        client = GraphQLClient(endpoint=endpoint, session=client_httpx)
+        async with client:
+            pass
+        assert not client_httpx.is_closed
+    finally:
+        await client_httpx.aclose()
+
+
+async def test_ownership_internal_aiohttp() -> None:
+    """
+    Internally created aiohttp sessions are closed exactly once.
+    """
+    from aiographql.client.transport.http import AiohttpTransport
+
+    endpoint = "http://example.com/graphql"
+    client = GraphQLClient(endpoint=endpoint, transport="aiohttp")
+    transport = client.transport
+    assert isinstance(transport, AiohttpTransport)
+
+    # Trigger session creation
+    session = await transport._get_session()
+    assert transport._owns_session is True
+
+    with patch.object(session, "close", wraps=session.close) as mock_close:
+        await client.close()
+        mock_close.assert_called_once()
+
+    assert session.closed
+
+
+async def test_ownership_internal_httpx() -> None:
+    """
+    Internally created httpx clients are closed exactly once.
+    """
+    from aiographql.client.transport.http import HttpxTransport
+
+    endpoint = "http://example.com/graphql"
+    client = GraphQLClient(endpoint=endpoint, transport="httpx")
+    transport = client.transport
+    assert isinstance(transport, HttpxTransport)
+
+    # Trigger client creation
+    httpx_client = await transport._get_client()
+    assert transport._owns_client is True
+
+    with patch.object(httpx_client, "aclose", wraps=httpx_client.aclose) as mock_close:
+        await client.close()
+        mock_close.assert_called_once()
+
+    assert httpx_client.is_closed
+
+
+async def test_subscription_internal_session_cleanup() -> None:
+    """
+    Verify that an internally created session for a subscription is cleaned up when the subscription transport is closed.
+    """
+    from aiographql.client.transport.http import AiohttpSubscriptionTransport
+
+    endpoint = "http://example.com/graphql"
+    # When GraphQLClient.subscribe is called without a session, it passes None to get_default_subscription_transport
+    # which creates AiohttpSubscriptionTransport(session=None).
+    transport = AiohttpSubscriptionTransport(endpoint=endpoint)
+    session = await transport._get_session()
+    assert transport._owns_session is True
+
+    with patch.object(session, "close", wraps=session.close) as mock_close:
+        await transport.close()
+        mock_close.assert_called_once()
+
+    assert session.closed
+
+
+async def test_no_unclosed_session_warnings(recwarn: pytest.WarningsRecorder) -> None:
+    """
+    Run a simple client lifecycle and check for ResourceWarning related to unclosed sessions.
+    """
+    from aiographql.client.transport.http import AiohttpTransport
+    from aiographql.client.transport.http import HttpxTransport
+
+    endpoint = "http://example.com/graphql"
+
+    # We'll use a real-ish but unreachable endpoint to avoid actual network but trigger session usage if needed.
+    # Actually, just open and close is enough for transport.
+    async with GraphQLClient(endpoint=endpoint) as client:
+        # Just to be sure the session is created if it's aiohttp
+        if isinstance(client.transport, AiohttpTransport):
+            await client.transport._get_session()
+        elif isinstance(client.transport, HttpxTransport):
+            await client.transport._get_client()
+
+    # Filter for ResourceWarnings
+    resource_warnings = [w for w in recwarn if issubclass(w.category, ResourceWarning)]
+    # aiohttp sometimes emits warnings about unclosed connectors even if session is closed,
+    # but we want to make sure WE didn't leave a session open.
+    for w in resource_warnings:
+        assert "unclosed" not in str(w.message).lower()
