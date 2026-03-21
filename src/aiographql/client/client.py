@@ -5,7 +5,6 @@ import dataclasses
 
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Literal
 from typing import cast
 
 import graphql
@@ -85,7 +84,7 @@ class GraphQLClient:
         response data.
     :param transport: Custom transport to use for making requests. If not provided,
         the best available transport is automatically selected (preferring aiohttp).
-        Can be "auto", "httpx", "aiohttp" or a :class:`GraphQLTransport` instance.
+        Must be a :class:`GraphQLTransport` instance.
     """
 
     def __init__(
@@ -98,7 +97,7 @@ class GraphQLClient:
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
-        transport: Literal["auto", "httpx", "aiohttp"] | GraphQLTransport | None = None,
+        transport: GraphQLTransport | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -424,9 +423,7 @@ class GraphQLClient:
         wait: bool = False,
         protocols: str | Iterable[str] = (),
         connection_init_payload: dict[str, Any] | None = None,
-        transport: Literal["auto", "aiohttp"]
-        | GraphQLSubscriptionTransport
-        | None = None,
+        transport: GraphQLSubscriptionTransport | None = None,
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -472,6 +469,7 @@ class GraphQLClient:
         :param connection_init_payload: Extra fields for the `connection_init` payload.
         :param transport: Custom transport to use for the subscription. If not
             provided, the best available transport is automatically selected.
+            Must be a :class:`GraphQLSubscriptionTransport` instance.
         :return: The initialised subscription.
         """
         request = self._prepare_request(

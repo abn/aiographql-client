@@ -5,6 +5,7 @@ import gc
 
 from typing import TYPE_CHECKING
 from typing import Any
+from unittest.mock import patch
 
 import aiohttp
 import pytest
@@ -63,7 +64,9 @@ async def test_user_ownership_httpx(server: str, query_city: str) -> None:
     """
     async with httpx.AsyncClient() as session:
         client = GraphQLClient(
-            endpoint=server, session=session, transport="httpx", validate=False
+            endpoint=server,
+            session=session,
+            validate=False,
         )
         await client.query(query_city)
         await client.close()
@@ -79,7 +82,10 @@ async def test_library_ownership_aiohttp(
     """
     Library Ownership Test: Library-created sessions ARE closed safely.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
 
     internal_session = client._session()
@@ -103,7 +109,10 @@ async def test_library_ownership_httpx(server: str, query_city: str) -> None:
     """
     Library Ownership Test: Library-created httpx clients ARE closed safely.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
 
     internal_client = client._session()
@@ -118,7 +127,10 @@ async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
     """
     Connection Pooling Test: Consecutive calls reuse the same internal session.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
     session1 = client._session()
 
@@ -136,7 +148,10 @@ async def test_connection_pooling_httpx(server: str, query_city: str) -> None:
     """
     Connection Pooling Test: Consecutive calls reuse the same internal httpx client.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
     client1 = client._session()
 
@@ -153,7 +168,7 @@ async def test_explicit_session_override(server: str, query_city: str) -> None:
     """
     Verify that providing a session to the query method overrides the client's default.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", validate=False)
+    client = GraphQLClient(endpoint=server, validate=False)
 
     async with aiohttp.ClientSession() as override_session:
         await client.query(query_city, session=override_session)

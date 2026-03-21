@@ -165,7 +165,7 @@ async def test_external_aiohttp_session(
     query_output: dict[str, Any],
 ) -> None:
     async with aiohttp.ClientSession() as session:
-        client = GraphQLClient(endpoint=server, transport="aiohttp", session=session)
+        client = GraphQLClient(endpoint=server, session=session)
         # Patching the ClientSession.request globally
         mock_request = mocker.patch(
             "aiohttp.ClientSession.request", wraps=session.request

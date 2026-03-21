@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import aiohttp
 import httpx
 import pytest
@@ -50,7 +52,10 @@ async def test_aiohttp_library_ownership(
     """
     Test that library-created aiohttp sessions ARE closed by the client.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", headers=headers)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, headers=headers)
     await client.query(query_city)
 
     transport = client.transport
@@ -68,7 +73,10 @@ async def test_httpx_library_ownership(
     """
     Test that library-created httpx clients ARE closed by the client.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", headers=headers)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, headers=headers)
     await client.query(query_city)
 
     transport = client.transport
@@ -86,7 +94,10 @@ async def test_aiohttp_connection_pooling(
     """
     Test that consecutive aiohttp calls reuse the same session instance.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", headers=headers)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, headers=headers)
     try:
         await client.query(query_city)
         transport = client.transport
@@ -107,7 +118,10 @@ async def test_httpx_connection_pooling(
     """
     Test that consecutive httpx calls reuse the same client instance.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", headers=headers)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, headers=headers)
     try:
         await client.query(query_city)
         transport = client.transport

@@ -39,7 +39,6 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
         endpoint="http://localhost/graphql",
         session=mock_session,
         validate=False,
-        transport="aiohttp",
     )
 
     user_input = CreateUserInput(name="Alice")
@@ -75,7 +74,6 @@ async def test_client_pydantic_decode(mocker: Any) -> None:
         endpoint="http://localhost/graphql",
         session=mock_session,
         validate=False,
-        transport="aiohttp",
     )
 
     query = "{ user(id: 1) { id name } }"
