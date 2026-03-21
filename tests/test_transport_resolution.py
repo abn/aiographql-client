@@ -13,35 +13,22 @@ from aiographql.client.transport import HttpxTransport
 from aiographql.client.transport import get_default_transport
 
 
-def test_get_default_transport_httpx_preferred() -> None:
+def test_get_default_transport_aiohttp_preferred() -> None:
     endpoint = "http://example.com/graphql"
-    with (
-        patch("importlib.metadata.version", return_value="0.24.0"),
-        patch.dict(sys.modules, {"httpx": MagicMock()}),
-    ):
+    with patch.dict(sys.modules, {"aiohttp": MagicMock()}):
         transport = get_default_transport(endpoint)
-        assert isinstance(transport, HttpxTransport)
+        assert isinstance(transport, AiohttpTransport)
         assert transport.endpoint == endpoint
 
 
-def test_get_default_transport_httpx_too_old_fallback_to_aiohttp() -> None:
+def test_get_default_transport_aiohttp_missing_fallback_to_httpx() -> None:
     endpoint = "http://example.com/graphql"
     with (
-        patch("importlib.metadata.version", return_value="0.23.0"),
-        patch.dict(sys.modules, {"httpx": MagicMock(), "aiohttp": MagicMock()}),
+        patch("importlib.metadata.version", return_value="0.24.0"),
+        patch.dict(sys.modules, {"aiohttp": None, "httpx": MagicMock()}),
     ):
         transport = get_default_transport(endpoint)
-        assert isinstance(transport, AiohttpTransport)
-
-
-def test_get_default_transport_httpx_missing_fallback_to_aiohttp() -> None:
-    endpoint = "http://example.com/graphql"
-    with (
-        patch.dict(sys.modules, {"httpx": None, "aiohttp": MagicMock()}),
-        patch("importlib.metadata.version", side_effect=ImportError),
-    ):
-        transport = get_default_transport(endpoint)
-        assert isinstance(transport, AiohttpTransport)
+        assert isinstance(transport, HttpxTransport)
 
 
 def test_get_default_transport_none_available_raises_runtime_error() -> None:
