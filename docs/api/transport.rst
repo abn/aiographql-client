@@ -17,3 +17,7 @@ HttpxTransport
 --------------
 .. autoclass:: aiographql.client.transport.http.HttpxTransport
     :members:
+
+get_default_transport
+---------------------
+.. autofunction:: aiographql.client.transport.get_default_transport

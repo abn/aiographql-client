@@ -5,6 +5,7 @@ from typing import Any
 from typing import Protocol
 from typing import runtime_checkable
 
+
 if TYPE_CHECKING:
     from aiographql.client.request import GraphQLRequest
     from aiographql.client.response import GraphQLResponse

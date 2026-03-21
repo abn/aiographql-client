@@ -9,6 +9,7 @@ from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLTransport
 
+
 if TYPE_CHECKING:
     import aiohttp
     import httpx
@@ -26,6 +27,7 @@ class HttpxTransport(GraphQLTransport):
         self,
         endpoint: str,
         client: httpx.AsyncClient | None = None,
+        session: httpx.AsyncClient | None = None,
     ) -> None:
         try:
             import httpx as _  # noqa: F401
@@ -36,7 +38,7 @@ class HttpxTransport(GraphQLTransport):
             ) from None
 
         self.endpoint = endpoint
-        self._client = client
+        self._client = client or session
         self._internal_client = False
 
     async def request(
@@ -50,6 +52,10 @@ class HttpxTransport(GraphQLTransport):
         Execute a GraphQL request using httpx.
         """
         import httpx
+
+        # Remove 'session' from kwargs if it exists, as httpx doesn't support it
+        # and we already handled it in __init__
+        kwargs.pop("session", None)
 
         method = method.upper()
         if method == "POST":
