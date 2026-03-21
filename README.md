@@ -12,7 +12,66 @@ An asynchronous GraphQL client built on top of aiohttp and graphql-core-next. It
 For the most recent project documentation, you can visit https://aiographql-client.readthedocs.io/.
 
 ## Installation
-`pip install aiographql-client`
+
+To install the client with the default `aiohttp` transport:
+
+```bash
+pip install aiographql-client[aiohttp]
+```
+
+To use `httpx` as the transport:
+
+```bash
+pip install aiographql-client[httpx]
+```
+
+To install both:
+
+```bash
+pip install aiographql-client[all]
+```
+
+## Transports & Auto-detection
+
+The client supports multiple HTTP backends. You can choose which one to use during installation via extras.
+
+- **`aiohttp`**: The default asynchronous HTTP client for the library.
+- **`httpx`**: A modern, feature-rich HTTP client.
+
+### Auto-detection
+
+When you initialize a `GraphQLClient` without specifying a transport, it will try to automatically detect an available backend:
+
+1. It first checks if `httpx` is installed.
+2. If not, it checks if `aiohttp` is installed.
+3. If neither is found, it raises a `RuntimeError`.
+
+```python
+from aiographql.client import GraphQLClient
+
+# Auto-detects available transport (httpx preferred if both installed)
+client = GraphQLClient(endpoint="https://api.github.com/graphql")
+```
+
+### Manual Selection
+
+You can also explicitly specify which transport to use:
+
+```python
+from aiographql.client import GraphQLClient
+
+# Explicitly use httpx
+client = GraphQLClient(
+    endpoint="https://api.github.com/graphql",
+    transport="httpx"
+)
+
+# Explicitly use aiohttp
+client = GraphQLClient(
+    endpoint="https://api.github.com/graphql",
+    transport="aiohttp"
+)
+```
 
 ## Example Usage
 Here are some example usages of this client implementation. For more examples, and advanced scenarios,
