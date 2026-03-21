@@ -12,7 +12,12 @@ from typing import cast
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from typing import TypeAlias
+
+    from aiographql.client.codec import GraphQLCodec
     from aiographql.client.request import GraphQLRequest
+    from aiographql.client.serializer import GraphQLSerializer
     from aiographql.client.transport.base import GraphQLSession
     from aiographql.client.transport.base import GraphQLSubscriptionTransport
 
@@ -24,14 +29,6 @@ from aiographql.client.request import GraphQLRequestContainer
 from aiographql.client.response import GraphQLBaseResponse
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.resolver import get_default_subscription_transport
-
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-    from typing import TypeAlias
-
-    from aiographql.client.codec import GraphQLCodec
-    from aiographql.client.serializer import GraphQLSerializer
 
 
 class GraphQLSubscriptionEventType(Enum):
@@ -300,21 +297,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
                     )
 
                 try:
-                    async for msg in ws:
-                        # We assume the message type check is still relevant if it's aiohttp-like
-                        # but different transports might have different message objects.
-                        # For now, we maintain compatibility with aiohttp's WSMessage.
-                        if hasattr(msg, "type"):
-                            import aiohttp
-
-                            if msg.type != aiohttp.WSMsgType.TEXT:
-                                if msg.type == aiohttp.WSMsgType.ERROR:
-                                    break
-                                continue
-                            data = msg.data
-                        else:
-                            data = msg
-
+                    async for data in ws:
                         event = GraphQLSubscriptionEvent(
                             subscription_id=self.id,
                             request=self.request,

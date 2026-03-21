@@ -21,7 +21,7 @@ async def create_default_connector() -> aiohttp.TCPConnector:
             "Install it with `pip install aiographql-client[aiohttp]`."
         ) from None
 
-    connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 1}
+    connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 10}
     if sys.version_info < (3, 14):
         connector_kwargs["enable_cleanup_closed"] = True
 
