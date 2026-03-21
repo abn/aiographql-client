@@ -41,7 +41,7 @@ aiohttp = ["aiohttp >=3.5,<4.0"]
 httpx = ["httpx >=0.24.0,<1.0.0"]
 all = [
     "aiohttp",
-    "httpx",
+    "pydantic",
 ]
 
 [tool.poetry]

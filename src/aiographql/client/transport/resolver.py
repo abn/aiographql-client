@@ -80,17 +80,17 @@ def get_default_transport(
         return AiohttpTransport(endpoint=endpoint, **kwargs)
 
     # auto or None
-    if _is_httpx_available():
-        from aiographql.client.transport.http import HttpxTransport
-
-        return HttpxTransport(endpoint=endpoint, **kwargs)
-
     if _is_aiohttp_available():
         from aiographql.client.transport.http import AiohttpTransport
 
         return AiohttpTransport(endpoint=endpoint, **kwargs)
 
+    if _is_httpx_available():
+        from aiographql.client.transport.http import HttpxTransport
+
+        return HttpxTransport(endpoint=endpoint, **kwargs)
+
     raise RuntimeError(
-        "No suitable transport found. Please install either `httpx>=0.24.0` or `aiohttp` via extras, "
-        "e.g., `pip install aiographql-client[httpx]` or `pip install aiographql-client[aiohttp]`."
+        "No suitable transport found. Please install either `aiohttp` or `httpx>=0.24.0` via extras, "
+        "e.g., `pip install aiographql-client[aiohttp]` or `pip install aiographql-client[httpx]`."
     )

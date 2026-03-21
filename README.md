@@ -25,7 +25,7 @@ To use `httpx` as the transport:
 pip install aiographql-client[httpx]
 ```
 
-To install both:
+To install the client with the default `aiohttp` transport and `pydantic` support:
 
 ```bash
 pip install aiographql-client[all]
@@ -42,14 +42,14 @@ The client supports multiple HTTP backends. You can choose which one to use duri
 
 When you initialize a `GraphQLClient` without specifying a transport, it will try to automatically detect an available backend:
 
-1. It first checks if `httpx` is installed.
-2. If not, it checks if `aiohttp` is installed.
+1. It first checks if `aiohttp` is installed.
+2. If not, it checks if `httpx` is installed.
 3. If neither is found, it raises a `RuntimeError`.
 
 ```python
 from aiographql.client import GraphQLClient
 
-# Auto-detects available transport (httpx preferred if both installed)
+# Auto-detects available transport (aiohttp preferred if both installed)
 client = GraphQLClient(endpoint="https://api.github.com/graphql")
 ```
 
