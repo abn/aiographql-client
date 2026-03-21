@@ -110,7 +110,10 @@ async def test_ownership_internal_aiohttp() -> None:
     from aiographql.client.transport.http import AiohttpTransport
 
     endpoint = "http://example.com/graphql"
-    client = GraphQLClient(endpoint=endpoint, transport="aiohttp")
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=endpoint)
     transport = client.transport
     assert isinstance(transport, AiohttpTransport)
 
@@ -132,7 +135,10 @@ async def test_ownership_internal_httpx() -> None:
     from aiographql.client.transport.http import HttpxTransport
 
     endpoint = "http://example.com/graphql"
-    client = GraphQLClient(endpoint=endpoint, transport="httpx")
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=endpoint)
     transport = client.transport
     assert isinstance(transport, HttpxTransport)
 

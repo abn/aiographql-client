@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from typing import cast
+from unittest.mock import patch
 
 import aiohttp
 import httpx
@@ -35,7 +36,9 @@ async def test_user_ownership_httpx(server: str, query_city: str) -> None:
     """
     async with httpx.AsyncClient() as httpx_client:
         client = GraphQLClient(
-            endpoint=server, transport="httpx", session=httpx_client, validate=False
+            endpoint=server,
+            session=httpx_client,
+            validate=False,
         )
         await client.query(query_city)
         await client.close()
@@ -47,7 +50,10 @@ async def test_library_ownership_aiohttp(server: str, query_city: str) -> None:
     """
     Test that library-created aiohttp session is closed by the client.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
 
     # Access internal session
@@ -64,7 +70,10 @@ async def test_library_ownership_httpx(server: str, query_city: str) -> None:
     """
     Test that library-created httpx client is closed by the client.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
     await client.query(query_city)
 
     # Access internal client
@@ -81,7 +90,10 @@ async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
     """
     Test that multiple queries reuse the same session instance.
     """
-    client = GraphQLClient(endpoint=server, transport="aiohttp", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_httpx_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
 
     await client.query(query_city)
     transport = cast("AiohttpTransport", client._transport)
@@ -100,7 +112,10 @@ async def test_connection_pooling_httpx(server: str, query_city: str) -> None:
     """
     Test that multiple queries reuse the same httpx client instance.
     """
-    client = GraphQLClient(endpoint=server, transport="httpx", validate=False)
+    with patch(
+        "aiographql.client.transport.resolver._is_aiohttp_available", return_value=False
+    ):
+        client = GraphQLClient(endpoint=server, validate=False)
 
     await client.query(query_city)
     transport = cast("HttpxTransport", client._transport)

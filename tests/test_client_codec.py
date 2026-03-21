@@ -22,7 +22,6 @@ async def test_client_query_data_as(mocker: Any) -> None:
         endpoint="http://test",
         codec=DefaultGraphQLCodec(),
         validate=False,
-        transport="aiohttp",
     )
 
     mock_response_json = {"data": {"cities": [{"name": "London"}, {"name": "Paris"}]}}
@@ -58,7 +57,6 @@ async def test_client_encode_variables(mocker: Any) -> None:
         endpoint="http://test",
         codec=codec,
         validate=False,
-        transport="aiohttp",
     )
 
     @dataclasses.dataclass

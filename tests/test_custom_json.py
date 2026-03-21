@@ -27,7 +27,6 @@ async def test_custom_serializer_uuid() -> None:
         endpoint="http://localhost:8080/v1/graphql",
         serializer=CustomSerializer(),
         validate=False,
-        transport="aiohttp",
     )
 
     request = client._prepare_request(
@@ -59,7 +58,6 @@ async def test_custom_serializer_deserialization() -> None:
         endpoint="http://localhost:8080/v1/graphql",
         serializer=CustomSerializer(),
         validate=False,
-        transport="aiohttp",
     )
 
     # Mocking a response to test json_loads

@@ -4,8 +4,23 @@ Configuring Transport
 =====================
 
 The client allows you to customize how GraphQL requests are executed by using a transport abstraction.
-By default, the client uses :class:`aiographql.client.transport.AiohttpTransport`.
-It also supports :class:`aiographql.client.transport.HttpxTransport` for using the `httpx` library.
+By default, the client automatically selects the best available transport based on installed packages.
+If both ``aiohttp`` and ``httpx`` are installed, ``AiohttpTransport`` is preferred.
+
+You can also explicitly specify a transport instance, such as :class:`aiographql.client.transport.AiohttpTransport` or :class:`aiographql.client.transport.HttpxTransport`.
+
+Automatic Transport Selection
+*****************************
+
+If you do not provide a transport instance, the client will attempt to resolve a default one for you.
+This is equivalent to passing ``transport=None``.
+
+.. code-block:: python
+
+    from aiographql import GraphQLClient
+
+    # Automatically selects the best available transport
+    client = GraphQLClient(endpoint="http://127.0.0.1:8080/v1/graphql")
 
 Customizing Transport
 *********************
@@ -44,20 +59,18 @@ Similarly, :class:`aiographql.client.transport.HttpxTransport` allows you to spe
 
 This can be done so by passing in the session/client when doing any of the following;
 
-1. creating a client (this will be passed to the default `AiohttpTransport` or provided transport)
+1. Creating a client (this will be passed to the default transport)
 
 .. code-block:: python
 
-    # For Aiohttp
-    aiographql.GraphQLClient(
+    # For Aiohttp session
+    client = aiographql.GraphQLClient(
         endpoint="http://127.0.0.1:8080/v1/graphql", session=session
     )
 
-    # For Httpx
-    from aiographql.client.transport import HttpxTransport
-    transport = HttpxTransport(endpoint="...", client=async_client)
-    aiographql.GraphQLClient(
-        endpoint="http://127.0.0.1:8080/v1/graphql", transport=transport
+    # For Httpx client
+    client = aiographql.GraphQLClient(
+        endpoint="http://127.0.0.1:8080/v1/graphql", client=async_client
     )
 
 2. creating a transport explicitly
@@ -94,7 +107,9 @@ This can be done so by passing in the session/client when doing any of the follo
 
 3. creating a subscription
 
-Note: Subscriptions are currently only supported via `AiohttpTransport`.
+Note: Subscriptions are currently only supported via :class:`aiographql.client.transport.http.AiohttpSubscriptionTransport`.
+This transport is automatically selected when you call :meth:`aiographql.client.GraphQLClient.subscribe`
+if ``aiohttp`` is available.
 
 .. code-block:: python
 

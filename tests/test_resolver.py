@@ -23,37 +23,6 @@ def test_resolver_is_httpx_available_version_check() -> None:
         assert _is_httpx_available() is False
 
 
-def test_resolver_explicit_transport_not_found() -> None:
-    with (
-        patch(
-            "aiographql.client.transport.resolver._is_httpx_available",
-            return_value=False,
-        ),
-        pytest.raises(ImportError, match="httpx is not installed"),
-    ):
-        get_default_transport("http://test", transport="httpx")
-
-    with (
-        patch(
-            "aiographql.client.transport.resolver._is_aiohttp_available",
-            return_value=False,
-        ),
-        pytest.raises(ImportError, match="aiohttp is not installed"),
-    ):
-        get_default_transport("http://test", transport="aiohttp")
-
-
-def test_resolver_subscription_explicit_transport_not_found() -> None:
-    with (
-        patch(
-            "aiographql.client.transport.resolver._is_aiohttp_available",
-            return_value=False,
-        ),
-        pytest.raises(ImportError, match="aiohttp is not installed"),
-    ):
-        get_default_subscription_transport("http://test", transport="aiohttp")
-
-
 def test_resolver_no_transport_available() -> None:
     with (
         patch(

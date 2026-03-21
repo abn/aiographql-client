@@ -55,21 +55,24 @@ client = GraphQLClient(endpoint="https://api.github.com/graphql")
 
 ### Manual Selection
 
-You can also explicitly specify which transport to use:
+You can also explicitly specify which transport to use by providing a transport instance:
 
 ```python
 from aiographql.client import GraphQLClient
+from aiographql.client.transport import HttpxTransport, AiohttpTransport
 
 # Explicitly use httpx
+transport = HttpxTransport(endpoint="https://api.github.com/graphql")
 client = GraphQLClient(
     endpoint="https://api.github.com/graphql",
-    transport="httpx"
+    transport=transport
 )
 
 # Explicitly use aiohttp
+transport = AiohttpTransport(endpoint="https://api.github.com/graphql")
 client = GraphQLClient(
     endpoint="https://api.github.com/graphql",
-    transport="aiohttp"
+    transport=transport
 )
 ```
 
