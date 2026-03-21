@@ -21,7 +21,9 @@ from aiographql.client.serializer import GraphQLSerializer
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
+from aiographql.client.transport import GraphQLSubscriptionTransport
 from aiographql.client.transport import GraphQLTransport
+from aiographql.client.transport import get_default_subscription_transport
 from aiographql.client.transport import get_default_transport
 
 
@@ -408,6 +410,9 @@ class GraphQLClient:
         wait: bool = False,
         protocols: str | Iterable[str] = (),
         connection_init_payload: dict[str, Any] | None = None,
+        transport: Literal["auto", "aiohttp"]
+        | GraphQLSubscriptionTransport
+        | None = None,
     ) -> GraphQLSubscription:
         """
         Create and initialise a GraphQL subscription. Once subscribed and a known event
@@ -451,6 +456,8 @@ class GraphQLClient:
             is completed, websocket disconnected or async task cancelled.
         :param protocols: GraphQL over WebSocket Sub-protocol(s) used.
         :param connection_init_payload: Extra fields for the `connection_init` payload.
+        :param transport: Custom transport to use for the subscription. If not
+            provided, the best available transport is automatically selected.
         :return: The initialised subscription.
         """
         request = self._prepare_request(
@@ -470,6 +477,9 @@ class GraphQLClient:
             protocols=protocols,
             connection_init_payload=connection_init_payload,
             serializer=self._serializer,
+            transport=get_default_subscription_transport(
+                endpoint=self.endpoint, transport=transport
+            ),
         )
         await subscription.subscribe(
             endpoint=self.endpoint, session=session or self._session, wait=wait

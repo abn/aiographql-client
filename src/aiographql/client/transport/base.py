@@ -35,3 +35,28 @@ class GraphQLTransport(Protocol):
         Close the transport and any underlying resources.
         """
         ...
+
+
+@runtime_checkable
+class GraphQLSubscriptionTransport(Protocol):
+    """
+    Protocol for GraphQL subscription transports.
+    """
+
+    async def subscribe(
+        self,
+        endpoint: str,
+        request: GraphQLRequest,
+        serializer: GraphQLSerializer,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Execute a GraphQL subscription.
+        """
+        ...
+
+    async def close(self) -> None:
+        """
+        Close the transport and any underlying resources.
+        """
+        ...
