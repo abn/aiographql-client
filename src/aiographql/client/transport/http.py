@@ -169,8 +169,12 @@ class AiohttpTransport(GraphQLTransport):
         """
         import aiohttp
 
+        from aiographql.client.helpers import create_default_connector
+
         if self._session is None:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(
+                connector=await create_default_connector()
+            )
             self._owns_session = True
 
         return self._session
@@ -284,8 +288,12 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         import aiohttp
 
+        from aiographql.client.helpers import create_default_connector
+
         if self._session is None:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(
+                connector=await create_default_connector()
+            )
             self._owns_session = True
 
         return self._session
@@ -302,10 +310,64 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         # use provided session, or internal session
         actual_session = kwargs.pop("session", None) or await self._get_session()
-        return await actual_session.ws_connect(endpoint, **kwargs)
+
+        # pass headers from request to the websocket upgrade
+        if request.headers:
+            kwargs.setdefault("headers", request.headers)
+
+        return AiohttpWebSocketResponse(
+            await actual_session.ws_connect(endpoint, **kwargs)
+        )
 
     async def close(self) -> None:
         if self._session is not None and self._owns_session:
             await self._session.close()
             self._session = None
             self._owns_session = False
+
+
+class AiohttpWebSocketResponse:
+    def __init__(self, ws: aiohttp.ClientWebSocketResponse) -> None:
+        self.ws = ws
+
+    async def __aenter__(self) -> AiohttpWebSocketResponse:
+        # aiohttp.ClientWebSocketResponse does not have __aenter__, so return self
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        # ClientWebSocketResponse has a close() method.
+        await self.ws.close()
+
+    async def send_str(self, data: str) -> None:
+        import asyncio
+
+        res = self.ws.send_str(data)
+        if asyncio.iscoroutine(res):
+            await res
+
+    def __aiter__(self) -> AiohttpWebSocketResponse:
+        return self
+
+    async def __anext__(self) -> Any:
+        import aiohttp
+
+        while True:
+            msg = await self.ws.receive()
+
+            # aiohttp-style message object
+            if hasattr(msg, "type"):
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    return msg.data
+
+                if msg.type in (
+                    aiohttp.WSMsgType.CLOSE,
+                    aiohttp.WSMsgType.CLOSED,
+                    aiohttp.WSMsgType.CLOSING,
+                    aiohttp.WSMsgType.ERROR,
+                ):
+                    raise StopAsyncIteration
+
+                continue
+
+            # transport returned plain data
+            return msg
