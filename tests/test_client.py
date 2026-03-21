@@ -159,18 +159,20 @@ async def test_unsuccessful_request(
 
 async def test_external_aiohttp_session(
     mocker: MockerFixture,
-    client: GraphQLClient,
+    server: str,
     headers: dict[str, str],
     query_city: str,
     query_output: dict[str, Any],
 ) -> None:
     async with aiohttp_client_session() as session:
-        spy = mocker.spy(session, "request")
-        response = await client.post(
-            GraphQLRequest(query=query_city), headers=headers, session=session
+        client = GraphQLClient(endpoint=server, transport="aiohttp", session=session)
+        # Patching the ClientSession.request globally
+        mock_request = mocker.patch(
+            "aiohttp.ClientSession.request", wraps=session.request
         )
+        response = await client.post(GraphQLRequest(query=query_city), headers=headers)
         assert response.data == query_output
-        spy.assert_called_once()
+        assert mock_request.called
 
 
 async def test_mutation(
