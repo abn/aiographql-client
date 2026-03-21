@@ -163,17 +163,27 @@ class AiohttpTransport(GraphQLTransport):
         self._session = session
         self._owns_session = False
 
+    @staticmethod
+    async def _create_default_connector() -> aiohttp.TCPConnector:
+        import sys
+
+        import aiohttp
+
+        connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 100}
+        if sys.version_info < (3, 14):
+            connector_kwargs["enable_cleanup_closed"] = True
+
+        return aiohttp.TCPConnector(**connector_kwargs)
+
     async def _get_session(self) -> aiohttp.ClientSession:
         """
         Get or create the internal aiohttp session.
         """
         import aiohttp
 
-        from aiographql.client.helpers import create_default_connector
-
         if self._session is None:
             self._session = aiohttp.ClientSession(
-                connector=await create_default_connector()
+                connector=await self._create_default_connector()
             )
             self._owns_session = True
 
@@ -270,14 +280,6 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         endpoint: str,
         session: aiohttp.ClientSession | None = None,
     ) -> None:
-        try:
-            import aiohttp as _  # noqa: F401
-        except ImportError:
-            raise GraphQLClientException(
-                "aiohttp is required to use AiohttpSubscriptionTransport. "
-                "Install it with `pip install aiographql-client[aiohttp]`."
-            ) from None
-
         self.endpoint = endpoint
         self._session = session
         self._owns_session = False
@@ -288,11 +290,9 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         import aiohttp
 
-        from aiographql.client.helpers import create_default_connector
-
         if self._session is None:
             self._session = aiohttp.ClientSession(
-                connector=await create_default_connector()
+                connector=await AiohttpTransport._create_default_connector()
             )
             self._owns_session = True
 

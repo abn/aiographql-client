@@ -35,7 +35,6 @@ if TYPE_CHECKING:
     from aiographql.client.codec import T
     from aiographql.client.response import GraphQLResponse
     from aiographql.client.transport import GraphQLSession
-    from aiographql.client.transport import GraphQLTransport
 
 
 @dataclasses.dataclass(frozen=True)
@@ -57,13 +56,13 @@ class GraphQLClient:
         )
         response: GraphQLResponse = await client.query("{ city { name } }")
 
-    You can also use an application scoped :class:`aiohttp.ClientSession` throughout
+    You can also use an application scoped :class:`GraphQLSession` throughout
     the life of the client as show below.
 
     .. code-block:: python
         :emphasize-lines: 1,4
 
-        async with aiohttp.ClientSession() as session:
+        async with httpx.AsyncClient() as session:
             client = GraphQLClient(
                 endpoint="http://127.0.0.1:8080/v1/graphql",
                 session=session
@@ -76,7 +75,7 @@ class GraphQLClient:
         specifying then here.
     :param method: Default method to use when submitting a GraphQL request to the
         specified `endpoint`.
-    :param session: Optional `aiohttp.ClientSession` to use when making requests.
+    :param session: Optional :class:`GraphQLSession` to use when making requests.
         This is expected to be externally managed.
     :param validate: If set to `False`, the client will not attempt to validate
         requests against the schema from the server. This is useful when
@@ -85,7 +84,7 @@ class GraphQLClient:
     :param codec: Custom codec to use for encoding request variables and decoding
         response data.
     :param transport: Custom transport to use for making requests. If not provided,
-        the best available transport is automatically selected (preferring httpx).
+        the best available transport is automatically selected (preferring aiohttp).
         Can be "auto", "httpx", "aiohttp" or a :class:`GraphQLTransport` instance.
     """
 
@@ -285,7 +284,7 @@ class GraphQLClient:
         :param headers: Additional headers to be set when sending HTTP request.
         :param operation: GraphQL operation name to use.
         :param variables: Query variables to set for the provided request.
-        :param session: Optional `aiohttp.ClientSession` to use for requests.
+        :param session: Optional `GraphQLSession` to use for requests.
         :return: The decoded data.
         """
         response = await self.query(
@@ -331,7 +330,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
-        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting response object.
         """
         request = self._prepare_request(
@@ -368,7 +367,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
-        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         """
         return await self.query(
@@ -400,7 +399,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
-        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         """
         return await self.query(
@@ -458,7 +457,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
-        :param session: Optional `aiohttp.ClientSession` to use for requests
+        :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         :param callbacks: Custom callback registry mapping an event to one more more
             callback methods. If not provided, a new instance is created.
