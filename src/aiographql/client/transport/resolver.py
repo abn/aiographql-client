@@ -8,6 +8,7 @@ from typing import Literal
 
 
 if TYPE_CHECKING:
+    from aiographql.client.transport.base import GraphQLSubscriptionTransport
     from aiographql.client.transport.base import GraphQLTransport
 
 
@@ -93,4 +94,47 @@ def get_default_transport(
     raise RuntimeError(
         "No suitable transport found. Please install either `aiohttp` or `httpx>=0.24.0` via extras, "
         "e.g., `pip install aiographql-client[aiohttp]` or `pip install aiographql-client[httpx]`."
+    )
+
+
+def get_default_subscription_transport(
+    endpoint: str,
+    transport: Literal["auto", "aiohttp"]
+    | GraphQLSubscriptionTransport
+    | None = "auto",
+    **kwargs: Any,
+) -> GraphQLSubscriptionTransport:
+    """
+    Resolve the transport to use for making GraphQL subscriptions.
+
+    :param endpoint: The GraphQL endpoint URL.
+    :param transport: The transport to use. Can be "auto", "aiohttp", or a
+        GraphQLSubscriptionTransport instance. Defaults to "auto".
+    :param kwargs: Additional arguments to pass to the transport constructor.
+    :return: A GraphQLSubscriptionTransport instance.
+    :raises ImportError: If the requested transport is not available.
+    :raises RuntimeError: If "auto" transport is requested but no suitable transport is
+        available.
+    """
+    if not isinstance(transport, str) and transport is not None:
+        return transport
+
+    if transport == "aiohttp":
+        from aiographql.client.transport.http import AiohttpSubscriptionTransport
+
+        if not _is_aiohttp_available():
+            raise ImportError(
+                "aiohttp is not installed. Install it with `pip install aiographql-client[aiohttp]`."
+            )
+        return AiohttpSubscriptionTransport(endpoint=endpoint, **kwargs)
+
+    # auto or None
+    if _is_aiohttp_available():
+        from aiographql.client.transport.http import AiohttpSubscriptionTransport
+
+        return AiohttpSubscriptionTransport(endpoint=endpoint, **kwargs)
+
+    raise RuntimeError(
+        "No suitable subscription transport found. Please install `aiohttp` via extras, "
+        "e.g., `pip install aiographql-client[aiohttp]`."
     )

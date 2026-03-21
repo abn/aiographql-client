@@ -14,14 +14,17 @@ from typing import cast
 if TYPE_CHECKING:
     import aiohttp
 
+    from aiographql.client.transport.base import GraphQLSubscriptionTransport
+    from aiographql.client.request import GraphQLRequest
+
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
 from cafeteria.asyncio.callbacks import SimpleTriggerCallback
 
-from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequestContainer
 from aiographql.client.response import GraphQLBaseResponse
 from aiographql.client.response import GraphQLResponse
+from aiographql.client.transport.resolver import get_default_subscription_transport
 
 
 if TYPE_CHECKING:
@@ -135,6 +138,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
     protocols: str | Iterable[str] = dataclasses.field(default_factory=tuple)
     connection_init_payload: dict[str, Any] | None = dataclasses.field(default=None)
     serializer: GraphQLSerializer | None = dataclasses.field(default=None)
+    transport: GraphQLSubscriptionTransport | None = dataclasses.field(default=None)
     task: asyncio.Task[Any] | None = dataclasses.field(
         default=None, init=False, compare=False
     )
@@ -241,18 +245,22 @@ class GraphQLSubscription(GraphQLRequestContainer):
             self.callbacks.dispatch(event.type, event)
 
     async def _websocket_connect(
-        self, endpoint: str, session: aiohttp.ClientSession
+        self,
+        endpoint: str,
+        transport: GraphQLSubscriptionTransport,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         """
         Helper method to create websocket connection with specified *endpoint*
-        using the specified :class:`aiohttp.ClientSession`. Once connected, we
+        using the specified :class:`GraphQLSubscriptionTransport`. Once connected, we
         initialise and start the GraphQL subscription; then wait for any incoming
         messages. Any message received via the websocket connection is cast into
         a :class:`GraphQLSubscriptionEvent` instance and dispatched for handling via
         :method:`handle`.
 
         :param endpoint: Endpoint to use when creating the websocket connection.
-        :param session: Session to use when creating the websocket connection.
+        :param transport: Transport to use when creating the websocket connection.
+        :param session: Optional session to use when creating the websocket connection.
         """
         if self.serializer is None:
             # This should ideally be passed from client, but for safety:
@@ -260,7 +268,15 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
             object.__setattr__(self, "serializer", DefaultSerializer())
 
-        async with session.ws_connect(endpoint, protocols=self.protocols) as ws:
+        ws = await transport.subscribe(
+            endpoint=endpoint,
+            request=cast("GraphQLRequest", self.request),
+            serializer=cast("GraphQLSerializer", self.serializer),
+            protocols=self.protocols,
+            session=session,
+        )
+
+        async with ws:
 
             def _serialize(value: Any) -> str:
                 serialized = cast("GraphQLSerializer", self.serializer).dumps(value)
@@ -284,18 +300,25 @@ class GraphQLSubscription(GraphQLRequestContainer):
                 )
 
             try:
-                async for msg in ws:  # type:  aiohttp.WSMessage
-                    import aiohttp
+                async for msg in ws:
+                    # We assume the message type check is still relevant if it's aiohttp-like
+                    # but different transports might have different message objects.
+                    # For now, we maintain compatibility with aiohttp's WSMessage.
+                    if hasattr(msg, "type"):
+                        import aiohttp
 
-                    if msg.type != aiohttp.WSMsgType.TEXT:
-                        if msg.type == aiohttp.WSMsgType.ERROR:
-                            break
-                        continue
+                        if msg.type != aiohttp.WSMsgType.TEXT:
+                            if msg.type == aiohttp.WSMsgType.ERROR:
+                                break
+                            continue
+                        data = msg.data
+                    else:
+                        data = msg
 
                     event = GraphQLSubscriptionEvent(
                         subscription_id=self.id,
                         request=self.request,
-                        json=cast("GraphQLSerializer", self.serializer).loads(msg.data),
+                        json=cast("GraphQLSerializer", self.serializer).loads(data),
                     )
                     await self.handle(event=event)
 
@@ -305,25 +328,33 @@ class GraphQLSubscription(GraphQLRequestContainer):
                 await ws.send_str(_serialize(self.connection_stop_request()))
 
     async def _subscribe(
-        self, endpoint: str, session: aiohttp.ClientSession | None = None
+        self,
+        endpoint: str,
+        transport: GraphQLSubscriptionTransport | None = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         """
         Helper method wrapping :method:`GraphQLSubscription._websocket_connect` handling
-        unique :class:`aiohttp.ClentSession` creation if on is not already provided.
+        unique :class:`GraphQLSubscriptionTransport` resolution.
 
         :param endpoint: Endpoint to use when creating the websocket connection.
+        :param transport: Optional transport to use.
         :param session: Optional session to use when creating the websocket connection.
         """
-        if session:
-            return await self._websocket_connect(endpoint=endpoint, session=session)
-
-        async with aiohttp_client_session() as session:
-            return await self._websocket_connect(endpoint=endpoint, session=session)
+        actual_transport = (
+            transport
+            or self.transport
+            or get_default_subscription_transport(endpoint=endpoint)
+        )
+        return await self._websocket_connect(
+            endpoint=endpoint, transport=actual_transport, session=session
+        )
 
     async def subscribe(
         self,
         endpoint: str,
         force: bool = False,
+        transport: GraphQLSubscriptionTransport | None = None,
         session: aiohttp.ClientSession | None = None,
         wait: bool = False,
     ) -> None:
@@ -332,6 +363,7 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
         :param endpoint: GraphQL endpoint to subscribe to
         :param force: Force re-subscription if already subscribed
+        :param transport: Optional transport to use for requests
         :param session: Optional session to use for requests
         :param wait: If set to `True`, this method will wait until the subscription
             is completed, websocket disconnected or async task cancelled.
@@ -339,7 +371,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
         if self.active() and not force:
             return
         self.unsubscribe()
-        task = asyncio.create_task(self._subscribe(endpoint=endpoint, session=session))
+        task = asyncio.create_task(
+            self._subscribe(endpoint=endpoint, transport=transport, session=session)
+        )
         object.__setattr__(self, "task", task)
 
         if wait and self.task is not None:

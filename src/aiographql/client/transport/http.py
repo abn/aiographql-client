@@ -7,6 +7,7 @@ from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.response import GraphQLResponse
+from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
 
 
@@ -231,6 +232,60 @@ class AiohttpTransport(GraphQLTransport):
                 else serialized
             )
         return value
+
+    async def close(self) -> None:
+        if self._session is not None:
+            await self._session.close()
+
+
+class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
+    """
+    Aiohttp implementation of GraphQLSubscriptionTransport.
+    """
+
+    def __init__(
+        self,
+        endpoint: str,
+        session: aiohttp.ClientSession | None = None,
+    ) -> None:
+        try:
+            import aiohttp as _  # noqa: F401
+        except ImportError:
+            raise GraphQLClientException(
+                "aiohttp is required to use AiohttpSubscriptionTransport. "
+                "Install it with `pip install aiographql-client[aiohttp]`."
+            ) from None
+
+        self.endpoint = endpoint
+        self._session = session
+
+    async def subscribe(
+        self,
+        endpoint: str,
+        request: GraphQLRequest,
+        serializer: GraphQLSerializer,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Execute a GraphQL subscription using aiohttp websockets.
+        """
+
+        actual_session = kwargs.pop("session", self._session)
+        if actual_session:
+            return await actual_session.ws_connect(endpoint, **kwargs)
+
+        # If no session is provided, we need to manage one.
+        # However, aiohttp.ClientSession as a context manager will close the session
+        # and all its connections (including the websocket) when the context exits.
+        # For subscriptions, the connection needs to stay open.
+        # The existing helper 'aiohttp_client_session' might be used, but we need
+        # to ensure the session is closed eventually.
+        session = await aiohttp_client_session().__aenter__()
+        try:
+            return await session.ws_connect(endpoint, **kwargs)
+        except Exception:
+            await session.close()
+            raise
 
     async def close(self) -> None:
         if self._session is not None:
