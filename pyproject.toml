@@ -40,8 +40,8 @@ pydantic = ["pydantic>=2.0"]
 aiohttp = ["aiohttp >=3.5,<4.0"]
 httpx = ["httpx >=0.24.0,<1.0.0"]
 all = [
-    "aiographql-client[aiohttp]",
-    "aiographql-client[httpx]",
+    "aiohttp",
+    "httpx",
 ]
 
 [tool.poetry]
