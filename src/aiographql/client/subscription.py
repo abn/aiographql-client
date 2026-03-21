@@ -10,7 +10,9 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
 
-import aiohttp
+
+if TYPE_CHECKING:
+    import aiohttp
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
@@ -283,6 +285,8 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
             try:
                 async for msg in ws:  # type:  aiohttp.WSMessage
+                    import aiohttp
+
                     if msg.type != aiohttp.WSMsgType.TEXT:
                         if msg.type == aiohttp.WSMsgType.ERROR:
                             break

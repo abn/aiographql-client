@@ -34,7 +34,7 @@ class HttpxTransport(GraphQLTransport):
         except ImportError:
             raise GraphQLClientException(
                 "httpx is required to use HttpxTransport. "
-                "Install it with `pip install httpx`."
+                "Install it with `pip install aiographql-client[httpx]`."
             ) from None
 
         self.endpoint = endpoint
@@ -144,6 +144,14 @@ class AiohttpTransport(GraphQLTransport):
         endpoint: str,
         session: aiohttp.ClientSession | None = None,
     ) -> None:
+        try:
+            import aiohttp as _  # noqa: F401
+        except ImportError:
+            raise GraphQLClientException(
+                "aiohttp is required to use AiohttpTransport. "
+                "Install it with `pip install aiographql-client[aiohttp]`."
+            ) from None
+
         self.endpoint = endpoint
         self._session = session
 

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+from typing import Any
+
 from aiographql.client.client import GraphQLClient
 from aiographql.client.client import GraphQLQueryMethod
 from aiographql.client.codec import DefaultGraphQLCodec
@@ -15,9 +18,24 @@ from aiographql.client.response import GraphQLResponse
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEvent
 from aiographql.client.subscription import GraphQLSubscriptionEventType
-from aiographql.client.transport import AiohttpTransport
 from aiographql.client.transport import GraphQLTransport
-from aiographql.client.transport import HttpxTransport
+
+
+if TYPE_CHECKING:
+    from aiographql.client.transport import AiohttpTransport
+    from aiographql.client.transport import HttpxTransport
+
+
+def __getattr__(name: str) -> Any:
+    if name == "AiohttpTransport":
+        from aiographql.client.transport import AiohttpTransport
+
+        return AiohttpTransport
+    if name == "HttpxTransport":
+        from aiographql.client.transport import HttpxTransport
+
+        return HttpxTransport
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [

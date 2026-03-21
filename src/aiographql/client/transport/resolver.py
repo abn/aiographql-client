@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
 
-from aiographql.client.transport.http import AiohttpTransport
-from aiographql.client.transport.http import HttpxTransport
-
 
 if TYPE_CHECKING:
     from aiographql.client.transport.base import GraphQLTransport
@@ -65,26 +62,35 @@ def get_default_transport(
         return transport
 
     if transport == "httpx":
+        from aiographql.client.transport.http import HttpxTransport
+
         if not _is_httpx_available(min_version="0.0.0"):  # Any version if explicit
             raise ImportError(
-                "httpx is not installed. Install it with `pip install httpx`."
+                "httpx is not installed. Install it with `pip install aiographql-client[httpx]`."
             )
         return HttpxTransport(endpoint=endpoint, **kwargs)
 
     if transport == "aiohttp":
+        from aiographql.client.transport.http import AiohttpTransport
+
         if not _is_aiohttp_available():
             raise ImportError(
-                "aiohttp is not installed. Install it with `pip install aiohttp`."
+                "aiohttp is not installed. Install it with `pip install aiographql-client[aiohttp]`."
             )
         return AiohttpTransport(endpoint=endpoint, **kwargs)
 
     # auto or None
     if _is_httpx_available():
+        from aiographql.client.transport.http import HttpxTransport
+
         return HttpxTransport(endpoint=endpoint, **kwargs)
 
     if _is_aiohttp_available():
+        from aiographql.client.transport.http import AiohttpTransport
+
         return AiohttpTransport(endpoint=endpoint, **kwargs)
 
     raise RuntimeError(
-        "No suitable transport found. Please install either `httpx>=0.24.0` or `aiohttp`."
+        "No suitable transport found. Please install either `httpx>=0.24.0` or `aiohttp` via extras, "
+        "e.g., `pip install aiographql-client[httpx]` or `pip install aiographql-client[aiohttp]`."
     )
