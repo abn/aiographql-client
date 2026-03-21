@@ -199,21 +199,26 @@ class AiohttpTransport(GraphQLTransport):
         serializer: GraphQLSerializer,
         **kwargs: Any,
     ) -> GraphQLResponse:
-        async with session.request(
-            method=method, url=self.endpoint, headers=request.headers, **kwargs
-        ) as resp:
-            resp_data = await resp.read()
-            try:
-                body = serializer.loads(resp_data)
-            except Exception:
-                body = None
+        import aiohttp
 
-            response = GraphQLResponse(request=request, json=body)
+        try:
+            async with session.request(
+                method=method, url=self.endpoint, headers=request.headers, **kwargs
+            ) as resp:
+                resp_data = await resp.read()
+                try:
+                    body = serializer.loads(resp_data)
+                except Exception:
+                    body = None
 
-            if 200 <= resp.status < 300:
-                return response
+                response = GraphQLResponse(request=request, json=body)
 
-            raise GraphQLRequestException(response)
+                if 200 <= resp.status < 300:
+                    return response
+
+                raise GraphQLRequestException(response)
+        except aiohttp.ClientError as exc:
+            raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
 
     def _coerce_value(self, value: Any, serializer: GraphQLSerializer) -> Any:
         if isinstance(value, bool):

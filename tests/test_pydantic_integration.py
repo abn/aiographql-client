@@ -34,11 +34,15 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
     # aiohttp context manager: async with session.request(...) as resp
     mock_context_manager = mocker.MagicMock()
     mock_context_manager.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-    mock_context_manager.__aexit__ = mocker.AsyncMock()
-    mock_session.request.return_value = mock_context_manager
+    mock_request = mocker.patch(
+        "aiohttp.ClientSession.request", return_value=mock_context_manager
+    )
 
     client = GraphQLClient(
-        endpoint="http://localhost/graphql", session=mock_session, validate=False
+        endpoint="http://localhost/graphql",
+        session=mock_session,
+        validate=False,
+        transport="aiohttp",
     )
 
     user_input = CreateUserInput(name="Alice")
@@ -50,7 +54,7 @@ async def test_client_pydantic_variables(mocker: Any) -> None:
     assert response.data["createUser"]["name"] == "Alice"
 
     # Check that variables were encoded correctly before being sent
-    call_args = mock_session.request.call_args
+    call_args = mock_request.call_args
     # payload is in 'data' as JSON bytes or string
     sent_data = json.loads(call_args.kwargs["data"])
     assert sent_data["variables"]["input"] == {"name": "Alice"}
@@ -68,11 +72,13 @@ async def test_client_pydantic_decode(mocker: Any) -> None:
     mock_response.read.return_value = json.dumps(response_json).encode("utf-8")
     mock_context_manager = mocker.MagicMock()
     mock_context_manager.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-    mock_context_manager.__aexit__ = mocker.AsyncMock()
-    mock_session.request.return_value = mock_context_manager
+    mocker.patch("aiohttp.ClientSession.request", return_value=mock_context_manager)
 
     client = GraphQLClient(
-        endpoint="http://localhost/graphql", session=mock_session, validate=False
+        endpoint="http://localhost/graphql",
+        session=mock_session,
+        validate=False,
+        transport="aiohttp",
     )
 
     query = "{ user(id: 1) { id name } }"
