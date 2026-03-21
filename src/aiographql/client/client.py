@@ -12,18 +12,16 @@ import graphql
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from cafeteria.asyncio.callbacks import CallbackType
 
-from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLClientValidationException
 from aiographql.client.exceptions import GraphQLIntrospectionException
-from aiographql.client.exceptions import GraphQLRequestException
-from aiographql.client.helpers import aiohttp_client_session
 from aiographql.client.request import GraphQLRequest
-from aiographql.client.response import GraphQLResponse
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.serializer import GraphQLSerializer
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
+from aiographql.client.transport import AiohttpTransport
+from aiographql.client.transport import GraphQLTransport
 
 
 if TYPE_CHECKING:
@@ -34,6 +32,8 @@ if TYPE_CHECKING:
 
     from aiographql.client.codec import GraphQLCodec
     from aiographql.client.codec import T
+    from aiographql.client.response import GraphQLResponse
+    from aiographql.client.transport import GraphQLTransport
 
 
 @dataclasses.dataclass(frozen=True)
@@ -82,6 +82,8 @@ class GraphQLClient:
     :param serializer: Custom JSON serializer to use for requests and responses.
     :param codec: Custom codec to use for encoding request variables and decoding
         response data.
+    :param transport: Custom transport to use for making requests. If not provided,
+        a :class:`aiographql.client.transport.AiohttpTransport` is used.
     """
 
     def __init__(
@@ -94,23 +96,31 @@ class GraphQLClient:
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
+        transport: GraphQLTransport | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
         self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
         self._headers.update(headers or {})
         self._schema = schema
-        self._session = session
         self._validate = validate
         self._serializer = serializer or DefaultSerializer()
         self._codec = codec
+        self._transport = transport or AiohttpTransport(
+            endpoint=self.endpoint, session=session
+        )
+
+    @property
+    def _session(self) -> aiohttp.ClientSession | None:
+        if isinstance(self._transport, AiohttpTransport):
+            return self._transport._session
+        return None
 
     async def close(self) -> None:
         """
-        Close the underlying `aiohttp.ClientSession` if one was created by the client.
+        Close the underlying transport.
         """
-        if self._session is not None:
-            await self._session.close()
+        await self._transport.close()
 
     async def __aenter__(self) -> GraphQLClient:
         return self
@@ -232,53 +242,6 @@ class GraphQLClient:
 
         return request
 
-    async def _http_request(
-        self,
-        session: aiohttp.ClientSession,
-        method: str,
-        request: GraphQLRequest,
-        **kwargs: Any,
-    ) -> GraphQLResponse:
-        """
-        Helper method to make an http request using the provided *session*.
-
-        :param session: Session to use when making the request.
-        :param method: HTTP method to use when making the request.
-        :param request: Prepared GraphQL request to dispatch to the server.
-        :param kwargs: Additional arguments to pass to
-            :method:`aiohttp.ClientSession.request` when making the request.
-        :raises: :class:`GraphQLRequestException` when the server responds with a
-            non 200 status code.
-        :return: Query response.
-        """
-        async with session.request(
-            method=method, url=self.endpoint, headers=request.headers, **kwargs
-        ) as resp:
-            resp_data = await resp.read()
-            try:
-                body = self._serializer.loads(resp_data)
-            except Exception:
-                body = None
-
-            response = GraphQLResponse(request=request, json=body)
-
-            if 200 <= resp.status < 300:
-                return response
-
-            raise GraphQLRequestException(response)
-
-    def _coerce_value(self, value: Any) -> Any:
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, (dict, list)):
-            serialized = self._serializer.dumps(value)
-            return (
-                serialized.decode("utf-8")
-                if isinstance(serialized, bytes)
-                else serialized
-            )
-        return value
-
     async def query_data_as(
         self,
         request: GraphQLRequest | str,
@@ -357,31 +320,12 @@ class GraphQLClient:
         await self.validate(request=request)
         method = method or self._method
 
-        if method == GraphQLQueryMethod.post:
-            kwargs = {"data": self._serializer.dumps(request.payload())}
-        elif method == GraphQLQueryMethod.get:
-            params = {
-                k: str(v)
-                if not isinstance(v, (dict, list, bool))
-                else self._coerce_value(v)
-                for k, v in request.payload().items()
-            }
-            kwargs = {"params": params}  # type: ignore[dict-item]
-        else:
-            raise GraphQLClientException(f"Invalid method ({method}) specified")
-
-        if session or self._session:
-            return await self._http_request(
-                session=cast("aiohttp.ClientSession", session or self._session),
-                method=method,
-                request=request,
-                **kwargs,
-            )
-
-        async with aiohttp_client_session() as session:
-            return await self._http_request(
-                session=session, method=method, request=request, **kwargs
-            )
+        return await self._transport.request(
+            method=method,
+            request=request,
+            serializer=self._serializer,
+            session=session,
+        )
 
     async def post(
         self,

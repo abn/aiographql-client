@@ -1,17 +1,33 @@
 .. _transport:
 
-Configuring HTTP Transport
-==========================
+Configuring Transport
+=====================
+
+The client allows you to customize how GraphQL requests are executed by using a transport abstraction.
+By default, the client uses :class:`aiographql.client.transport.AiohttpTransport`.
+
+Customizing Transport
+*********************
+
+You can provide a custom transport instance when creating the :class:`aiographql.client.GraphQLClient`.
+
+.. code-block:: python
+
+    from aiographql import GraphQLClient
+    from aiographql.client.transport import AiohttpTransport
+
+    transport = AiohttpTransport(endpoint="http://127.0.0.1:8080/v1/graphql")
+    client = GraphQLClient(endpoint="http://127.0.0.1:8080/v1/graphql", transport=transport)
 
 Custom HTTP Client Sessions
 ***************************
 
-The client allows you to specify a `aiohttp Client Session <https://docs.aiohttp.org/en/stable/client_reference.html>`_
+The :class:`aiographql.client.transport.AiohttpTransport` allows you to specify a `aiohttp Client Session <https://docs.aiohttp.org/en/stable/client_reference.html>`_
 for use at various levels. Including per query and/or for all queries made by the client.
 
 This can be done so by passing in the session when doing any of the following;
 
-1. creating a client
+1. creating a client (this will be passed to the default `AiohttpTransport`)
 
 .. code-block:: python
 
@@ -19,7 +35,17 @@ This can be done so by passing in the session when doing any of the following;
         endpoint="http://127.0.0.1:8080/v1/graphql", session=session
     )
 
-2. making a query
+2. creating an `AiohttpTransport` explicitly
+
+.. code-block:: python
+
+    from aiographql.client.transport import AiohttpTransport
+
+    transport = AiohttpTransport(
+        endpoint="http://127.0.0.1:8080/v1/graphql", session=session
+    )
+
+3. making a query
 
 .. code-block:: python
 

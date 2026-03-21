@@ -24,7 +24,9 @@ async def test_custom_serializer_uuid() -> None:
             return orjson.dumps(obj, option=orjson.OPT_INDENT_2).decode("utf-8")
 
     client = GraphQLClient(
-        endpoint="http://localhost:8080/v1/graphql", serializer=CustomSerializer()
+        endpoint="http://localhost:8080/v1/graphql",
+        serializer=CustomSerializer(),
+        validate=False,
     )
 
     request = client._prepare_request(
@@ -53,7 +55,9 @@ async def test_custom_serializer_deserialization() -> None:
             return orjson.dumps(obj)
 
     client = GraphQLClient(
-        endpoint="http://localhost:8080/v1/graphql", serializer=CustomSerializer()
+        endpoint="http://localhost:8080/v1/graphql",
+        serializer=CustomSerializer(),
+        validate=False,
     )
 
     # Mocking a response to test json_loads
@@ -76,10 +80,10 @@ async def test_custom_serializer_deserialization() -> None:
     session = MagicMock(spec=aiohttp.ClientSession)
     session.request.return_value = MockResponse()
 
-    response = await client._http_request(
+    response = await client.query(
+        request=GraphQLRequest(query="{ user { name } }"),
         session=session,
         method="POST",
-        request=GraphQLRequest(query="{ user { name } }"),
     )
 
     # Check if custom_loads was used
