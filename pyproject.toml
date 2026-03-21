@@ -190,6 +190,7 @@ pytest-mock = "^3.15.1"
 mypy = "^1.19.1"
 types-orjson = "^3.6.2"
 pydantic = ">=2.0"
+ruff = "^0.15.7"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"
