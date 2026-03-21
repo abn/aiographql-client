@@ -5,6 +5,7 @@ import dataclasses
 
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Literal
 from typing import cast
 
 import graphql
@@ -20,8 +21,8 @@ from aiographql.client.serializer import GraphQLSerializer
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
-from aiographql.client.transport import AiohttpTransport
 from aiographql.client.transport import GraphQLTransport
+from aiographql.client.transport import get_default_transport
 
 
 if TYPE_CHECKING:
@@ -83,7 +84,8 @@ class GraphQLClient:
     :param codec: Custom codec to use for encoding request variables and decoding
         response data.
     :param transport: Custom transport to use for making requests. If not provided,
-        a :class:`aiographql.client.transport.AiohttpTransport` is used.
+        the best available transport is automatically selected (preferring httpx).
+        Can be "auto", "httpx", "aiohttp" or a :class:`GraphQLTransport` instance.
     """
 
     def __init__(
@@ -96,7 +98,7 @@ class GraphQLClient:
         validate: bool = True,
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
-        transport: GraphQLTransport | None = None,
+        transport: Literal["auto", "httpx", "aiohttp"] | GraphQLTransport | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -106,14 +108,16 @@ class GraphQLClient:
         self._validate = validate
         self._serializer = serializer or DefaultSerializer()
         self._codec = codec
-        self._transport = transport or AiohttpTransport(
-            endpoint=self.endpoint, session=session
+        self._transport = get_default_transport(
+            endpoint=self.endpoint, transport=transport, session=session
         )
 
     @property
     def _session(self) -> aiohttp.ClientSession | None:
-        if isinstance(self._transport, AiohttpTransport):
-            return self._transport._session
+        if hasattr(self._transport, "_session"):
+            return cast("aiohttp.ClientSession | None", self._transport._session)
+        if hasattr(self._transport, "session"):
+            return cast("aiohttp.ClientSession | None", self._transport.session)
         return None
 
     async def close(self) -> None:
