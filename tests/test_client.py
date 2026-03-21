@@ -271,7 +271,7 @@ async def test_subscription_connection_init_payload(
 
 
 async def test_query_method_session_override(mocker: MockerFixture) -> None:
-    from aiographql.client.transport.http import AiohttpTransport
+    from aiographql.client.transport.aiohttp import AiohttpTransport
 
     endpoint = "http://example.com/graphql"
     # Disable validation to avoid introspection in this test

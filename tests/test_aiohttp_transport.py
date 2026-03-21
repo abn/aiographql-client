@@ -9,7 +9,7 @@ import pytest
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
-from aiographql.client.transport.http import AiohttpTransport
+from aiographql.client.transport.aiohttp import AiohttpTransport
 
 
 @pytest.mark.asyncio

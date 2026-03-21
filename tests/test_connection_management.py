@@ -7,8 +7,8 @@ import httpx
 import pytest
 
 from aiographql.client import GraphQLClient
-from aiographql.client.transport.http import AiohttpTransport
-from aiographql.client.transport.http import HttpxTransport
+from aiographql.client.transport.aiohttp import AiohttpTransport
+from aiographql.client.transport.httpx import HttpxTransport
 
 
 pytestmark = pytest.mark.asyncio

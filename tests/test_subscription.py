@@ -13,10 +13,10 @@ from aiographql.client import GraphQLRequest
 from aiographql.client import GraphQLSubscription
 from aiographql.client import GraphQLSubscriptionEventType
 from aiographql.client.subscription import GraphQLSubscriptionEvent
+from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
-from aiographql.client.transport.http import AiohttpSubscriptionTransport
-from aiographql.client.transport.http import HttpxTransport
+from aiographql.client.transport.httpx import HttpxTransport
 
 
 if TYPE_CHECKING:
@@ -255,7 +255,7 @@ async def test_subscription_routing_aiohttp(mocker: MockerFixture) -> None:
         client = GraphQLClient(
             endpoint=endpoint, session=aiohttp_session, validate=False
         )
-        from aiographql.client.transport.http import AiohttpTransport
+        from aiographql.client.transport.aiohttp import AiohttpTransport
 
         assert isinstance(client.transport, AiohttpTransport)
 
