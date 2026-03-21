@@ -39,9 +39,9 @@ class GraphQLRequest:
         if operation is not None:
             object.__setattr__(self, "operationName", operation)
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattribute__(self, item: str) -> Any:
         if item == "operation":
-            return self.operationName
+            return object.__getattribute__(self, "operationName")
         return super().__getattribute__(item)
 
     def payload(self) -> dict[str, Any]:
