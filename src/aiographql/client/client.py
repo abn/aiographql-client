@@ -128,6 +128,17 @@ class GraphQLClient:
             return cast("httpx.AsyncClient | None", self._transport._client)
         return None
 
+    def _aiohttp_session(self) -> aiohttp.ClientSession | None:
+        try:
+            import aiohttp
+
+            _session = self._session()
+            if isinstance(_session, aiohttp.ClientSession):
+                return _session
+        except ImportError:
+            pass
+        return None
+
     async def close(self) -> None:
         """
         Close the underlying transport.
@@ -486,7 +497,7 @@ class GraphQLClient:
             transport=get_default_subscription_transport(
                 endpoint=self.endpoint,
                 transport=transport,
-                session=session or self._session(),
+                session=session or self._aiohttp_session(),
             ),
         )
         await subscription.subscribe(endpoint=self.endpoint, wait=wait)
