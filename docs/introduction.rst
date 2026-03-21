@@ -32,15 +32,29 @@ You can add the the package to your project by specifying a dependency to `aiogr
 
 If you are using `Poetry`_ to manage your project, the following command should do the trick.
 
-.. code-block:: python
+To install with the default `aiohttp` transport:
 
-    poetry add aiographql-client
+.. code-block:: shell
+
+    poetry add aiographql-client[aiohttp]
+
+To use `httpx` as the transport:
+
+.. code-block:: shell
+
+    poetry add aiographql-client[httpx]
+
+To use `websockets` for subscriptions (alternative to `aiohttp`):
+
+.. code-block:: shell
+
+    poetry add aiographql-client[websockets]
 
 When using pip you can do the following.
 
 .. code-block:: shell
 
-    pip install aiographql-client
+    pip install aiographql-client[aiohttp]
 
 .. _aiographql-client: https://pypi.org/project/aiographql-client/
 .. _Poetry: https://python-poetry.org

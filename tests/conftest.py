@@ -139,3 +139,45 @@ async def mutation_city(
 @pytest.fixture
 def mutation_output() -> dict[str, Any]:
     return {"insert_city": {"affected_rows": 1}}
+
+
+@pytest.fixture
+def ws_message_ka() -> str:
+    return '{"type":"ka"}'
+
+
+@pytest.fixture
+def ws_message_connection_ack() -> str:
+    return '{"type":"connection_ack"}'
+
+
+@pytest.fixture
+def ws_message_data() -> str:
+    return (
+        '{"type":"data","id":"1","payload":{"data":{"city":[{"id":1,"name":"Kabul"}]}}}'
+    )
+
+
+@pytest.fixture
+def ws_message_error() -> str:
+    return '{"type":"error","id":"1","payload":{"message":"an error occurred"}}'
+
+
+@pytest.fixture
+def ws_message_complete() -> str:
+    return '{"type":"complete","id":"1"}'
+
+
+@pytest.fixture
+def ws_message_invalid_json() -> str:
+    return '{"type":"data", "id": "1", "payload": {"data": {"city": '
+
+
+@pytest.fixture
+def ws_message_no_type() -> str:
+    return '{"id":"1","payload":{"data":{"city":[{"id":1,"name":"Kabul"}]}}}'
+
+
+@pytest.fixture
+def ws_message_bad_payload() -> str:
+    return '{"type":"data","id":"1","payload":"not a dict"}'

@@ -168,12 +168,12 @@ async def test_subscription_connection_requests_minimal() -> None:
 
 
 @pytest.mark.asyncio
-async def test_subscription_handle_mismatch_id() -> None:
+async def test_subscription_handle_mismatch_id(ws_message_data: str) -> None:
     mock_callbacks = MagicMock(spec=CallbackRegistry)
     req = GraphQLRequest(query="{ city { name } }")
     sub = GraphQLSubscription(request=req, callbacks=mock_callbacks)
     event = GraphQLSubscriptionEvent(
-        request=req, json={"id": "other-id", "type": "data", "payload": {}}
+        request=req, json={"id": "other-id", "type": "data", "payload": {"data": {}}}
     )
     await sub.handle(event)
     mock_callbacks.dispatch.assert_not_called()

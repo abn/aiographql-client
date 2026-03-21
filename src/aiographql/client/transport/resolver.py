@@ -46,6 +46,18 @@ def _is_aiohttp_available() -> bool:
         return False
 
 
+def _is_websockets_available() -> bool:
+    """
+    Check if websockets is available.
+    """
+    try:
+        import websockets  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
 def get_default_transport(
     endpoint: str,
     transport: GraphQLTransport | None = None,
@@ -151,7 +163,12 @@ def get_default_subscription_transport(
             **kwargs,
         )
 
+    if _is_websockets_available():
+        from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
+
+        return WebsocketSubscriptionTransport(endpoint=endpoint, **kwargs)
+
     raise RuntimeError(
-        "No suitable subscription transport found. Please install `aiohttp` via extras, "
-        "e.g., `pip install aiographql-client[aiohttp]`."
+        "No suitable subscription transport found. Please install `aiohttp` or `websockets` via extras, "
+        "e.g., `pip install aiographql-client[aiohttp]` or `pip install aiographql-client[websockets]`."
     )

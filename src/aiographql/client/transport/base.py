@@ -46,6 +46,23 @@ class GraphQLTransport(Protocol):
 
 
 @runtime_checkable
+class GraphQLWebSocketResponse(Protocol):
+    """
+    Protocol for GraphQL WebSocket responses.
+    """
+
+    async def __aenter__(self) -> GraphQLWebSocketResponse: ...
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
+
+    async def send_str(self, data: str) -> None: ...
+
+    def __aiter__(self) -> GraphQLWebSocketResponse: ...
+
+    async def __anext__(self) -> Any: ...
+
+
+@runtime_checkable
 class GraphQLSubscriptionTransport(Protocol):
     """
     Protocol for GraphQL subscription transports.
@@ -57,7 +74,7 @@ class GraphQLSubscriptionTransport(Protocol):
         request: GraphQLRequest,
         serializer: GraphQLSerializer,
         **kwargs: Any,
-    ) -> Any:
+    ) -> GraphQLWebSocketResponse:
         """
         Execute a GraphQL subscription.
         """

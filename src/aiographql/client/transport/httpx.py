@@ -97,7 +97,10 @@ class HttpxTransport(GraphQLTransport):
 
         try:
             resp = await client.request(
-                method=method, url=self.endpoint, headers=request.headers, **kwargs
+                method=method,
+                url=self.endpoint,
+                headers=request.headers,
+                **kwargs,
             )
             resp_data = resp.content
             try:
