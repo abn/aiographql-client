@@ -52,73 +52,106 @@ This requires `httpx` to be installed.
 Custom HTTP Client Sessions
 ***************************
 
-The :class:`aiographql.client.transport.AiohttpTransport` allows you to specify a `aiohttp Client Session <https://docs.aiohttp.org/en/stable/client_reference.html>`_
-for use at various levels. Including per query and/or for all queries made by the client.
+The :class:`aiographql.client.transport.AiohttpTransport` allows you to specify an `aiohttp Client Session <https://docs.aiohttp.org/en/stable/client_reference.html>`_
+for use at various levels, including per query and for all queries made by the client.
 
-Similarly, :class:`aiographql.client.transport.HttpxTransport` allows you to specify a `httpx.AsyncClient <https://www.python-httpx.org/async/>`_.
+Similarly, :class:`aiographql.client.transport.HttpxTransport` allows you to specify an `httpx.AsyncClient <https://www.python-httpx.org/async/>`_.
 
-This can be done so by passing in the session/client when doing any of the following;
+Providing your own session is highly recommended for **production use**, as it allows for better control over connection pooling, timeouts, and lifecycle management.
 
-1. Creating a client (this will be passed to the default transport)
+.. important::
 
-.. code-block:: python
+    When providing your own session, the library will **not** automatically close it. You are responsible for ensuring the session is closed when it is no longer needed.
 
-    # For Aiohttp session
-    client = aiographql.GraphQLClient(
-        endpoint="http://127.0.0.1:8080/v1/graphql", session=session
-    )
+Usage Patterns
+--------------
 
-    # For Httpx client
-    client = aiographql.GraphQLClient(
-        endpoint="http://127.0.0.1:8080/v1/graphql", client=async_client
-    )
+1. **Global Session (Recommended for high performance)**
 
-2. creating a transport explicitly
+   Creating a client with a pre-configured session:
 
 .. code-block:: python
 
-    # Aiohttp
-    from aiographql.client.transport import AiohttpTransport
+    import aiohttp
+    from aiographql import GraphQLClient
 
-    transport = AiohttpTransport(
-        endpoint="http://127.0.0.1:8080/v1/graphql", session=session
-    )
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(limit=200, force_close=True)
+    ) as session:
+        client = GraphQLClient(
+            endpoint="http://127.0.0.1:8080/v1/graphql",
+            session=session
+        )
+        await client.query("{ city { name } }")
 
-    # Httpx
-    from aiographql.client.transport import HttpxTransport
-
-    transport = HttpxTransport(
-        endpoint="http://127.0.0.1:8080/v1/graphql", client=async_client
-    )
-
-3. making a query
+2. **Per-query Session**
 
 .. code-block:: python
 
-    # Aiohttp
-    await client.query(
-        request=request, session=session
-    )
+    # Using Httpx
+    async with httpx.AsyncClient() as async_client:
+        await client.query(
+            request=request,
+            client=async_client
+        )
 
-    # Httpx
-    await client.query(
-        request=request, client=async_client
-    )
+Connection Limits & Subscriptions
+*********************************
 
-3. creating a subscription
+By default, the ``AiohttpTransport`` uses a ``TCPConnector`` with a connection limit of **100**.
 
-Note: Subscriptions are currently only supported via :class:`aiographql.client.transport.websocket.AiohttpSubscriptionTransport`.
-This transport is automatically selected when you call :meth:`aiographql.client.GraphQLClient.subscribe`
-if ``aiohttp`` is available.
+Impact on Subscriptions
+-----------------------
+
+GraphQL subscriptions maintain a long-lived WebSocket connection. If you are using many concurrent subscriptions, you may reach the default connection limit.
+
+*   **Exhausting limits**: If the limit is reached, subsequent requests (queries/mutations) may hang or time out until a connection is freed.
+*   **Best Practice**: For production applications with high subscription counts or high concurrency, provide a custom session with an appropriate ``limit``:
 
 .. code-block:: python
 
-    await client.subscribe(
-        request=request, session=session
-    )
+    import aiohttp
 
-Using Behind SOCK Proxies
-*************************
+    # Increase limit for high-concurrency or many subscriptions
+    connector = aiohttp.TCPConnector(limit=500)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        client = GraphQLClient(endpoint="...", session=session)
+        # Use client...
+
+Reliable Production Use
+***********************
+
+For reliable production use, consider the following guides:
+
+Timeouts
+--------
+
+Always set reasonable timeouts for your requests to prevent your application from hanging indefinitely.
+
+.. code-block:: python
+
+    import aiohttp
+
+    timeout = aiohttp.ClientTimeout(total=30, connect=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        client = GraphQLClient(endpoint="...", session=session)
+        # ...
+
+Retries
+-------
+
+The library does not implement automatic retries. For production, consider using a library like `tenacity <https://tenacity.readthedocs.io/>`_ to handle transient network errors or rate limits.
+
+.. code-block:: python
+
+    from tenacity import retry, stop_after_attempt, wait_exponential
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def query_with_retry(client, request):
+        return await client.query(request)
+
+Behind SOCKS Proxies
+********************
 
 In order use via a socks proxy, you will need to custom connector, like the one provided by
 `aiohttp-socks <https://pypi.org/project/aiohttp-socks/>`_.

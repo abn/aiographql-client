@@ -71,3 +71,14 @@ validation globally when initializing the :class:`aiographql.client.GraphQLClien
 {}
 >>> response.errors
 [GraphQLError(extensions={'code': 'undefinedField', 'typeName': 'Query', 'fieldName': 'bad'}, locations=[{'line': 3, 'column': 15}], message="Field 'bad' doesn't exist on type 'Query'", path=['query', 'bad'])]
+
+Introspection Caching
+---------------------
+
+The client introspects the server to get the schema for validation. This schema is cached internally. For long-running production services, if the server schema changes, you can force a refresh:
+
+.. code-block:: python
+
+    await client.get_schema(refresh=True)
+
+This is particularly useful if your GraphQL server is updated with new fields or types without restarting the client application.
