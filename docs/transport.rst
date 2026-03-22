@@ -122,7 +122,7 @@ Usage Patterns
     async with httpx.AsyncClient() as async_client:
         await client.query(
             request=request,
-            client=async_client
+            session=async_client
         )
 
 Connection Limits & Subscriptions
