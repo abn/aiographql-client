@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from typing import TYPE_CHECKING
+from collections.abc import AsyncGenerator  # noqa: TC003
 
 import strawberry
 
@@ -10,10 +10,6 @@ from strawberry.asgi import GraphQL
 from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
-
-
-if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
 
 
 @strawberry.type
