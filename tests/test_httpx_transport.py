@@ -153,6 +153,29 @@ async def test_httpx_transport_external_client(strawberry_server: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_httpx_transport_session_alias(strawberry_server: str) -> None:
+    endpoint = strawberry_server
+    import httpx
+
+    async with httpx.AsyncClient() as session:
+        transport = HttpxTransport(endpoint=endpoint)
+        serializer = DefaultSerializer()
+        request = GraphQLRequest(
+            query="{ hello }", headers={"Content-Type": "application/json"}
+        )
+
+        # Pass session as an alias for client in the request call
+        response = await transport.request(
+            method="POST", request=request, serializer=serializer, session=session
+        )
+        assert response.data == {"hello": "world"}
+
+        await transport.close()
+        # session should NOT be closed if it was provided by the user
+        assert not session.is_closed
+
+
+@pytest.mark.asyncio
 async def test_httpx_transport_invalid_method() -> None:
     transport = HttpxTransport(endpoint="http://example.com")
     with pytest.raises(GraphQLClientException) as excinfo:
