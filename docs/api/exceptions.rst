@@ -21,3 +21,8 @@ GraphQLIntrospectionException
 -----------------------------
 .. autoclass:: aiographql.client.GraphQLIntrospectionException
     :members:
+
+GraphQLCodecException
+---------------------
+.. autoclass:: aiographql.client.GraphQLCodecException
+    :members:

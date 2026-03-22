@@ -23,7 +23,7 @@ Getting started is as simple as passing your GraphQL query to :func:`aiographql.
 .. code-block:: python
 
     import asyncio
-    from aiographql import GraphQLClient
+    from aiographql.client import GraphQLClient
 
     async def main():
         # Initialize the client
@@ -51,36 +51,26 @@ For more detailed examples on how to use the library, see :ref:`examples`.
     allows for easier working with GraphQL and also adds auto-complete during development.
 
 
-Adding to your project
-----------------------
+Available Extras
+~~~~~~~~~~~~~~~~
 
-You can add the the package to your project by specifying a dependency to `aiographql-client`_.
+*   ``aiohttp``: Installs ``aiohttp`` for the default HTTP transport and WebSocket subscriptions.
+*   ``httpx``: Installs ``httpx`` for the alternative HTTP transport and ``websockets`` for subscriptions.
+*   ``pydantic``: Installs ``pydantic`` (v2) for enhanced data modeling and validation.
 
-If you are using `Poetry`_ to manage your project, the following command should do the trick.
-
-To install with the default `aiohttp` transport:
-
-.. code-block:: shell
-
-    poetry add aiographql-client[aiohttp]
-
-To use `httpx` as the transport:
+Using Poetry
+~~~~~~~~~~~~
 
 .. code-block:: shell
 
-    poetry add aiographql-client[httpx]
+    poetry add aiographql-client[aiohttp,pydantic]
 
-To use `websockets` for subscriptions (alternative to `aiohttp`):
-
-.. code-block:: shell
-
-    poetry add aiographql-client[websockets]
-
-When using pip you can do the following.
+Using pip
+~~~~~~~~~
 
 .. code-block:: shell
 
-    pip install aiographql-client[aiohttp]
+    pip install aiographql-client[aiohttp,pydantic]
 
 .. _aiographql-client: https://pypi.org/project/aiographql-client/
 .. _Poetry: https://python-poetry.org
