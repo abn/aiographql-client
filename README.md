@@ -19,22 +19,16 @@ To install the client with the default `aiohttp` transport:
 pip install aiographql-client[aiohttp]
 ```
 
-To use `httpx` as the transport:
+To use `httpx` as the transport (includes `websockets` for subscriptions):
 
 ```bash
 pip install aiographql-client[httpx]
 ```
 
-To use `websockets` for subscriptions (alternative to `aiohttp`):
-
-```bash
-pip install aiographql-client[websockets]
-```
-
 To install the client with the default `aiohttp` transport and `pydantic` support:
 
 ```bash
-pip install aiographql-client[all]
+pip install aiographql-client[aiohttp,pydantic]
 ```
 
 ## Transports & Auto-detection
@@ -42,8 +36,7 @@ pip install aiographql-client[all]
 The client supports multiple HTTP backends. You can choose which one to use during installation via extras.
 
 - **`aiohttp`**: The default asynchronous HTTP client for the library. Supports both queries and subscriptions.
-- **`httpx`**: A modern, feature-rich HTTP client. Supports queries only.
-- **`websockets`**: A standalone WebSocket client. Can be used for subscriptions when `aiohttp` is not available.
+- **`httpx`**: A modern, feature-rich HTTP client. Supports queries and subscriptions (via `websockets`).
 
 ### Auto-detection
 
@@ -60,6 +53,8 @@ When you initialize a `GraphQLClient` without specifying a transport, it will tr
 1. It first checks if `aiohttp` is installed.
 2. If not, it checks if `websockets` is installed.
 3. If neither is found, it raises a `RuntimeError`.
+
+Note that `websockets` is installed automatically when the `httpx` extra is used.
 
 ```python
 from aiographql.client import GraphQLClient
@@ -91,6 +86,8 @@ client = GraphQLClient(
 )
 
 # Explicitly use websockets for subscriptions
+from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
+
 subscription_transport = WebsocketSubscriptionTransport(endpoint="wss://your-api.com/graphql")
 client = GraphQLClient(
     endpoint="https://your-api.com/graphql",
@@ -109,8 +106,8 @@ pip install tox
 # Run all environments
 tox
 
-# Run a specific environment (e.g., Python 3.10 with all transports)
-tox -e py310-all
+# Run a specific environment (e.g., Python 3.10 with aiohttp and pydantic)
+tox -e py310-aiohttp-pydantic
 
 # Run with only aiohttp
 tox -e py310-aiohttp
