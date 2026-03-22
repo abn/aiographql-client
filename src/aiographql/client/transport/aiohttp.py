@@ -189,6 +189,12 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         Execute a GraphQL subscription using aiohttp websockets.
         """
+        # ws_connect expects ws:// or wss://
+        if endpoint.startswith("http://"):
+            endpoint = f"ws://{endpoint[7:]}"
+        elif endpoint.startswith("https://"):
+            endpoint = f"wss://{endpoint[8:]}"
+
         # use provided session, or internal session
         actual_session = kwargs.pop("session", None) or await self._get_session()
 
