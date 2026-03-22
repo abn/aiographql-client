@@ -17,8 +17,18 @@ GraphQLSubscriptionEvent
 .. autoclass:: aiographql.client.GraphQLSubscriptionEvent
     :members:
 
+GraphQLCodec
+------------
+.. autoclass:: aiographql.client.GraphQLCodec
+    :members:
+
+DefaultGraphQLCodec
+-------------------
+.. autoclass:: aiographql.client.DefaultGraphQLCodec
+    :members:
+
 GraphQLError
---------------
+------------
 .. autoclass:: aiographql.client.GraphQLError
     :members:
     :undoc-members:

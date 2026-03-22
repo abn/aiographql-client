@@ -41,6 +41,7 @@ Documentation Content
 
    examples
    transport
+   data-models
    api
 
 .. toctree::

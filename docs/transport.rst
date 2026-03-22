@@ -17,10 +17,40 @@ This is equivalent to passing ``transport=None``.
 
 .. code-block:: python
 
-    from aiographql import GraphQLClient
+    from aiographql.client import GraphQLClient
 
     # Automatically selects the best available transport
     client = GraphQLClient(endpoint="http://127.0.0.1:8080/v1/graphql")
+
+Available Transports
+********************
+
+The library supports multiple transports for HTTP (Queries/Mutations) and WebSocket (Subscriptions).
+
+.. list-table:: Transport Comparison
+   :widths: 20 20 20 40
+   :header-rows: 1
+
+   * - Name
+     - Type
+     - Dependency
+     - Recommended Use Case
+   * - ``AiohttpTransport``
+     - HTTP
+     - ``aiohttp``
+     - Default, high performance, integrated session management.
+   * - ``HttpxTransport``
+     - HTTP
+     - ``httpx``
+     - If you are already using ``httpx`` or need its specific features.
+   * - ``AiohttpSubscriptionTransport``
+     - WebSocket
+     - ``aiohttp``
+     - Default for subscriptions, shares ``aiohttp`` session.
+   * - ``WebsocketSubscriptionTransport``
+     - WebSocket
+     - ``websockets``
+     - Lightweight alternative for subscriptions.
 
 Customizing Transport
 *********************
@@ -29,7 +59,7 @@ You can provide a custom transport instance when creating the :class:`aiographql
 
 .. code-block:: python
 
-    from aiographql import GraphQLClient
+    from aiographql.client import GraphQLClient
     from aiographql.client.transport import AiohttpTransport
 
     transport = AiohttpTransport(endpoint="http://127.0.0.1:8080/v1/graphql")
@@ -43,7 +73,7 @@ This requires `httpx` to be installed.
 
 .. code-block:: python
 
-    from aiographql import GraphQLClient
+    from aiographql.client import GraphQLClient
     from aiographql.client.transport import HttpxTransport
 
     transport = HttpxTransport(endpoint="http://127.0.0.1:8080/v1/graphql")
@@ -73,7 +103,7 @@ Usage Patterns
 .. code-block:: python
 
     import aiohttp
-    from aiographql import GraphQLClient
+    from aiographql.client import GraphQLClient
 
     async with aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(limit=200, force_close=True)
