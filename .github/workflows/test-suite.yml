@@ -98,4 +98,5 @@ jobs:
             SERVER_APOLLO_V2: "http://127.0.0.1:4000/graphql"
             SERVER_STRAWBERRY: "http://127.0.0.1:5000/graphql"
         run: |
-          tox -e py-${{ matrix.transport }}
+          TOX_ENV="py$(echo ${{ matrix.python-version }} | tr -d '.')-${{ matrix.transport }}"
+          tox -e $TOX_ENV
