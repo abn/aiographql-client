@@ -39,7 +39,7 @@ jobs:
           - 8080:8080
         options: --restart on-failure
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Start podman socket
         shell: bash
