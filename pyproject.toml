@@ -38,9 +38,7 @@ repository = "https://github.com/abn/aiographql-client"
 [project.optional-dependencies]
 pydantic = ["pydantic>=2.0"]
 aiohttp = ["aiohttp >=3.5,<4.0"]
-httpx = ["httpx >=0.24.0,<1.0.0"]
-websockets = ["websockets>=13.0"]
-subscriptions = ["aiohttp >=3.5,<4.0"]
+httpx = ["httpx >=0.24.0,<1.0.0", "websockets>=13.0"]
 all = [
     "aiohttp >=3.5,<4.0",
     "pydantic>=2.0",
@@ -131,8 +129,10 @@ omit = [
 ]
 
 [tool.coverage.paths]
+# ensure these paths are treated as equivalents
 source = [
-    "src",
+    "src/",
+    "*/site-packages"
 ]
 
 [tool.coverage.report]
@@ -140,7 +140,7 @@ skip_empty = true
 ignore_errors = true
 
 # Regexes for lines to exclude from consideration
-exclude_lines = [
+exclude_also = [
     # Have to re-enable the standard pragma
     "pragma: no cover",
 
@@ -167,6 +167,41 @@ output = ".coverage/coverage.xml"
 [tool.coverage.json]
 output = ".coverage/coverage.json"
 
+[tool.tox]
+env_list = [
+    { product = [
+        { prefix = "py3", start = 10, stop = 14 },
+        ["all", "aiohttp", "httpx"],
+    ] }
+]
+
+[tool.tox.env_run_base]
+description = "run tests"
+allowlist_externals = ["poetry"]
+pass_env = ["SERVER_WORLD_DB", "SERVER_APOLLO_V2", "SERVER_STRAWBERRY"]
+extras = [
+    "pydantic",
+    { replace = "if", condition = "factor.aiohttp or factor.all", then = ["aiohttp"], extend = true },
+    { replace = "if", condition = "factor.httpx or factor.all", then = ["httpx"], extend = true },
+]
+commands = [
+    ["poetry", "install", "--no-root", "--only=test"],
+    ["pytest", { replace = "posargs", extend = true }]
+]
+
+[tool.tox.env.report]
+skip_install = true
+deps = ["coverage[toml]"]
+set_env = { COVERAGE_FILE = "{toxinidir}/.coverage/data" }
+commands = [
+    ["coverage", "report"],
+    ["coverage", "html"]
+]
+
+[tool.tox.env.clean]
+inherit_from = "report"
+commands = [["coverage", "erase"]]
+
 [tool.mypy]
 files = "src, tests"
 mypy_path = "src"
@@ -190,17 +225,16 @@ exclude = [
 ]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.0.2"
-pytest-asyncio = "^1.3.0"
-pytest-cov = "^7.0.0"
-pytest-mock = "^3.15.1"
-mypy = "^1.19.1"
-types-orjson = "^3.6.2"
-pydantic = ">=2.0"
-ruff = "^0.15.7"
-httpx = "^0.28.1"
-respx = "^0.22.0"
-pytest-timeout = "^2.4.0"
+mypy = ">=1.19.1"
+types-orjson = ">=3.6.2"
+ruff = ">=0.15.7"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=9.0.2"
+pytest-asyncio = ">=1.3.0"
+pytest-cov = ">=7.0.0"
+pytest-mock = ">=3.15.1"
+mocket = ">=3.13.2"
 
 [tool.poetry.group.dev.dependencies.coverage]
 version = "^7.4"
