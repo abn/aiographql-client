@@ -43,9 +43,14 @@ async def test_custom_serializer_uuid() -> None:
     assert str(user_id) in dumped_payload
 
 
+@pytest.mark.aiohttp
 @pytest.mark.asyncio
 async def test_custom_serializer_deserialization() -> None:
     # Custom load function that adds a prefix to keys (just for testing)
+    from unittest.mock import MagicMock
+
+    import aiohttp
+
     class CustomSerializer:
         def loads(self, data: str | bytes) -> dict[str, Any]:
             obj = orjson.loads(data)
@@ -72,10 +77,6 @@ async def test_custom_serializer_deserialization() -> None:
 
         async def __aexit__(self, *args: Any) -> None:
             pass
-
-    from unittest.mock import MagicMock
-
-    import aiohttp
 
     session = MagicMock(spec=aiohttp.ClientSession)
     session.request.return_value = MockResponse()

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
 
-import aiohttp
 import pytest
+
+from mocket.plugins.httpretty import HTTPretty
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.request import GraphQLRequest
@@ -15,31 +14,27 @@ from aiographql.client.transport.aiohttp import AiohttpTransport
 from aiographql.client.transport.aiohttp import AiohttpWebSocketResponse
 
 
+pytestmark = pytest.mark.aiohttp
+
+
 @pytest.mark.asyncio
-async def test_aiohttp_transport_invalid_json_response() -> None:
-    transport = AiohttpTransport(endpoint="http://test.com")
+async def test_aiohttp_transport_invalid_json_response(
+    mocket: Any, httpretty: Any
+) -> None:
+    endpoint = "http://test.com/graphql"
+    transport = AiohttpTransport(endpoint=endpoint)
     request = GraphQLRequest(query="{ test }")
     serializer = DefaultSerializer()
 
-    mock_session = MagicMock(spec=aiohttp.ClientSession)
-    mock_resp = MagicMock()
-    mock_resp.status = 200
+    httpretty.register_uri(
+        HTTPretty.POST,
+        endpoint,
+        body="invalid json",
+        content_type="text/plain",
+        status=200,
+    )
 
-    async def async_read() -> bytes:
-        return b"invalid json"
-
-    mock_resp.read = async_read
-
-    class AsyncContextManager:
-        async def __aenter__(self) -> Any:
-            return mock_resp
-
-        async def __aexit__(self, *args: Any) -> None:
-            pass
-
-    mock_session.request.return_value = AsyncContextManager()
-
-    resp = await transport._http_request(mock_session, "POST", request, serializer)
+    resp = await transport.request("POST", request, serializer)
     assert resp.json is None
 
 
@@ -84,6 +79,11 @@ def test_aiohttp_transport_coerce_value_extra() -> None:
 
 @pytest.mark.asyncio
 async def test_aiohttp_websocket_response_anext() -> None:
+    from unittest.mock import AsyncMock
+    from unittest.mock import MagicMock
+
+    import aiohttp
+
     # Mocking aiohttp.ClientWebSocketResponse
     ws = AsyncMock()
 

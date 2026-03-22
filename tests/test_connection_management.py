@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import aiohttp
-import httpx
 import pytest
 
 from aiographql.client import GraphQLClient
-from aiographql.client.transport.aiohttp import AiohttpTransport
-from aiographql.client.transport.httpx import HttpxTransport
 
 
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.aiohttp
 async def test_aiohttp_user_ownership(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    import aiohttp
+
     """
     Test that user-provided aiohttp.ClientSession is NOT closed by the client.
     """
@@ -30,9 +29,12 @@ async def test_aiohttp_user_ownership(
     assert session.closed  # Should be closed by our context manager
 
 
+@pytest.mark.httpx
 async def test_httpx_user_ownership(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    import httpx
+
     """
     Test that user-provided httpx.AsyncClient is NOT closed by the client.
     """
@@ -46,9 +48,12 @@ async def test_httpx_user_ownership(
     assert session.is_closed  # Should be closed by our context manager
 
 
+@pytest.mark.aiohttp
 async def test_aiohttp_library_ownership(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+
     """
     Test that library-created aiohttp sessions ARE closed by the client.
     """
@@ -67,9 +72,12 @@ async def test_aiohttp_library_ownership(
     assert session.closed
 
 
+@pytest.mark.httpx
 async def test_httpx_library_ownership(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    from aiographql.client.transport.httpx import HttpxTransport
+
     """
     Test that library-created httpx clients ARE closed by the client.
     """
@@ -88,9 +96,12 @@ async def test_httpx_library_ownership(
     assert session.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_aiohttp_connection_pooling(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+
     """
     Test that consecutive aiohttp calls reuse the same session instance.
     """
@@ -112,9 +123,12 @@ async def test_aiohttp_connection_pooling(
         await client.close()
 
 
+@pytest.mark.httpx
 async def test_httpx_connection_pooling(
     server: str, query_city: str, headers: dict[str, str]
 ) -> None:
+    from aiographql.client.transport.httpx import HttpxTransport
+
     """
     Test that consecutive httpx calls reuse the same client instance.
     """

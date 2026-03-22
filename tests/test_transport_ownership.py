@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 from typing import cast
 from unittest.mock import patch
 
-import aiohttp
-import httpx
 import pytest
 
 from aiographql.client import GraphQLClient
@@ -18,7 +16,10 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.aiohttp
 async def test_user_ownership_aiohttp(server: str, query_city: str) -> None:
+    import aiohttp
+
     """
     Test that user-provided aiohttp.ClientSession is not closed by the client.
     """
@@ -30,7 +31,10 @@ async def test_user_ownership_aiohttp(server: str, query_city: str) -> None:
         assert not session.closed
 
 
+@pytest.mark.httpx
 async def test_user_ownership_httpx(server: str, query_city: str) -> None:
+    import httpx
+
     """
     Test that user-provided httpx.AsyncClient is not closed by the client.
     """
@@ -46,6 +50,7 @@ async def test_user_ownership_httpx(server: str, query_city: str) -> None:
         assert not httpx_client.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_library_ownership_aiohttp(server: str, query_city: str) -> None:
     """
     Test that library-created aiohttp session is closed by the client.
@@ -66,6 +71,7 @@ async def test_library_ownership_aiohttp(server: str, query_city: str) -> None:
     assert session.closed
 
 
+@pytest.mark.httpx
 async def test_library_ownership_httpx(server: str, query_city: str) -> None:
     """
     Test that library-created httpx client is closed by the client.
@@ -86,6 +92,7 @@ async def test_library_ownership_httpx(server: str, query_city: str) -> None:
     assert httpx_client.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
     """
     Test that multiple queries reuse the same session instance.
@@ -108,6 +115,7 @@ async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
     await client.close()
 
 
+@pytest.mark.httpx
 async def test_connection_pooling_httpx(server: str, query_city: str) -> None:
     """
     Test that multiple queries reuse the same httpx client instance.

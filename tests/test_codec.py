@@ -182,7 +182,10 @@ def test_codec_encode_dict() -> None:
     }
 
 
+@pytest.mark.pydantic
 def test_codec_extra_coverage() -> None:
+    from pydantic import BaseModel
+
     codec = DefaultGraphQLCodec()
 
     # Test Union support

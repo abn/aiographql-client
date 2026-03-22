@@ -14,14 +14,17 @@ from aiographql.client.transport.aiohttp import (
 from aiographql.client.transport.httpx import HttpxTransport as HttpxTransportActual
 
 
+@pytest.mark.aiohttp
 def test_aiohttp_transport_lazy_import() -> None:
     assert AiohttpTransport is AiohttpTransportActual
 
 
+@pytest.mark.httpx
 def test_httpx_transport_lazy_import() -> None:
     assert HttpxTransport is HttpxTransportActual
 
 
+@pytest.mark.aiohttp
 def test_aiohttp_subscription_transport_lazy_import() -> None:
     assert AiohttpSubscriptionTransport is AiohttpSubscriptionTransportActual
 

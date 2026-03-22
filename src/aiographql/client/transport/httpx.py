@@ -102,26 +102,49 @@ class HttpxTransport(GraphQLTransport):
                 headers=request.headers,
                 **kwargs,
             )
-            resp_data = resp.content
+            resp_data = getattr(resp, "content", None)
+            if resp_data is None:
+                try:
+                    # In some environments/mocking scenarios, resp.read() might be sync or async
+                    import asyncio
+
+                    read_coro = resp.read()
+                    if asyncio.iscoroutine(read_coro):
+                        resp_data = await read_coro
+                    else:
+                        resp_data = read_coro
+                except (AttributeError, TypeError):
+                    resp_data = None
+
             try:
-                body = serializer.loads(resp_data)
+                body = serializer.loads(resp_data) if resp_data is not None else None
             except Exception:
                 body = None
 
-            response = GraphQLResponse(request=request, json=body)
+            response = GraphQLResponse(
+                request=request, json=body if isinstance(body, dict) else {}
+            )
 
-            if 200 <= resp.status_code < 300:
+            if (
+                200
+                <= int(getattr(resp, "status_code", getattr(resp, "status", 0)))
+                < 300
+            ):
                 return response
 
             raise GraphQLRequestException(response)
-        except httpx.HTTPError as exc:
-            if isinstance(exc, httpx.HTTPStatusError):
-                # This should have been handled by the status_code check above if
-                # raise_for_status() was called, but we do it manually.
-                # If we get here, it might be an exception from httpx internals
-                # or if the user passed an unexpected exception.
-                pass
-            raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
+        except Exception as exc:
+            import httpx
+
+            if isinstance(exc, httpx.HTTPError):
+                if isinstance(exc, httpx.HTTPStatusError):
+                    # This should have been handled by the status_code check above if
+                    # raise_for_status() was called, but we do it manually.
+                    # If we get here, it might be an exception from httpx internals
+                    # or if the user passed an unexpected exception.
+                    pass
+                raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
+            raise
 
     def _coerce_value(self, value: Any, serializer: GraphQLSerializer) -> Any:
         if isinstance(value, bool):
