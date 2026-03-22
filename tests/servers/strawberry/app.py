@@ -31,14 +31,14 @@ class Query:
     @strawberry.field
     def city(self, name: str) -> City | None:
         if name == "London":
-            return City(name="London", country="UK")
+            return City(name="London", country="UK")  # type: ignore[call-arg]
         return None
 
     @strawberry.field
     def cities(self) -> list[City]:
         return [
-            City(name="London", country="UK"),
-            City(name="Paris", country="France"),
+            City(name="London", country="UK"),  # type: ignore[call-arg]
+            City(name="Paris", country="France"),  # type: ignore[call-arg]
         ]
 
 
@@ -46,7 +46,7 @@ class Query:
 class Mutation:
     @strawberry.mutation
     def add_city(self, name: str, country: str) -> City:
-        return City(name=name, country=country)
+        return City(name=name, country=country)  # type: ignore[call-arg]
 
 
 @strawberry.type
@@ -59,9 +59,9 @@ class Subscription:
 
     @strawberry.subscription
     async def city_added(self) -> AsyncGenerator[City, None]:
-        yield City(name="Berlin", country="Germany")
+        yield City(name="Berlin", country="Germany")  # type: ignore[call-arg]
         await asyncio.sleep(0.1)
-        yield City(name="Rome", country="Italy")
+        yield City(name="Rome", country="Italy")  # type: ignore[call-arg]
 
 
 schema = strawberry.Schema(
