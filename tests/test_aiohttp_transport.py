@@ -75,6 +75,7 @@ async def test_aiohttp_transport_session_override(
         assert not session.closed
 
 
+@pytest.mark.strawberry
 async def test_aiohttp_transport_external_session(
     strawberry_server: str,
 ) -> None:

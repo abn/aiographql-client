@@ -53,6 +53,13 @@ jobs:
           export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
           podman compose up -d apollo-server-v2 strawberry-server
 
+      - name: Wait for strawberry
+        shell: bash
+        run: |
+          timeout 60s bash -c \
+            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:5000/graphql)" == "000" ]]; do sleep 2; done' \
+          || false
+
       - name: Install poetry and tox
         run: pipx install poetry tox
 
