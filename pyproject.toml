@@ -228,9 +228,7 @@ enable_error_code = [
     "truthy-bool",
 ]
 exclude = [
-    "tests/fixtures",
-    "tests/masonry/builders/fixtures",
-    "tests/utils/fixtures",
+    "tests/servers"
 ]
 
 [tool.poetry.group.docs]
