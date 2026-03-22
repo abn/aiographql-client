@@ -204,7 +204,7 @@ commands = [["coverage", "erase"]]
 
 [tool.tox.env.docs]
 description = "build documentation"
-base_python = "py314"
+base_python = "py312"  # we keep this in sync with .read-the-docs.yml build environment
 allowlist_externals = ["poetry", "make"]
 commands = [
     ["poetry", "install", "--no-root", "--only=docs,main", "--all-extras"],
@@ -237,10 +237,10 @@ exclude = [
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-Sphinx = ">=8.1.3"
-sphinx-material = ">=0.0.36"
-sphinx-autodoc-typehints = ">=2.5.0"
-sphinxcontrib-spelling = ">=8.0.0"
+Sphinx = {version = "^9.1.0", python = ">=3.12"}
+sphinx-material = {version = "^0.0.36", python = ">=3.12"}
+sphinx-autodoc-typehints = {version = "^3.9.9", python = ">=3.12"}
+sphinxcontrib-spelling = {version = "^8.0.2", python = ">=3.12"}
 
 [tool.poetry.group.dev.dependencies]
 mypy = ">=1.19.1"
