@@ -161,6 +161,14 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         endpoint: str,
         session: aiohttp.ClientSession | None = None,
     ) -> None:
+        try:
+            import aiohttp as _  # noqa: F401
+        except ImportError:
+            raise GraphQLClientException(
+                "aiohttp is required to use AiohttpSubscriptionTransport. "
+                "Install it with `pip install aiographql-client[aiohttp]`."
+            ) from None
+
         self.endpoint = endpoint
         self._session = session
         self._owns_session = False
