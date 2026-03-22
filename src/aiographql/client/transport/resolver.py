@@ -170,5 +170,5 @@ def get_default_subscription_transport(
 
     raise RuntimeError(
         "No suitable subscription transport found. Please install `aiohttp` or `websockets` via extras, "
-        "e.g., `pip install aiographql-client[aiohttp]` or `pip install aiographql-client[websockets]`."
+        "e.g., `pip install aiographql-client[aiohttp]` or `pip install aiographql-client[httpx]`."
     )
