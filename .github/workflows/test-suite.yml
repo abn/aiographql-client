@@ -20,7 +20,7 @@ jobs:
       matrix:
         os: [Ubuntu]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        transport: ["aiohttp", "httpx", "both"]
+        transport: ["aiohttp", "httpx", "all"]
     services:
       postgres:
         image: docker.io/postgres:9.6-alpine
@@ -47,31 +47,42 @@ jobs:
           systemctl --user start podman.socket
           systemctl --user status podman.socket
 
-      - name: Start test container (apollo-server-v2)
+      - name: Start test containers
         shell: bash
         run: |
           export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
-          podman compose up -d apollo-server-v2
+          podman compose up -d apollo-server-v2 strawberry-server
 
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install poetry and tox
+        run: pipx install poetry tox
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry
 
-      - name: Setup test environment
+      - name: Get poetry cache directory
+        run: printf 'cache-dir=%s\n' "$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+        id: poetry-config
         shell: bash
-        run: |
-          if [ "${{ matrix.transport }}" == "aiohttp" ]; then
-            poetry install --extras aiohttp
-          elif [ "${{ matrix.transport }}" == "httpx" ]; then
-            poetry install --extras httpx
-          else
-            poetry install --extras all
-          fi
+
+      - name: Get current date
+        run: printf 'date=%s\n' "$(date -I)" >> $GITHUB_OUTPUT
+        id: get-date
+        shell: bash
+
+      - name: Cache Poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.poetry-config.outputs.cache-dir }}/artifacts
+            ${{ steps.poetry-config.outputs.cache-dir }}/cache
+          key: poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.transport }}-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
+          restore-keys: |
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.transport }}-
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-
+          enableCrossOsArchive: true
 
       - name: Wait for hasura
         shell: bash
@@ -82,7 +93,9 @@ jobs:
 
       - name: Execute test suite
         shell: bash
+        env:
+            SERVER_WORLD_DB: "http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
+            SERVER_APOLLO_V2: "http://127.0.0.1:4000/graphql"
+            SERVER_STRAWBERRY: "http://127.0.0.1:5000/graphql"
         run: |
-          poetry run pytest \
-            --server-world-db="http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql" \
-            --server-apollo-v2="http://127.0.0.1:4000/graphql"
+          tox -e py-${{ matrix.transport }}
