@@ -18,6 +18,7 @@ keywords = [
     "graphql",
     "graphql-core",
     "graphql-core-next",
+    "httpx",
 ]
 dynamic = [
     "classifiers",
@@ -39,10 +40,6 @@ repository = "https://github.com/abn/aiographql-client"
 pydantic = ["pydantic>=2.0"]
 aiohttp = ["aiohttp >=3.5,<4.0"]
 httpx = ["httpx >=0.24.0,<1.0.0", "websockets>=13.0"]
-all = [
-    "aiohttp >=3.5,<4.0",
-    "pydantic>=2.0",
-]
 
 [tool.poetry]
 classifiers = [
@@ -171,7 +168,7 @@ output = ".coverage/coverage.json"
 env_list = [
     { product = [
         { prefix = "py3", start = 10, stop = 14 },
-        ["all", "aiohttp", "httpx"],
+        ["aiohttp", "httpx"],
     ] }
 ]
 
@@ -181,8 +178,8 @@ allowlist_externals = ["poetry"]
 pass_env = ["SERVER_WORLD_DB", "SERVER_APOLLO_V2", "SERVER_STRAWBERRY"]
 extras = [
     "pydantic",
-    { replace = "if", condition = "factor.aiohttp or factor.all", then = ["aiohttp"], extend = true },
-    { replace = "if", condition = "factor.httpx or factor.all", then = ["httpx"], extend = true },
+    { replace = "if", condition = "factor.aiohttp", then = ["aiohttp"], extend = true },
+    { replace = "if", condition = "factor.httpx", then = ["httpx"], extend = true },
 ]
 commands = [
     ["poetry", "install", "--no-root", "--only=test"],
