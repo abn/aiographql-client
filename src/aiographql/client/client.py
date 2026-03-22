@@ -421,7 +421,7 @@ class GraphQLClient:
         on_error: CallbackType | None = None,
         session: GraphQLSession | None = None,
         wait: bool = False,
-        protocols: str | Iterable[str] = (),
+        protocols: str | Iterable[str] = ("graphql-ws",),
         connection_init_payload: dict[str, Any] | None = None,
         transport: GraphQLSubscriptionTransport | None = None,
     ) -> GraphQLSubscription:

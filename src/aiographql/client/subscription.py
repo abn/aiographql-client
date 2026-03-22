@@ -131,7 +131,9 @@ class GraphQLSubscription(GraphQLRequestContainer):
             GraphQLSubscriptionEventType.COMPLETE,
         ]
     )
-    protocols: str | Iterable[str] = dataclasses.field(default_factory=tuple)
+    protocols: str | Iterable[str] = dataclasses.field(
+        default_factory=lambda: ("graphql-ws",)
+    )
     connection_init_payload: dict[str, Any] | None = dataclasses.field(default=None)
     serializer: GraphQLSerializer | None = dataclasses.field(default=None)
     transport: GraphQLSubscriptionTransport | None = dataclasses.field(default=None)
