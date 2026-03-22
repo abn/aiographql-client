@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           timeout 60s bash -c \
-            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:5000/graphql)" == "000" ]]; do sleep 2; done' \
+            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:5000/graphql)" != "200" ]]; do sleep 2; done' \
           || false
 
       - name: Install poetry and tox
