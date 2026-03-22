@@ -16,9 +16,12 @@ class City:
     name: str
 
 
-@pytest.mark.aiohttp
-@pytest.mark.asyncio
 async def test_client_query_data_as(mocker: Any) -> None:
+    try:
+        import aiohttp as _  # noqa: F401
+    except ImportError:
+        pytest.skip("aiohttp not installed")
+
     client = GraphQLClient(
         endpoint="http://test",
         codec=DefaultGraphQLCodec(),
@@ -51,9 +54,12 @@ async def test_client_query_data_as(mocker: Any) -> None:
     assert isinstance(cities[0], City)
 
 
-@pytest.mark.aiohttp
-@pytest.mark.asyncio
 async def test_client_encode_variables(mocker: Any) -> None:
+    try:
+        import aiohttp as _  # noqa: F401
+    except ImportError:
+        pytest.skip("aiohttp not installed")
+
     codec = DefaultGraphQLCodec()
     client = GraphQLClient(
         endpoint="http://test",

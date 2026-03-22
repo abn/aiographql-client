@@ -12,6 +12,7 @@ import pytest
 
 from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLRequest
+from aiographql.client.exceptions import GraphQLClientException
 
 
 pytestmark = pytest.mark.asyncio
@@ -40,13 +41,21 @@ async def event_loop_exceptions() -> AsyncGenerator[
     running_loop.set_exception_handler(old_handler)
 
 
-@pytest.mark.aiohttp
 async def test_helper_implicit_aiohttp_client_session_is_closed(
     event_loop_exceptions: list[tuple[None, dict[str, Any]]],
     client: GraphQLClient,
     headers: dict[str, str],
     query_city: str,
 ) -> None:
+    try:
+        from aiographql.client.transport.aiohttp import AiohttpTransport
+        from aiographql.client.transport.aiohttp import AiohttpTransport as _
+
+        if not isinstance(client.transport, AiohttpTransport):
+            pytest.skip("client not using aiohttp")
+    except ImportError:
+        pytest.skip("aiohttp not installed")
+
     request = GraphQLRequest(query=query_city, headers=headers)
     await client.query(request)
 
@@ -72,8 +81,12 @@ async def test_client_closes_internal_transport_on_exit() -> None:
         mock_close.assert_called_once()
 
 
-@pytest.mark.aiohttp
 async def test_ownership_external_aiohttp() -> None:
+    try:
+        import aiohttp as _  # noqa: F401
+    except ImportError:
+        pytest.skip("aiohttp not installed")
+
     import aiohttp
 
     """
@@ -162,19 +175,20 @@ async def test_ownership_internal_httpx() -> None:
     assert httpx_client.is_closed
 
 
-@pytest.mark.aiohttp
 async def test_subscription_internal_session_cleanup() -> None:
+    try:
+        from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
-    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
+        # When GraphQLClient.subscribe is called without a session, it passes None to get_default_subscription_transport
+        # which creates AiohttpSubscriptionTransport(session=None).
+        transport = AiohttpSubscriptionTransport(endpoint="http://example.com/graphql")
+    except (ImportError, GraphQLClientException):
+        pytest.skip("aiohttp not installed or not available")
 
     """
     Verify that an internally created session for a subscription is cleaned up when the subscription transport is closed.
     """
 
-    endpoint = "http://example.com/graphql"
-    # When GraphQLClient.subscribe is called without a session, it passes None to get_default_subscription_transport
-    # which creates AiohttpSubscriptionTransport(session=None).
-    transport = AiohttpSubscriptionTransport(endpoint=endpoint)
     session = await transport._get_session()
     assert transport._owns_session is True
 
