@@ -35,6 +35,16 @@ services:
     networks:
       - aiographql-client-test
 
+  strawberry-server:
+    build:
+      dockerfile: Dockerfile
+      context: ./tests/servers/strawberry
+    ports:
+      - "5000:8000"
+    restart: on-failure
+    networks:
+      - aiographql-client-test
+
 networks:
   aiographql-client-test:
     driver: bridge

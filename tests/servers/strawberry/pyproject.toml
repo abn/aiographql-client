@@ -1,0 +1,12 @@
+[project]
+name = "strawberry-test-server"
+version = "0.1.0"
+description = "Test server for aiographql-client"
+dependencies = [
+    "strawberry-graphql[debug-server]>=0.262.0",
+    "starlette",
+    "uvicorn[standard]",
+]
+
+[tool.poetry]
+package-mode = false
