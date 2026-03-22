@@ -15,6 +15,10 @@ class GraphQLClientException(Exception):
     pass
 
 
+class GraphQLTransportException(GraphQLClientException):
+    pass
+
+
 class GraphQLClientValidationException(GraphQLClientException):
     def __init__(self, *args: graphql.GraphQLError) -> None:
         message = "Query validation failed\n"
