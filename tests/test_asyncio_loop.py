@@ -49,7 +49,6 @@ async def test_helper_implicit_aiohttp_client_session_is_closed(
 ) -> None:
     try:
         from aiographql.client.transport.aiohttp import AiohttpTransport
-        from aiographql.client.transport.aiohttp import AiohttpTransport as _
 
         if not isinstance(client.transport, AiohttpTransport):
             pytest.skip("client not using aiohttp")
@@ -62,7 +61,8 @@ async def test_helper_implicit_aiohttp_client_session_is_closed(
     # force python to gc unclosed sessions
     gc.collect()
 
-    for _, context in event_loop_exceptions:
+    for exc in event_loop_exceptions:
+        context = exc[1]
         # we check the message and that it is not related to any persistent session
         if context["message"] == "Unclosed client session":
             pytest.fail(f"Found unclosed client session: {context}")
