@@ -61,9 +61,12 @@ class HttpxTransport(GraphQLTransport):
         """
         Execute a GraphQL request using httpx.
         """
-        # Remove 'session' from kwargs if it exists, as httpx doesn't support it
-        # and we already handled it in __init__
-        kwargs.pop("session", None)
+        # use provided client, or internal client, or create a temporary one
+        actual_client = (
+            kwargs.pop("client", None)
+            or kwargs.pop("session", None)
+            or await self._get_client()
+        )
 
         method = method.upper()
         if method == "POST":
@@ -79,8 +82,6 @@ class HttpxTransport(GraphQLTransport):
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
-        # use provided client, or internal client, or create a temporary one
-        actual_client = kwargs.pop("client", None) or await self._get_client()
         return await self._http_request(
             actual_client, method, request, serializer, **kwargs
         )

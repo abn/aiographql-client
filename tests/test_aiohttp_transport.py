@@ -18,6 +18,56 @@ pytestmark = pytest.mark.aiohttp
 
 
 @pytest.mark.asyncio
+@pytest.mark.strawberry
+async def test_aiohttp_transport_session_override(
+    strawberry_server: str,
+) -> None:
+    endpoint = strawberry_server
+    import aiohttp
+
+    async with aiohttp.ClientSession() as session:
+        transport = AiohttpTransport(endpoint=endpoint)
+        serializer = DefaultSerializer()
+        request = GraphQLRequest(
+            query="{ hello }", headers={"Content-Type": "application/json"}
+        )
+
+        # Pass session as an override in the request call
+        response = await transport.request(
+            method="POST", request=request, serializer=serializer, session=session
+        )
+        assert response.data == {"hello": "world"}
+
+        await transport.close()
+        # session should NOT be closed if it was provided by the user
+        assert not session.closed
+
+
+@pytest.mark.asyncio
+async def test_aiohttp_transport_external_session(
+    strawberry_server: str,
+) -> None:
+    endpoint = strawberry_server
+    import aiohttp
+
+    async with aiohttp.ClientSession() as session:
+        transport = AiohttpTransport(endpoint=endpoint, session=session)
+        serializer = DefaultSerializer()
+        request = GraphQLRequest(
+            query="{ hello }", headers={"Content-Type": "application/json"}
+        )
+
+        response = await transport.request(
+            method="POST", request=request, serializer=serializer
+        )
+        assert response.data == {"hello": "world"}
+
+        await transport.close()
+        # session should NOT be closed if it was provided by the user
+        assert not session.closed
+
+
+@pytest.mark.asyncio
 async def test_aiohttp_transport_invalid_json_response(
     mocket: Any, httpretty: Any
 ) -> None:
