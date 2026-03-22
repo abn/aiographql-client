@@ -98,6 +98,29 @@ client = GraphQLClient(
 )
 ```
 
+### Development
+
+To run the full test suite with all supported transport combinations and Python versions, you can use `tox`:
+
+```bash
+# Install tox
+pip install tox
+
+# Run all environments
+tox
+
+# Run a specific environment (e.g., Python 3.10 with all transports)
+tox -e py310-all
+
+# Run with only aiohttp
+tox -e py310-aiohttp
+
+# Run with only httpx
+tox -e py310-httpx
+```
+
+See `pyproject.toml` for all available environment factors and combinations.
+
 ## Example Usage
 Here are some example usages of this client implementation. For more examples, and advanced scenarios,
 see [Usage Examples](https://aiographql-client.readthedocs.io/en/latest/examples.html) section in
