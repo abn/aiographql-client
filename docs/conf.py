@@ -12,6 +12,9 @@
 #
 import os
 import sys
+import warnings
+
+warnings.filterwarnings("ignore", category=SyntaxWarning, module="css_html_js_minify")
 
 sys.path.insert(0, os.path.abspath("../src"))
 
