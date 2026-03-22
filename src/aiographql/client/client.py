@@ -85,6 +85,9 @@ class GraphQLClient:
     :param transport: Custom transport to use for making requests. If not provided,
         the best available transport is automatically selected (preferring aiohttp).
         Must be a :class:`GraphQLTransport` instance.
+    :param subscription_transport: Custom transport to use for subscriptions. If not
+        provided, the best available transport is automatically selected. Must be a
+        :class:`GraphQLSubscriptionTransport` instance.
     """
 
     def __init__(
@@ -98,6 +101,7 @@ class GraphQLClient:
         serializer: GraphQLSerializer | None = None,
         codec: GraphQLCodec | None = None,
         transport: GraphQLTransport | None = None,
+        subscription_transport: GraphQLSubscriptionTransport | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -112,6 +116,7 @@ class GraphQLClient:
             transport=transport,
             session=session,
         )
+        self._subscription_transport = subscription_transport
 
     @property
     def transport(self) -> GraphQLTransport:
@@ -491,7 +496,7 @@ class GraphQLClient:
             serializer=self._serializer,
             transport=get_default_subscription_transport(
                 endpoint=self.endpoint,
-                transport=transport,
+                transport=transport or self._subscription_transport,
                 session=session or self._aiohttp_session(),
             ),
         )
