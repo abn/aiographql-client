@@ -121,7 +121,47 @@ See `pyproject.toml` for all available environment factors and combinations.
 ## Example Usage
 Here are some example usages of this client implementation. For more examples, and advanced scenarios,
 see [Usage Examples](https://aiographql-client.readthedocs.io/en/latest/examples.html) section in
-the documentation.
+the documentation or the [examples](examples/) directory in this repository.
+
+### Examples
+
+We provide several well-documented, scenario-based examples using a [Strawberry](https://strawberry.rocks/) GraphQL server. You can find them in the [examples/](examples/) directory.
+
+To run the examples, first start the Strawberry server using `podman compose`:
+
+```bash
+podman compose run --build strawberry-server
+```
+
+Then you can run any of the scenario scripts:
+
+```bash
+# Basic Queries
+poetry run python examples/basic_queries.py
+
+# Pydantic Data Models
+poetry run python examples/data_models.py
+
+# Dataclass Models
+poetry run python examples/dataclass_models.py
+
+# Authenticated Requests
+poetry run python examples/authenticated_requests.py
+
+# Mutations with Variables
+poetry run python examples/mutations.py
+
+# Real-time Subscriptions
+poetry run python examples/subscriptions.py
+
+# Httpx Transport & Shared Sessions
+poetry run python examples/httpx_transport.py
+
+# Custom Serialization & Codecs
+poetry run python examples/custom_serialization.py
+```
+
+See [examples/README.md](examples/README.md) for more detailed descriptions of each scenario.
 
 ### Simple Query
 ```py
