@@ -3,20 +3,46 @@
 Getting started
 ===============
 
-This package is intended to be used as a client library for when your application requires
-interacting with a GraphQL server.
+``aiographql-client`` is a modern, lightweight, and type-safe Python client for GraphQL, built on top of ``asyncio``, ``aiohttp``, and ``graphql-core``. It is designed for developers who value performance, flexibility, and a great developer experience.
+
+Key Features
+------------
+
+* **Async-first**: Built from the ground up for ``asyncio``.
+* **Multiple Transports**: Support for both ``aiohttp`` (default) and ``httpx``.
+* **Subscriptions**: Built-in support for GraphQL subscriptions over WebSockets.
+* **Type Safety**: Leverages ``graphql-core`` for query validation and ``Pydantic``/``dataclasses`` for data modeling.
+* **Flexible Configuration**: Easily customize headers, timeouts, and connection pools.
+* **Production Ready**: Used in high-performance production environments.
+
+Quick Start
+-----------
 
 Getting started is as simple as passing your GraphQL query to :func:`aiographql.client.GraphQLClient.query`.
 
 .. code-block:: python
 
-        async def get_logged_in_username(token: str) -> GraphQLResponse:
-            client = GraphQLClient(
-                endpoint="https://api.github.com/graphql",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            return await client.query("query { viewer { login } }")
+    import asyncio
+    from aiographql import GraphQLClient
 
+    async def main():
+        # Initialize the client
+        client = GraphQLClient(
+            endpoint="https://countries.trevorblades.com/",
+        )
+
+        # Execute a simple query
+        response = await client.query("{ countries { name code } }")
+
+        # Access data
+        if not response.errors:
+            for country in response.data["countries"][:5]:
+                print(f"{country['name']} ({country['code']})")
+        else:
+            print(f"Errors: {response.errors}")
+
+    if __name__ == "__main__":
+        asyncio.run(main())
 
 For more detailed examples on how to use the library, see :ref:`examples`.
 

@@ -95,3 +95,44 @@ Here is an example that will print the timestamp every time a keep-alive event i
         GraphQLSubscriptionEventType.KEEP_ALIVE,
         lambda x: print(f"Received keep-alive at {datetime.utcnow().isoformat()}")
     )
+
+Waiting for Subscriptions
+*************************
+
+By default, :meth:`aiographql.client.GraphQLClient.subscribe` returns a :class:`aiographql.client.subscription.GraphQLSubscription` object immediately, while the subscription runs in the background.
+
+If you want to wait for the subscription to complete (e.g., in a simple script), you can pass ``wait=True``.
+
+.. code-block:: python
+
+    await client.subscribe(request=request, on_data=print, wait=True)
+
+Alternatively, you can wait for the background task manually:
+
+.. code-block:: python
+
+    subscription = await client.subscribe(request=request, on_data=print)
+    # Do other things...
+    await subscription.task
+
+Error Handling in Subscriptions
+*******************************
+
+When a subscription encounters an error, the ``on_error`` callback is triggered. It's important to note that by default, most errors will cause the subscription to close.
+
+.. code-block:: python
+
+    async def handle_error(error):
+        print(f"Subscription error: {error}")
+        # Logic to potentially restart subscription if needed
+
+    subscription = await client.subscribe(
+        request=request,
+        on_data=print,
+        on_error=handle_error
+    )
+
+Connection Pool Limits
+**********************
+
+As mentioned in the :ref:`transport` section, the default connection limit is 100. Each active subscription consumes one connection from this pool. If you anticipate having many concurrent subscriptions, ensure your session's connector is configured with a higher limit.

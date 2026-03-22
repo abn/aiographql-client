@@ -108,3 +108,58 @@ wit multiple operations.
         request=request,
         operation="FindLastIssue"
     )
+
+Mutations
+---------
+
+Mutations are performed using the same :meth:`aiographql.client.GraphQLClient.query` method, as the GraphQL specification treats them similarly to queries but with side effects.
+
+.. code-block:: python
+
+    request = GraphQLRequest(
+        query="""
+            mutation AddStar($starrableId: ID!) {
+              addStar(input: {starrableId: $starrableId}) {
+                starrable {
+                  stargazerCount
+                }
+              }
+            }
+        """,
+        variables={"starrableId": "R_kgDOJ-..."}
+    )
+    response = await client.query(request)
+
+Alternatively, you can use the :meth:`aiographql.client.GraphQLClient.post` method to explicitly use a POST request (which is the default for ``query`` anyway).
+
+.. code-block:: python
+
+    response = await client.post(request)
+
+Custom Headers per Request
+--------------------------
+
+You can provide custom headers for a specific request. These will be merged with the headers configured on the client.
+
+.. code-block:: python
+
+    response = await client.query(
+        request="{ viewer { login } }",
+        headers={"X-Custom-Header": "value"}
+    )
+
+Handling Errors
+---------------
+
+Always check for errors in the response. The :class:`aiographql.client.GraphQLResponse` object contains an ``errors`` attribute which is a list of errors returned by the server.
+
+.. code-block:: python
+
+    response = await client.query("{ viewer { nonExistentField } }")
+    if response.errors:
+        for error in response.errors:
+            print(f"Error: {error['message']}")
+            # Access extensions, locations, path if available
+            print(f"Code: {error.get('extensions', {}).get('code')}")
+    else:
+        print(response.data)
