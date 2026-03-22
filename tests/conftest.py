@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import uuid
 
@@ -8,12 +9,62 @@ from typing import Any
 
 import pytest
 
+from mocket.mocket import Mocket
+from mocket.plugins.httpretty import HTTPretty
+
 from aiographql.client.client import GraphQLClient
 from aiographql.client.request import GraphQLRequest
 
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+
+def _has_package(package_name: str) -> bool:
+    return importlib.util.find_spec(package_name) is not None
+
+
+HAS_AIOHTTP = _has_package("aiohttp")
+HAS_HTTPX = _has_package("httpx")
+HAS_WEBSOCKETS = _has_package("websockets")
+HAS_PYDANTIC = _has_package("pydantic")
+
+
+@pytest.fixture(autouse=True)
+def _check_transport_availability(request: pytest.FixtureRequest) -> None:
+    if request.node.get_closest_marker("aiohttp") and not HAS_AIOHTTP:
+        pytest.skip("aiohttp not installed")
+    if request.node.get_closest_marker("httpx") and not HAS_HTTPX:
+        pytest.skip("httpx not installed")
+    if request.node.get_closest_marker("websockets") and not HAS_WEBSOCKETS:
+        pytest.skip("websockets not installed")
+    if request.node.get_closest_marker("pydantic") and not HAS_PYDANTIC:
+        pytest.skip("pydantic not installed")
+
+    if request.node.get_closest_marker("strawberry"):
+        import urllib.request
+
+        strawberry_server_url = request.config.getoption("--server-strawberry")
+        try:
+            with urllib.request.urlopen(strawberry_server_url, timeout=1):
+                pass
+        except Exception as e:
+            # Handle cases like 405 Method Not Allowed or 400 Bad Request which mean the server IS there
+            # but doesn't like our empty/GET request.
+            if hasattr(e, "code") and e.code in {400, 405}:
+                pass
+            else:
+                pytest.skip(
+                    f"strawberry server not available at {strawberry_server_url}: {e}"
+                )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "aiohttp: mark test as requiring aiohttp")
+    config.addinivalue_line("markers", "httpx: mark test as requiring httpx")
+    config.addinivalue_line("markers", "websockets: mark test as requiring websockets")
+    config.addinivalue_line("markers", "pydantic: mark test as requiring pydantic")
+    config.addinivalue_line("markers", "strawberry: mark test as requiring strawberry")
 
 
 def pytest_addoption(parser: Any) -> None:
@@ -33,6 +84,14 @@ def pytest_addoption(parser: Any) -> None:
         ),
         help="GraphQL Apollo Server (v2) to use for integration tests",
     )
+    parser.addoption(
+        "--server-strawberry",
+        action="store",
+        default=os.environ.get(
+            "GRAPHQL_ENDPOINT_STRAWBERRY", "http://127.0.0.1:5000/graphql"
+        ),
+        help="GraphQL Strawberry Server to use for integration tests",
+    )
 
 
 @pytest.fixture
@@ -50,6 +109,34 @@ def server(request: Any) -> str:
 def server_apollo_v2(request: Any) -> str:
     val: str = request.config.getoption("--server-apollo-v2")
     return val
+
+
+@pytest.fixture
+def strawberry_server(request: Any) -> str:
+    val: str = request.config.getoption("--server-strawberry")
+    return val
+
+
+@pytest.fixture
+def mocket() -> Any:
+    Mocket.enable()
+    yield Mocket
+    Mocket.disable()
+
+
+@pytest.fixture
+def httpretty() -> Any:
+    yield HTTPretty
+
+
+@pytest.fixture
+async def strawberry_client(
+    strawberry_server: str,
+) -> AsyncGenerator[GraphQLClient, None]:
+    # Use ws:// for subscriptions if necessary, but GraphQLClient handles it
+    endpoint = strawberry_server
+    async with GraphQLClient(endpoint=endpoint) as client:
+        yield client
 
 
 @pytest.fixture(autouse=True)

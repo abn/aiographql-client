@@ -76,6 +76,7 @@ GraphQL request:1:9
     )
 
 
+@pytest.mark.aiohttp
 async def test_apollo_v2_subscription(
     client: GraphQLClient, subscription_query: str
 ) -> None:

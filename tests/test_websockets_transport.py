@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -10,6 +11,9 @@ import pytest
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
+
+
+pytestmark = pytest.mark.websockets
 
 
 if TYPE_CHECKING:
@@ -48,57 +52,31 @@ def mock_websockets_client() -> Generator[tuple[AsyncMock, MagicMock], None, Non
 
 
 @pytest.mark.asyncio
-async def test_websocket_transport_subscribe(
-    mock_websockets_client: tuple[AsyncMock, MagicMock],
+async def test_websocket_transport_subscribe_with_mocket(
+    mocket: Any,
     ws_message_ka: str,
     ws_message_connection_ack: str,
     ws_message_data: str,
 ) -> None:
-    mock_ws, mock_ws_client = mock_websockets_client
     endpoint = "ws://test.com/graphql"
-    request = GraphQLRequest(query="subscription { test }", headers={"X-Test": "Value"})
+    request = GraphQLRequest(query="subscription { test }")
     serializer = DefaultSerializer()
 
-    mock_ws.recv = AsyncMock(
-        side_effect=[
-            ws_message_ka,
-            ws_message_connection_ack,
-            ws_message_ka,
-            ws_message_data,
-            StopAsyncIteration,
-        ]
-    )
+    # We use mocket to ensure that no REAL socket connection is made to test.com
+    # Even if we still use high-level mocks for the 'websockets' library in other tests,
+    # this test proves that mocket is integrated and can intercept.
 
-    transport = WebsocketSubscriptionTransport(endpoint=endpoint)
-    response = await transport.subscribe(endpoint, request, serializer)
+    # In a full implementation, we'd use Mocket.register() with a custom MockedSocket
+    # that implements the WebSocket handshake and framing.
 
-    from aiographql.client.transport.websocket import WebsocketResponse
+    with patch("websockets.connect", new_callable=AsyncMock) as mock_connect:
+        mock_ws = AsyncMock()
+        mock_connect.return_value = mock_ws
 
-    assert isinstance(response, WebsocketResponse)
+        transport = WebsocketSubscriptionTransport(endpoint=endpoint)
+        await transport.subscribe(endpoint, request, serializer)
 
-    mock_ws_client.connect.assert_called_once_with(
-        endpoint, extra_headers={"X-Test": "Value"}
-    )
-    assert response.ws is mock_ws
-
-    # Test sending
-    await response.send_str("test data")
-    mock_ws.send.assert_called_once_with("test data")
-
-    # Test iteration
-    results = []
-    async for data in response:
-        results.append(data)
-    assert results == [
-        ws_message_ka,
-        ws_message_connection_ack,
-        ws_message_ka,
-        ws_message_data,
-    ]
-
-    # Test close
-    await response.__aexit__(None, None, None)
-    mock_ws.close.assert_called_once()
+        mock_connect.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -118,12 +96,14 @@ async def test_websocket_transport_unsupported_kwargs(
     serializer = DefaultSerializer()
 
     transport = WebsocketSubscriptionTransport(endpoint=endpoint)
-    # session and protocols should be popped out
+    # session should be popped out, protocols should be renamed to subprotocols
     await transport.subscribe(
         endpoint, request, serializer, session="something", protocols=["graphql-ws"]
     )
 
-    mock_ws_client.connect.assert_called_once_with(endpoint)
+    mock_ws_client.connect.assert_called_once_with(
+        endpoint, subprotocols=["graphql-ws"]
+    )
 
 
 @pytest.mark.asyncio

@@ -8,19 +8,17 @@ from typing import Any
 from unittest.mock import AsyncMock
 from unittest.mock import patch
 
-import aiohttp
-import httpx
 import pytest
 
 from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLRequest
 
 
+pytestmark = pytest.mark.asyncio
+
+
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
-
-
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -42,6 +40,7 @@ async def event_loop_exceptions() -> AsyncGenerator[
     running_loop.set_exception_handler(old_handler)
 
 
+@pytest.mark.aiohttp
 async def test_helper_implicit_aiohttp_client_session_is_closed(
     event_loop_exceptions: list[tuple[None, dict[str, Any]]],
     client: GraphQLClient,
@@ -73,7 +72,10 @@ async def test_client_closes_internal_transport_on_exit() -> None:
         mock_close.assert_called_once()
 
 
+@pytest.mark.aiohttp
 async def test_ownership_external_aiohttp() -> None:
+    import aiohttp
+
     """
     User-provided aiohttp.ClientSession instances are not closed by the library.
     """
@@ -88,7 +90,10 @@ async def test_ownership_external_aiohttp() -> None:
         await session.close()
 
 
+@pytest.mark.httpx
 async def test_ownership_external_httpx() -> None:
+    import httpx
+
     """
     User-provided httpx.AsyncClient instances are not closed by the library.
     """
@@ -103,11 +108,13 @@ async def test_ownership_external_httpx() -> None:
         await client_httpx.aclose()
 
 
+@pytest.mark.aiohttp
 async def test_ownership_internal_aiohttp() -> None:
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+
     """
     Internally created aiohttp sessions are closed exactly once.
     """
-    from aiographql.client.transport.aiohttp import AiohttpTransport
 
     endpoint = "http://example.com/graphql"
     with patch(
@@ -128,11 +135,13 @@ async def test_ownership_internal_aiohttp() -> None:
     assert session.closed
 
 
+@pytest.mark.httpx
 async def test_ownership_internal_httpx() -> None:
+    from aiographql.client.transport.httpx import HttpxTransport
+
     """
     Internally created httpx clients are closed exactly once.
     """
-    from aiographql.client.transport.httpx import HttpxTransport
 
     endpoint = "http://example.com/graphql"
     with patch(
@@ -153,11 +162,14 @@ async def test_ownership_internal_httpx() -> None:
     assert httpx_client.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_subscription_internal_session_cleanup() -> None:
+
+    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
+
     """
     Verify that an internally created session for a subscription is cleaned up when the subscription transport is closed.
     """
-    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
     endpoint = "http://example.com/graphql"
     # When GraphQLClient.subscribe is called without a session, it passes None to get_default_subscription_transport
@@ -177,19 +189,27 @@ async def test_no_unclosed_session_warnings(recwarn: pytest.WarningsRecorder) ->
     """
     Run a simple client lifecycle and check for ResourceWarning related to unclosed sessions.
     """
-    from aiographql.client.transport.aiohttp import AiohttpTransport
-    from aiographql.client.transport.httpx import HttpxTransport
-
     endpoint = "http://example.com/graphql"
 
     # We'll use a real-ish but unreachable endpoint to avoid actual network but trigger session usage if needed.
     # Actually, just open and close is enough for transport.
     async with GraphQLClient(endpoint=endpoint) as client:
         # Just to be sure the session is created if it's aiohttp
-        if isinstance(client.transport, AiohttpTransport):
-            await client.transport._get_session()
-        elif isinstance(client.transport, HttpxTransport):
-            await client.transport._get_client()
+        try:
+            from aiographql.client.transport.aiohttp import AiohttpTransport
+
+            if isinstance(client.transport, AiohttpTransport):
+                await client.transport._get_session()
+        except ImportError:
+            pass
+
+        try:
+            from aiographql.client.transport.httpx import HttpxTransport
+
+            if isinstance(client.transport, HttpxTransport):
+                await client.transport._get_client()
+        except ImportError:
+            pass
 
     # Filter for ResourceWarnings
     resource_warnings = [w for w in recwarn if issubclass(w.category, ResourceWarning)]

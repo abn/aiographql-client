@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from typing import Any
+from unittest.mock import patch
 
-import httpx
 import pytest
-import respx
+
+from mocket.plugins.httpretty import HTTPretty
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLRequestException
@@ -14,122 +15,137 @@ from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.transport import HttpxTransport
 
 
+pytestmark = [pytest.mark.httpx, pytest.mark.strawberry]
+
+
 @pytest.mark.asyncio
-async def test_httpx_transport_post_success() -> None:
-    endpoint = "http://example.com/graphql"
+async def test_httpx_transport_post_success(
+    mocket: Any, httpretty: Any, strawberry_server: str
+) -> None:
+    endpoint = strawberry_server
+    transport = HttpxTransport(endpoint=endpoint)
+    serializer = DefaultSerializer()
+    request = GraphQLRequest(
+        query="{ hello }", headers={"Content-Type": "application/json"}
+    )
+
+    httpretty.register_uri(
+        HTTPretty.POST,
+        endpoint,
+        body='{"data": {"hello": "world"}}',
+        content_type="application/json",
+    )
+
+    response = await transport.request(
+        method="post", request=request, serializer=serializer
+    )
+
+    assert isinstance(response, GraphQLResponse)
+    assert response.data == {"hello": "world"}
+
+
+@pytest.mark.asyncio
+async def test_httpx_transport_get_success(
+    mocket: Any, httpretty: Any, strawberry_server: str
+) -> None:
+    endpoint = strawberry_server
+    transport = HttpxTransport(endpoint=endpoint)
+    serializer = DefaultSerializer()
+    request = GraphQLRequest(
+        query="{ hello }", headers={"Content-Type": "application/json"}
+    )
+
+    httpretty.register_uri(
+        HTTPretty.GET,
+        endpoint,
+        body='{"data": {"hello": "world"}}',
+        content_type="application/json",
+    )
+
+    response = await transport.request(
+        method="get", request=request, serializer=serializer
+    )
+
+    assert response.data == {"hello": "world"}
+
+
+@pytest.mark.asyncio
+async def test_httpx_transport_non_200_raises_exception(
+    strawberry_server: str,
+) -> None:
+    endpoint = f"{strawberry_server}/not-found"
     transport = HttpxTransport(endpoint=endpoint)
     serializer = DefaultSerializer()
     request = GraphQLRequest(query="{ hello }")
 
-    with respx.mock:
-        respx.post(endpoint).mock(
-            return_value=httpx.Response(200, content=b'{"data": {"hello": "world"}}')
-        )
+    with pytest.raises(GraphQLRequestException) as excinfo:
+        await transport.request(method="POST", request=request, serializer=serializer)
 
-        response = await transport.request(
-            method="post", request=request, serializer=serializer
-        )
-
-        assert isinstance(response, GraphQLResponse)
-        assert response.data == {"hello": "world"}
-        assert respx.post(endpoint).called
+    assert excinfo.value.response.json == {}
 
 
 @pytest.mark.asyncio
-async def test_httpx_transport_get_success() -> None:
-    endpoint = "http://example.com/graphql"
+async def test_httpx_transport_invalid_json_response(
+    mocket: Any, httpretty: Any, strawberry_server: str
+) -> None:
+    endpoint = strawberry_server
     transport = HttpxTransport(endpoint=endpoint)
     serializer = DefaultSerializer()
     request = GraphQLRequest(query="{ hello }")
 
-    with respx.mock:
-        respx.get(endpoint).mock(
-            return_value=httpx.Response(200, content=b'{"data": {"hello": "world"}}')
-        )
+    httpretty.register_uri(
+        HTTPretty.POST,
+        endpoint,
+        body="invalid json",
+        content_type="text/plain",
+        status=200,
+    )
 
-        response = await transport.request(
-            method="get", request=request, serializer=serializer
-        )
+    # This test ensures that when the response body is not valid JSON,
+    # GraphQLResponse.json is None.
 
-        assert response.data == {"hello": "world"}
-        assert respx.get(endpoint).called
+    response = await transport.request(
+        method="POST", request=request, serializer=serializer
+    )
+    assert response.json == {}
 
 
 @pytest.mark.asyncio
-async def test_httpx_transport_non_200_raises_exception() -> None:
-    endpoint = "http://example.com/graphql"
+async def test_httpx_transport_http_error(mocket: Any, strawberry_server: str) -> None:
+    endpoint = strawberry_server
     transport = HttpxTransport(endpoint=endpoint)
     serializer = DefaultSerializer()
     request = GraphQLRequest(query="{ hello }")
 
-    with respx.mock:
-        respx.post(endpoint).mock(
-            return_value=httpx.Response(404, content=b"Not Found")
-        )
+    from mocket.socket import MocketSocket
 
-        with pytest.raises(GraphQLRequestException) as excinfo:
-            await transport.request(
-                method="POST", request=request, serializer=serializer
-            )
+    def side_effect(*args: Any, **kwargs: Any) -> None:
+        raise ConnectionRefusedError("Connection refused")
 
-        assert excinfo.value.response.json is None
+    with (
+        patch.object(MocketSocket, "connect", side_effect=side_effect),
+        pytest.raises(GraphQLClientException) as excinfo,
+    ):
+        await transport.request(method="POST", request=request, serializer=serializer)
+    assert "HTTP request failed" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_httpx_transport_invalid_json_response() -> None:
-    endpoint = "http://example.com/graphql"
-    transport = HttpxTransport(endpoint=endpoint)
-    serializer = DefaultSerializer()
-    request = GraphQLRequest(query="{ hello }")
+async def test_httpx_transport_external_client(strawberry_server: str) -> None:
+    endpoint = strawberry_server
+    import httpx
 
-    with respx.mock:
-        respx.post(endpoint).mock(
-            return_value=httpx.Response(200, content=b"invalid json")
+    async with httpx.AsyncClient() as client:
+        transport = HttpxTransport(endpoint=endpoint, client=client)
+        serializer = DefaultSerializer()
+        request = GraphQLRequest(
+            query="{ hello }", headers={"Content-Type": "application/json"}
         )
 
         response = await transport.request(
             method="POST", request=request, serializer=serializer
         )
-        assert response.json is None
-
-
-@pytest.mark.asyncio
-async def test_httpx_transport_http_error() -> None:
-    endpoint = "http://example.com/graphql"
-    transport = HttpxTransport(endpoint=endpoint)
-    serializer = DefaultSerializer()
-    request = GraphQLRequest(query="{ hello }")
-
-    with respx.mock:
-        respx.post(endpoint).side_effect = httpx.ConnectError("Connection failed")
-
-        with pytest.raises(GraphQLClientException) as excinfo:
-            await transport.request(
-                method="POST", request=request, serializer=serializer
-            )
-
-        assert "HTTP request failed" in str(excinfo.value)
-
-
-@pytest.mark.asyncio
-async def test_httpx_transport_external_client() -> None:
-    endpoint = "http://example.com/graphql"
-    async with httpx.AsyncClient() as client:
-        transport = HttpxTransport(endpoint=endpoint, client=client)
-        serializer = DefaultSerializer()
-        request = GraphQLRequest(query="{ hello }")
-
-        with respx.mock:
-            respx.post(endpoint).mock(
-                return_value=httpx.Response(
-                    200, content=b'{"data": {"hello": "world"}}'
-                )
-            )
-
-            response = await transport.request(
-                method="POST", request=request, serializer=serializer
-            )
-            assert response.data == {"hello": "world"}
+        assert response.data == {"hello": "world"}
 
         await transport.close()
         # httpx client should NOT be closed if it was provided by the user
@@ -149,38 +165,44 @@ async def test_httpx_transport_invalid_method() -> None:
 
 
 @pytest.mark.asyncio
-async def test_httpx_transport_http_error_handling() -> None:
-    transport = HttpxTransport(endpoint="http://test.com")
+async def test_httpx_transport_http_error_handling(mocket: Any, httpretty: Any) -> None:
+    endpoint = "http://test.com/graphql"
+    transport = HttpxTransport(endpoint=endpoint)
     request = GraphQLRequest(query="{ test }")
     serializer = DefaultSerializer()
 
-    mock_client = MagicMock(spec=httpx.AsyncClient)
-    # Simulate a generic HTTPError
-    mock_client.request.side_effect = httpx.HTTPError("Generic Error")
+    # Simulate a generic HTTPError by forcing a connection failure via mocket
+    from mocket.socket import MocketSocket
 
-    with pytest.raises(
-        GraphQLClientException, match="HTTP request failed: Generic Error"
+    def side_effect(*args: Any, **kwargs: Any) -> None:
+        raise ConnectionRefusedError("Connection refused")
+
+    with (
+        patch.object(MocketSocket, "connect", side_effect=side_effect),
+        pytest.raises(GraphQLClientException, match="HTTP request failed"),
     ):
-        await transport._http_request(mock_client, "POST", request, serializer)
+        await transport.request("POST", request, serializer)
 
 
 @pytest.mark.asyncio
-async def test_httpx_transport_status_error_handling() -> None:
-    transport = HttpxTransport(endpoint="http://test.com")
+async def test_httpx_transport_status_error_handling(
+    mocket: Any, httpretty: Any
+) -> None:
+    endpoint = "http://test.com/graphql"
+    transport = HttpxTransport(endpoint=endpoint)
     request = GraphQLRequest(query="{ test }")
     serializer = DefaultSerializer()
 
-    mock_client = MagicMock(spec=httpx.AsyncClient)
-    # Simulate an HTTPStatusError
-    mock_response = MagicMock(spec=httpx.Response)
-    mock_response.status_code = 400
-    mock_response.content = b'{"errors": [{"message": "Bad Request"}]}'
-
-    # In HttpxTransport._http_request, it checks status_code manually
-    mock_client.request.return_value = mock_response
+    httpretty.register_uri(
+        HTTPretty.POST,
+        endpoint,
+        body='{"errors": [{"message": "Bad Request"}]}',
+        status=400,
+        content_type="application/json",
+    )
 
     with pytest.raises(GraphQLRequestException) as excinfo:
-        await transport._http_request(mock_client, "POST", request, serializer)
+        await transport.request("POST", request, serializer)
     assert excinfo.value.response.json == {"errors": [{"message": "Bad Request"}]}
 
 

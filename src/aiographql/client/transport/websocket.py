@@ -34,13 +34,39 @@ class WebsocketSubscriptionTransport(GraphQLSubscriptionTransport):
         """
         import websockets
 
+        # websockets.connect expects ws:// or wss://
+        if endpoint.startswith("http://"):
+            endpoint = f"ws://{endpoint[7:]}"
+        elif endpoint.startswith("https://"):
+            endpoint = f"wss://{endpoint[8:]}"
+
         # websockets.connect expects headers as a dict or list
         if request.headers:
-            kwargs.setdefault("extra_headers", request.headers)
+            # websockets 14.0+ uses additional_headers in asyncio.connect
+            # earlier versions and legacy use extra_headers.
+            # We try to use additional_headers if it's available in the signature.
+            # We use the version check as a fallback or primary method if inspect fails.
+            import importlib.metadata
+
+            import websockets
+
+            try:
+                version = importlib.metadata.version("websockets")
+                major_version = int(version.split(".")[0])
+                is_websockets_14_plus = major_version >= 14
+            except (importlib.metadata.PackageNotFoundError, ValueError):
+                is_websockets_14_plus = False
+
+            if is_websockets_14_plus:
+                kwargs.setdefault("additional_headers", request.headers)
+            else:
+                kwargs.setdefault("extra_headers", request.headers)
 
         # Remove unsupported kwargs
         kwargs.pop("session", None)
-        kwargs.pop("protocols", None)
+        subprotocols = kwargs.pop("protocols", None)
+        if subprotocols:
+            kwargs.setdefault("subprotocols", subprotocols)
 
         return WebsocketResponse(await websockets.connect(endpoint, **kwargs))
 

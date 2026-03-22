@@ -5,7 +5,6 @@ import asyncio
 from typing import TYPE_CHECKING
 from typing import Any
 
-import aiohttp
 import graphql
 import pytest
 
@@ -157,6 +156,7 @@ async def test_unsuccessful_request(
     )
 
 
+@pytest.mark.aiohttp
 async def test_external_aiohttp_session(
     mocker: MockerFixture,
     server: str,
@@ -164,6 +164,8 @@ async def test_external_aiohttp_session(
     query_city: str,
     query_output: dict[str, Any],
 ) -> None:
+    import aiohttp
+
     async with aiohttp.ClientSession() as session:
         client = GraphQLClient(endpoint=server, session=session)
         # Patching the ClientSession.request globally
@@ -186,6 +188,7 @@ async def test_mutation(
     assert response.data == mutation_output
 
 
+@pytest.mark.aiohttp
 async def test_subscription(
     client: GraphQLClient,
     headers: dict[str, str],
@@ -231,6 +234,7 @@ async def test_subscription(
         pytest.fail("Subscriptions timed out before receiving expected messages")
 
 
+@pytest.mark.aiohttp
 async def test_subscription_on_data_on_error_callbacks(
     client: GraphQLClient, subscription_query: str, headers: dict[str, str]
 ) -> None:
@@ -255,6 +259,7 @@ async def test_subscription_on_data_on_error_callbacks(
         assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
 
 
+@pytest.mark.aiohttp
 async def test_subscription_connection_init_payload(
     client: GraphQLClient, subscription_query: str, headers: dict[str, str]
 ) -> None:
@@ -270,7 +275,10 @@ async def test_subscription_connection_init_payload(
         assert subscription.connection_init_payload == connection_init_payload
 
 
+@pytest.mark.aiohttp
 async def test_query_method_session_override(mocker: MockerFixture) -> None:
+    import aiohttp
+
     from aiographql.client.transport.aiohttp import AiohttpTransport
 
     endpoint = "http://example.com/graphql"

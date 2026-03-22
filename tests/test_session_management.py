@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 from unittest.mock import patch
 
-import aiohttp
 import pytest
 
 from aiographql.client import GraphQLClient
@@ -16,13 +15,6 @@ from aiographql.client import GraphQLClient
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-try:
-    import httpx
-
-    HAS_HTTPX = True
-except ImportError:
-    httpx = None  # type: ignore[assignment]
-    HAS_HTTPX = False
 
 pytestmark = pytest.mark.asyncio
 
@@ -43,7 +35,10 @@ async def event_loop_exceptions() -> AsyncGenerator[list[dict[str, Any]], None]:
     running_loop.set_exception_handler(old_handler)
 
 
+@pytest.mark.aiohttp
 async def test_user_ownership_aiohttp(server: str, query_city: str) -> None:
+    import aiohttp
+
     """
     User Ownership Test: User-provided aiohttp.ClientSession is NOT closed.
     """
@@ -57,8 +52,10 @@ async def test_user_ownership_aiohttp(server: str, query_city: str) -> None:
     assert session.closed
 
 
-@pytest.mark.skipif(not HAS_HTTPX, reason="httpx not installed")
+@pytest.mark.httpx
 async def test_user_ownership_httpx(server: str, query_city: str) -> None:
+    import httpx
+
     """
     User Ownership Test: User-provided httpx.AsyncClient is NOT closed.
     """
@@ -76,9 +73,12 @@ async def test_user_ownership_httpx(server: str, query_city: str) -> None:
     assert session.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_library_ownership_aiohttp(
     server: str, query_city: str, event_loop_exceptions: list[dict[str, Any]]
 ) -> None:
+    import aiohttp
+
     """
     Library Ownership Test: Library-created sessions ARE closed safely.
     """
@@ -104,8 +104,10 @@ async def test_library_ownership_aiohttp(
             pytest.fail(f"Found unclosed client session: {context}")
 
 
-@pytest.mark.skipif(not HAS_HTTPX, reason="httpx not installed")
+@pytest.mark.httpx
 async def test_library_ownership_httpx(server: str, query_city: str) -> None:
+    import httpx
+
     """
     Library Ownership Test: Library-created httpx clients ARE closed safely.
     """
@@ -123,7 +125,10 @@ async def test_library_ownership_httpx(server: str, query_city: str) -> None:
     assert internal_client.is_closed
 
 
+@pytest.mark.aiohttp
 async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
+    import aiohttp
+
     """
     Connection Pooling Test: Consecutive calls reuse the same internal session.
     """
@@ -143,8 +148,10 @@ async def test_connection_pooling_aiohttp(server: str, query_city: str) -> None:
     await client.close()
 
 
-@pytest.mark.skipif(not HAS_HTTPX, reason="httpx not installed")
+@pytest.mark.httpx
 async def test_connection_pooling_httpx(server: str, query_city: str) -> None:
+    import httpx
+
     """
     Connection Pooling Test: Consecutive calls reuse the same internal httpx client.
     """
@@ -164,7 +171,10 @@ async def test_connection_pooling_httpx(server: str, query_city: str) -> None:
     await client.close()
 
 
+@pytest.mark.aiohttp
 async def test_explicit_session_override(server: str, query_city: str) -> None:
+    import aiohttp
+
     """
     Verify that providing a session to the query method overrides the client's default.
     """

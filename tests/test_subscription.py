@@ -9,7 +9,9 @@ import pytest
 
 from cafeteria.asyncio.callbacks import CallbackRegistry
 
+from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLRequest
+from aiographql.client import GraphQLResponse
 from aiographql.client import GraphQLSubscription
 from aiographql.client import GraphQLSubscriptionEventType
 from aiographql.client.subscription import GraphQLSubscriptionEvent
@@ -21,8 +23,6 @@ from aiographql.client.transport.httpx import HttpxTransport
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
-
-    from aiographql.client.response import GraphQLResponse
 
 
 def test_subscription_init_with_callback_default() -> None:
@@ -153,18 +153,25 @@ async def test_subscription_id_none_payload() -> None:
     assert cast("GraphQLResponse", event.payload).json == {"data": {}}
 
 
+@pytest.mark.strawberry
 @pytest.mark.asyncio
-async def test_subscription_connection_requests_minimal() -> None:
-    sub = GraphQLSubscription(request="{ city { name } }")
-    # request is string, so headers and payload logic changes
-    init_req = sub.connection_init_request()
-    assert init_req["type"] == "connection_init"
-    assert init_req["payload"]["headers"] == {}
+async def test_subscription_integration_strawberry(
+    strawberry_client: GraphQLClient,
+) -> None:
+    results = []
 
-    start_req = sub.connection_start_request()
-    assert start_req["type"] == "start"
-    # When request is string, it's converted to GraphQLRequest, so it has payload
-    assert start_req["payload"]["query"] == "{ city { name } }"
+    async def on_data(event: GraphQLSubscriptionEvent) -> None:
+        payload = event.payload
+        if isinstance(payload, GraphQLResponse):
+            results.append(payload.data["count"])
+
+    await strawberry_client.subscribe(
+        "subscription { count(target: 3) }",  # type: ignore[arg-type]
+        on_data=on_data,
+        wait=True,
+        protocols=["graphql-ws"],
+    )
+    assert results == [0, 1, 2]
 
 
 @pytest.mark.asyncio
@@ -209,6 +216,7 @@ async def test_subscription_serializer_lazy_init() -> None:
     assert sub.serializer is not None
 
 
+@pytest.mark.httpx
 @pytest.mark.asyncio
 async def test_subscription_routing_httpx(mocker: MockerFixture) -> None:
     """
@@ -241,6 +249,7 @@ async def test_subscription_routing_httpx(mocker: MockerFixture) -> None:
         assert kwargs["session"] is not httpx_client
 
 
+@pytest.mark.aiohttp
 @pytest.mark.asyncio
 async def test_subscription_routing_aiohttp(mocker: MockerFixture) -> None:
     """

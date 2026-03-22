@@ -6,20 +6,9 @@ from typing import Any
 
 import pytest
 
-from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
-from aiographql.client.transport.aiohttp import AiohttpTransport
-from aiographql.client.transport.aiohttp import AiohttpWebSocketResponse
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
 from aiographql.client.transport.base import GraphQLWebSocketResponse
-
-
-try:
-    from aiographql.client.transport.httpx import HttpxTransport
-
-    HAS_HTTPX = True
-except ImportError:
-    HAS_HTTPX = False
 
 
 def test_protocols_runtime_checkable() -> None:
@@ -28,29 +17,37 @@ def test_protocols_runtime_checkable() -> None:
     assert isinstance(GraphQLWebSocketResponse, type)
 
 
+@pytest.mark.aiohttp
 def test_aiohttp_transport_satisfies_protocol() -> None:
+    from aiographql.client.transport.aiohttp import AiohttpTransport
+
     # We don't need to instantiate it with a real endpoint for isinstance check
     transport = AiohttpTransport(endpoint="http://localhost")
     assert isinstance(transport, GraphQLTransport)
 
 
-@pytest.mark.skipif(not HAS_HTTPX, reason="httpx not installed")
+@pytest.mark.httpx
 def test_httpx_transport_satisfies_protocol() -> None:
+    from aiographql.client.transport.httpx import HttpxTransport
+
     transport = HttpxTransport(endpoint="http://localhost")
     assert isinstance(transport, GraphQLTransport)
 
 
+@pytest.mark.aiohttp
 def test_aiohttp_subscription_transport_satisfies_protocol() -> None:
+    from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
+
     transport = AiohttpSubscriptionTransport(endpoint="ws://localhost")
     assert isinstance(transport, GraphQLSubscriptionTransport)
 
 
+@pytest.mark.aiohttp
 def test_aiohttp_websocket_response_satisfies_protocol(mocker: Any) -> None:
+    from aiographql.client.transport.aiohttp import AiohttpWebSocketResponse
+
     # AiohttpWebSocketResponse needs a mock aiohttp.ClientWebSocketResponse
     mock_ws = mocker.Mock()
-    # To satisfy GraphQLWebSocketResponse, it needs to be an async context manager,
-    # have send_str, be an async iterator.
-    # AiohttpWebSocketResponse implements these.
 
     response = AiohttpWebSocketResponse(ws=mock_ws)
     assert isinstance(response, GraphQLWebSocketResponse)

@@ -11,6 +11,7 @@ from aiographql.client.transport.resolver import get_default_subscription_transp
 from aiographql.client.transport.resolver import get_default_transport
 
 
+@pytest.mark.httpx
 def test_resolver_is_httpx_available_version_check() -> None:
     with patch("importlib.metadata.version", return_value="0.23.0"):
         assert _is_httpx_available(min_version="0.24.0") is False

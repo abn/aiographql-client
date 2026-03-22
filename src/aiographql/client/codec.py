@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import decimal
 import enum
+import types
 import uuid
 
 from collections.abc import Iterable
@@ -14,6 +15,7 @@ from typing import TypeVar
 from typing import Union
 from typing import cast
 from typing import get_args
+from typing import get_origin
 from typing import get_type_hints
 from typing import runtime_checkable
 
@@ -86,7 +88,7 @@ class DefaultGraphQLCodec:
                 for f in dataclasses.fields(value)
             }
 
-        if isinstance(value, BaseModel):
+        if bool(pydantic) and isinstance(value, BaseModel):
             return self.encode(
                 value.model_dump(), include_primitives=include_primitives
             )
@@ -113,9 +115,9 @@ class DefaultGraphQLCodec:
 
     def decode(self, value: Any, target_type: type[T]) -> T:
         if value is None:
-            return value  # type: ignore[return-value]
+            return cast("T", value)
 
-        origin = getattr(target_type, "__origin__", None)
+        origin = get_origin(target_type)
         if origin is not None:
             args = get_args(target_type)
             if origin is list or origin is Iterable:
@@ -127,7 +129,7 @@ class DefaultGraphQLCodec:
                     self.decode(k, key_type): self.decode(v, val_type)
                     for k, v in value.items()
                 }  # type: ignore[return-value]
-            if origin is Union:
+            if origin is Union or origin is getattr(types, "UnionType", None):
                 # Simple Union support: try each type until one works
                 for arg in args:
                     if arg is type(None) and value is None:
@@ -146,7 +148,7 @@ class DefaultGraphQLCodec:
                     f"Failed to decode {value} to {target_type}: {e}"
                 ) from e
 
-        if isinstance(target_type, type) and issubclass(target_type, enum.Enum):  # type: ignore[redundant-expr]
+        if bool(isinstance(target_type, type)) and issubclass(target_type, enum.Enum):
             return target_type(value)
 
         if dataclasses.is_dataclass(target_type):
@@ -168,7 +170,11 @@ class DefaultGraphQLCodec:
                     f"Failed to decode {value} to {target_type}: {e}"
                 ) from e
 
-        if issubclass(target_type, BaseModel):
+        if (
+            bool(isinstance(target_type, type))
+            and bool(pydantic)
+            and issubclass(target_type, BaseModel)
+        ):
             if not isinstance(value, dict):
                 raise GraphQLCodecException(
                     f"Cannot decode non-dict value {value} to Pydantic model {target_type}"

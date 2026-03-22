@@ -39,6 +39,7 @@ async def test_query_with_introspection_disabled_global(
         assert response.data == query_output
 
 
+@pytest.mark.aiohttp
 @pytest.mark.asyncio
 async def test_subscription_with_introspection_disabled_global(
     mocker: MockerFixture, headers: dict[str, str], subscription_query: str

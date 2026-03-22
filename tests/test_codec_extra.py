@@ -4,12 +4,15 @@ import dataclasses
 import enum
 import uuid
 
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
 
 import pytest
 
-from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 from aiographql.client.codec import DefaultGraphQLCodec
 from aiographql.client.exceptions import GraphQLCodecException
@@ -26,9 +29,14 @@ class User:
     name: str
 
 
-class MyPydanticModel(BaseModel):
-    id: int
-    name: str
+def get_pydantic_model() -> type[BaseModel]:
+    from pydantic import BaseModel
+
+    class MyPydanticModel(BaseModel):
+        id: int
+        name: str
+
+    return MyPydanticModel
 
 
 def test_encode_fallback_subclasses() -> None:
@@ -45,9 +53,11 @@ def test_encode_fallback_subclasses() -> None:
     assert codec.encode(u, include_primitives=False) is u
 
 
+@pytest.mark.pydantic
 def test_encode_pydantic() -> None:
+    pydantic_model = get_pydantic_model()
     codec = DefaultGraphQLCodec()
-    model = MyPydanticModel(id=1, name="test")
+    model = pydantic_model(id=1, name="test")
     # Hits lines 87-90 in encode()
     assert codec.encode(model) == {"id": 1, "name": "test"}
 
@@ -98,29 +108,33 @@ def test_decode_dataclass_extra_fields() -> None:
         codec.decode(data, User)
 
 
+@pytest.mark.pydantic
 def test_decode_pydantic_success() -> None:
+    pydantic_model = get_pydantic_model()
     codec = DefaultGraphQLCodec()
     data = {"id": 1, "name": "test"}
     # Hits lines 164-170
-    model = codec.decode(data, MyPydanticModel)
-    assert isinstance(model, MyPydanticModel)
-    assert model.id == 1
+    model = codec.decode(data, pydantic_model)
+    assert isinstance(model, pydantic_model)
+    assert model.id == 1  # type: ignore[attr-defined]
 
 
+@pytest.mark.pydantic
 def test_decode_pydantic_failure() -> None:
+    pydantic_model = get_pydantic_model()
     codec = DefaultGraphQLCodec()
     # Hits lines 165-168
     with pytest.raises(
         GraphQLCodecException,
         match=r"Cannot decode non-dict value .* to Pydantic model",
     ):
-        codec.decode("not-a-dict", MyPydanticModel)
+        codec.decode("not-a-dict", pydantic_model)
 
     # Hits lines 171-174
     with pytest.raises(
         GraphQLCodecException, match="Failed to validate Pydantic model"
     ):
-        codec.decode({"id": "not-an-int"}, MyPydanticModel)
+        codec.decode({"id": "not-an-int"}, pydantic_model)
 
 
 def test_decode_general_fallback() -> None:
