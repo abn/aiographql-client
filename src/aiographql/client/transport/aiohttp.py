@@ -47,7 +47,7 @@ class AiohttpTransport(GraphQLTransport):
         import aiohttp
 
         connector_kwargs: dict[str, Any] = {"force_close": True, "limit": 100}
-        if sys.version_info < (3, 14):
+        if sys.version_info < (3, 12, 13):
             connector_kwargs["enable_cleanup_closed"] = True
 
         return aiohttp.TCPConnector(**connector_kwargs)
