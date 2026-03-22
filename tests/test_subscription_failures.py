@@ -14,6 +14,9 @@ from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLWebSocketResponse
 
 
+pytestmark = pytest.mark.asyncio
+
+
 if TYPE_CHECKING:
     from cafeteria.asyncio.callbacks import CallbackRegistry
 
@@ -44,7 +47,6 @@ class MockWebSocketResponse(GraphQLWebSocketResponse):
         return self.messages.pop(0)
 
 
-@pytest.mark.asyncio
 async def test_subscription_handle_server_error(ws_message_error: str) -> None:
     req = GraphQLRequest(query="subscription { city { name } }")
     # subscription ID is normally a UUID, let's fix it for the test
@@ -80,7 +82,6 @@ async def test_subscription_handle_server_error(ws_message_error: str) -> None:
     assert cast("GraphQLResponse", event.payload).json["message"] == "an error occurred"
 
 
-@pytest.mark.asyncio
 async def test_subscription_handle_invalid_json(ws_message_invalid_json: str) -> None:
     req = GraphQLRequest(query="subscription { city { name } }")
     sub = GraphQLSubscription(request=req)
@@ -102,7 +103,6 @@ async def test_subscription_handle_invalid_json(ws_message_invalid_json: str) ->
         await sub._websocket_connect("ws://test", mock_transport)
 
 
-@pytest.mark.asyncio
 async def test_subscription_complete_breaks_loop(ws_message_complete: str) -> None:
     req = GraphQLRequest(query="subscription { city { name } }")
     sub = GraphQLSubscription(request=req)

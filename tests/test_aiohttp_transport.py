@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-pytestmark = pytest.mark.aiohttp
+pytestmark = [pytest.mark.aiohttp, pytest.mark.asyncio]
 
 
 async def retry_on_transport_error(
@@ -46,7 +46,6 @@ async def retry_on_transport_error(
     raise RuntimeError("Unreachable")
 
 
-@pytest.mark.asyncio
 @pytest.mark.strawberry
 async def test_aiohttp_transport_session_override(
     strawberry_server: str,
@@ -76,7 +75,6 @@ async def test_aiohttp_transport_session_override(
         assert not session.closed
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_external_session(
     strawberry_server: str,
 ) -> None:
@@ -100,7 +98,6 @@ async def test_aiohttp_transport_external_session(
         assert not session.closed
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_invalid_json_response(
     mocket: Any, httpretty: Any
 ) -> None:
@@ -121,7 +118,6 @@ async def test_aiohttp_transport_invalid_json_response(
     assert resp.json is None
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_coerce_value_async() -> None:
     transport = AiohttpTransport(endpoint="http://test.com")
     serializer = DefaultSerializer()
@@ -133,7 +129,6 @@ async def test_aiohttp_transport_coerce_value_async() -> None:
     assert transport._coerce_value("string", serializer) == "string"
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_invalid_method_async() -> None:
     transport = AiohttpTransport(endpoint="http://test")
     with pytest.raises(GraphQLClientException, match="Invalid method"):
@@ -142,7 +137,7 @@ async def test_aiohttp_transport_invalid_method_async() -> None:
         )
 
 
-def test_aiohttp_transport_coerce_value_extra() -> None:
+async def test_aiohttp_transport_coerce_value_extra() -> None:
     transport = AiohttpTransport(endpoint="http://localhost")
     serializer = JSONSerializer()
 
@@ -160,7 +155,6 @@ def test_aiohttp_transport_coerce_value_extra() -> None:
     assert coerced_list == "[1, 2]"
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_websocket_response_anext() -> None:
     from unittest.mock import AsyncMock
     from unittest.mock import MagicMock

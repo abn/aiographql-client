@@ -11,7 +11,9 @@ from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLRequest
 
 
-@pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio
+
+
 async def test_custom_serializer_uuid() -> None:
     # Example from the issue: serialization of uuid.UUIDs
     user_id = uuid.uuid4()
@@ -44,7 +46,6 @@ async def test_custom_serializer_uuid() -> None:
 
 
 @pytest.mark.aiohttp
-@pytest.mark.asyncio
 async def test_custom_serializer_deserialization() -> None:
     # Custom load function that adds a prefix to keys (just for testing)
     from unittest.mock import MagicMock

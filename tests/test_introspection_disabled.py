@@ -9,11 +9,13 @@ from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLIntrospectionException
 
 
+pytestmark = pytest.mark.asyncio
+
+
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-@pytest.mark.asyncio
 async def test_query_with_introspection_disabled_global(
     mocker: MockerFixture,
     headers: dict[str, str],
@@ -40,7 +42,6 @@ async def test_query_with_introspection_disabled_global(
 
 
 @pytest.mark.aiohttp
-@pytest.mark.asyncio
 async def test_subscription_with_introspection_disabled_global(
     mocker: MockerFixture, headers: dict[str, str], subscription_query: str
 ) -> None:
