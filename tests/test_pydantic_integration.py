@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from aiographql.client import GraphQLClient
 
 
-pytestmark = pytest.mark.pydantic
+pytestmark = [pytest.mark.pydantic, pytest.mark.asyncio]
 
 
 def get_user_model() -> type[BaseModel]:
@@ -34,8 +34,6 @@ def get_input_model() -> type[BaseModel]:
     return CreateUserInput
 
 
-@pytest.mark.pydantic
-@pytest.mark.asyncio
 async def test_client_pydantic_variables(
     mocket: Any, httpretty: Any, strawberry_server: str
 ) -> None:
@@ -63,8 +61,6 @@ async def test_client_pydantic_variables(
     assert response.data["createUser"]["name"] == "Alice"
 
 
-@pytest.mark.pydantic
-@pytest.mark.asyncio
 async def test_client_pydantic_decode(
     mocket: Any, httpretty: Any, strawberry_server: str
 ) -> None:

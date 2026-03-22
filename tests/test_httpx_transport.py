@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-pytestmark = [pytest.mark.httpx, pytest.mark.strawberry]
+pytestmark = [pytest.mark.httpx, pytest.mark.strawberry, pytest.mark.asyncio]
 
 
 async def retry_on_transport_error(
@@ -47,7 +47,6 @@ async def retry_on_transport_error(
     raise RuntimeError("Unreachable")
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_post_success(
     mocket: Any, httpretty: Any, strawberry_server: str
 ) -> None:
@@ -73,7 +72,6 @@ async def test_httpx_transport_post_success(
     assert response.data == {"hello": "world"}
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_get_success(
     mocket: Any, httpretty: Any, strawberry_server: str
 ) -> None:
@@ -98,7 +96,6 @@ async def test_httpx_transport_get_success(
     assert response.data == {"hello": "world"}
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_non_200_raises_exception(
     strawberry_server: str,
 ) -> None:
@@ -113,7 +110,6 @@ async def test_httpx_transport_non_200_raises_exception(
     assert excinfo.value.response.json == {}
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_invalid_json_response(
     mocket: Any, httpretty: Any, strawberry_server: str
 ) -> None:
@@ -139,7 +135,6 @@ async def test_httpx_transport_invalid_json_response(
     assert response.json == {}
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_http_error(mocket: Any, strawberry_server: str) -> None:
     endpoint = strawberry_server
     transport = HttpxTransport(endpoint=endpoint)
@@ -159,7 +154,6 @@ async def test_httpx_transport_http_error(mocket: Any, strawberry_server: str) -
     assert "HTTP request failed" in str(excinfo.value)
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_external_client(strawberry_server: str) -> None:
     endpoint = strawberry_server
     import httpx
@@ -181,7 +175,6 @@ async def test_httpx_transport_external_client(strawberry_server: str) -> None:
         assert not client.is_closed
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_session_alias(strawberry_server: str) -> None:
     endpoint = strawberry_server
     import httpx
@@ -208,7 +201,6 @@ async def test_httpx_transport_session_alias(strawberry_server: str) -> None:
         assert not session.is_closed
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_invalid_method() -> None:
     transport = HttpxTransport(endpoint="http://example.com")
     with pytest.raises(GraphQLClientException) as excinfo:
@@ -220,7 +212,6 @@ async def test_httpx_transport_invalid_method() -> None:
     assert "Invalid method (PUT) specified" in str(excinfo.value)
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_http_error_handling(mocket: Any, httpretty: Any) -> None:
     endpoint = "http://test.com/graphql"
     transport = HttpxTransport(endpoint=endpoint)
@@ -240,7 +231,6 @@ async def test_httpx_transport_http_error_handling(mocket: Any, httpretty: Any) 
         await transport.request("POST", request, serializer)
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_status_error_handling(
     mocket: Any, httpretty: Any
 ) -> None:
@@ -262,7 +252,6 @@ async def test_httpx_transport_status_error_handling(
     assert excinfo.value.response.json == {"errors": [{"message": "Bad Request"}]}
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_coerce_value_async() -> None:
     transport = HttpxTransport(endpoint="http://test.com")
     serializer = DefaultSerializer()
@@ -271,7 +260,6 @@ async def test_httpx_transport_coerce_value_async() -> None:
     assert transport._coerce_value({"a": 1}, serializer) == '{"a":1}'
 
 
-@pytest.mark.asyncio
 async def test_httpx_transport_invalid_method_async() -> None:
     transport = HttpxTransport(endpoint="http://test")
     with pytest.raises(GraphQLClientException, match="Invalid method"):

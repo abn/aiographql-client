@@ -11,6 +11,9 @@ from aiographql.client import GraphQLClient
 from aiographql.client.codec import DefaultGraphQLCodec
 
 
+pytestmark = pytest.mark.asyncio
+
+
 @dataclasses.dataclass
 class City:
     name: str
@@ -100,7 +103,6 @@ async def test_client_encode_variables(mocker: Any) -> None:
     assert payload["variables"]["input"]["name"] == "Berlin"
 
 
-@pytest.mark.asyncio
 async def test_response_data_as() -> None:
     from aiographql.client.request import GraphQLRequest
     from aiographql.client.response import GraphQLResponse

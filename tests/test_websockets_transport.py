@@ -13,7 +13,7 @@ from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
 
 
-pytestmark = pytest.mark.websockets
+pytestmark = [pytest.mark.websockets, pytest.mark.asyncio]
 
 
 if TYPE_CHECKING:
@@ -51,7 +51,6 @@ def mock_websockets_client() -> Generator[tuple[AsyncMock, MagicMock], None, Non
         yield mock_ws, mock_ws_client
 
 
-@pytest.mark.asyncio
 async def test_websocket_transport_subscribe_with_mocket(
     mocket: Any,
     ws_message_ka: str,
@@ -79,14 +78,12 @@ async def test_websocket_transport_subscribe_with_mocket(
         mock_connect.assert_called_once()
 
 
-@pytest.mark.asyncio
 async def test_websocket_transport_close() -> None:
     # close() is a no-op currently, but we should test it exists
     transport = WebsocketSubscriptionTransport(endpoint="ws://test")
     await transport.close()
 
 
-@pytest.mark.asyncio
 async def test_websocket_transport_unsupported_kwargs(
     mock_websockets_client: tuple[AsyncMock, MagicMock],
 ) -> None:
@@ -106,7 +103,6 @@ async def test_websocket_transport_unsupported_kwargs(
     )
 
 
-@pytest.mark.asyncio
 async def test_websocket_transport_subscribe_error(
     mock_websockets_client: tuple[AsyncMock, MagicMock], ws_message_error: str
 ) -> None:
@@ -127,7 +123,6 @@ async def test_websocket_transport_subscribe_error(
     assert results == [ws_message_error]
 
 
-@pytest.mark.asyncio
 async def test_websocket_transport_subscribe_bad_data(
     mock_websockets_client: tuple[AsyncMock, MagicMock],
     ws_message_invalid_json: str,

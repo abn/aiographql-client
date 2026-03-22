@@ -32,7 +32,6 @@ def post() -> Iterator[
     yield post_func
 
 
-@pytest.mark.asyncio
 async def test_client_headers(
     server: str,
     headers: dict[str, str],
@@ -45,7 +44,6 @@ async def test_client_headers(
         assert isinstance(response, GraphQLResponse)
 
 
-@pytest.mark.asyncio
 async def test_request_headers(
     server: str,
     headers: dict[str, str],
@@ -58,7 +56,6 @@ async def test_request_headers(
         assert isinstance(response, GraphQLResponse)
 
 
-@pytest.mark.asyncio
 async def test_post_headers(
     server: str, headers: dict[str, str], client: GraphQLClient, query_city: str
 ) -> None:
@@ -69,7 +66,6 @@ async def test_post_headers(
     assert not response.errors
 
 
-@pytest.mark.asyncio
 async def test_no_headers(server: str, client: GraphQLClient, query_city: str) -> None:
     request = GraphQLRequest(query=query_city)
     with pytest.raises(GraphQLIntrospectionException):

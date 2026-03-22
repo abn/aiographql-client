@@ -11,11 +11,13 @@ from aiographql.client import GraphQLRequest
 from aiographql.client.transport import GraphQLSubscriptionTransport
 
 
+pytestmark = pytest.mark.asyncio
+
+
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-@pytest.mark.asyncio
 async def test_client_init_subscription_transport(mocker: MockerFixture) -> None:
     mock_transport = MagicMock(spec=GraphQLSubscriptionTransport)
     # Mocking subscribe to avoid actual network calls
@@ -45,7 +47,6 @@ async def test_client_init_subscription_transport(mocker: MockerFixture) -> None
     assert kwargs["transport"] == mock_transport
 
 
-@pytest.mark.asyncio
 async def test_client_subscribe_override_transport(mocker: MockerFixture) -> None:
     default_mock_transport = MagicMock(spec=GraphQLSubscriptionTransport)
     override_mock_transport = MagicMock(spec=GraphQLSubscriptionTransport)

@@ -11,7 +11,7 @@ from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.transport import AiohttpTransport
 
 
-pytestmark = [pytest.mark.aiohttp, pytest.mark.strawberry]
+pytestmark = [pytest.mark.aiohttp, pytest.mark.strawberry, pytest.mark.asyncio]
 
 
 if TYPE_CHECKING:
@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.strawberry
-@pytest.mark.asyncio
 async def test_aiohttp_transport_post_success(strawberry_server: str) -> None:
     endpoint = strawberry_server
     transport = AiohttpTransport(endpoint=endpoint)
@@ -37,7 +36,6 @@ async def test_aiohttp_transport_post_success(strawberry_server: str) -> None:
 
 
 @pytest.mark.strawberry
-@pytest.mark.asyncio
 async def test_aiohttp_transport_get_success(strawberry_server: str) -> None:
     endpoint = strawberry_server
     transport = AiohttpTransport(endpoint=endpoint)
@@ -54,7 +52,6 @@ async def test_aiohttp_transport_get_success(strawberry_server: str) -> None:
 
 
 @pytest.mark.strawberry
-@pytest.mark.asyncio
 async def test_aiohttp_transport_non_200_raises_exception(
     strawberry_server: str,
 ) -> None:
@@ -69,7 +66,6 @@ async def test_aiohttp_transport_non_200_raises_exception(
     assert excinfo.value.response.json is None
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_close_session_user_owned(
     mocker: MockerFixture,
 ) -> None:
@@ -83,7 +79,6 @@ async def test_aiohttp_transport_close_session_user_owned(
     mock_session.close.assert_not_called()
 
 
-@pytest.mark.asyncio
 async def test_aiohttp_transport_close_session_library_owned(
     mocker: MockerFixture,
 ) -> None:
