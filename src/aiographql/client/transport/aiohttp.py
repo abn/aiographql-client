@@ -5,6 +5,7 @@ from typing import Any
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLRequestException
+from aiographql.client.exceptions import GraphQLTransportException
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
@@ -129,7 +130,7 @@ class AiohttpTransport(GraphQLTransport):
 
                 raise GraphQLRequestException(response)
         except aiohttp.ClientError as exc:
-            raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
+            raise GraphQLTransportException(f"HTTP request failed: {exc}") from exc
 
     @staticmethod
     def _coerce_value(value: Any, serializer: GraphQLSerializer) -> Any:

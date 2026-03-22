@@ -5,6 +5,7 @@ from typing import Any
 
 from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLRequestException
+from aiographql.client.exceptions import GraphQLTransportException
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLTransport
 
@@ -144,7 +145,7 @@ class HttpxTransport(GraphQLTransport):
                     # If we get here, it might be an exception from httpx internals
                     # or if the user passed an unexpected exception.
                     pass
-                raise GraphQLClientException(f"HTTP request failed: {exc}") from exc
+                raise GraphQLTransportException(f"HTTP request failed: {exc}") from exc
             raise
 
     def _coerce_value(self, value: Any, serializer: GraphQLSerializer) -> Any:

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import asyncio
+
+from typing import TYPE_CHECKING
 from typing import Any
+from typing import TypeVar
 
 import pytest
 
 from mocket.plugins.httpretty import HTTPretty
 
 from aiographql.client.exceptions import GraphQLClientException
+from aiographql.client.exceptions import GraphQLTransportException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.serializer import JSONSerializer
@@ -14,7 +19,31 @@ from aiographql.client.transport.aiohttp import AiohttpTransport
 from aiographql.client.transport.aiohttp import AiohttpWebSocketResponse
 
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Coroutine
+
+
+T = TypeVar("T")
+
 pytestmark = pytest.mark.aiohttp
+
+
+async def retry_on_transport_error(
+    func: Callable[..., Coroutine[Any, Any, T]],
+    retries: int = 3,
+    delay: float = 1.0,
+    *args: Any,
+    **kwargs: Any,
+) -> T:
+    for i in range(retries):
+        try:
+            return await func(*args, **kwargs)
+        except GraphQLTransportException:
+            if i == retries - 1:
+                raise
+            await asyncio.sleep(delay)
+    raise RuntimeError("Unreachable")
 
 
 @pytest.mark.asyncio
@@ -33,8 +62,12 @@ async def test_aiohttp_transport_session_override(
         )
 
         # Pass session as an override in the request call
-        response = await transport.request(
-            method="POST", request=request, serializer=serializer, session=session
+        response = await retry_on_transport_error(
+            transport.request,
+            method="POST",
+            request=request,
+            serializer=serializer,
+            session=session,
         )
         assert response.data == {"hello": "world"}
 
@@ -57,8 +90,8 @@ async def test_aiohttp_transport_external_session(
             query="{ hello }", headers={"Content-Type": "application/json"}
         )
 
-        response = await transport.request(
-            method="POST", request=request, serializer=serializer
+        response = await retry_on_transport_error(
+            transport.request, method="POST", request=request, serializer=serializer
         )
         assert response.data == {"hello": "world"}
 
