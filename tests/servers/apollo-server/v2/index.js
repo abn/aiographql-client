@@ -1,5 +1,5 @@
 const { ApolloServer, gql, PubSub } = require("apollo-server");
-const faker = require("faker");
+const { faker } = require("@faker-js/faker");
 
 const pubsub = new PubSub();
 
