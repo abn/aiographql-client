@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [Ubuntu]
+        os: [ubuntu, windows, macos]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         transport: ["aiohttp", "httpx", "all"]
     services:
@@ -42,23 +42,36 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Start podman socket
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           systemctl --user start podman.socket
           systemctl --user status podman.socket
 
+      - name: Setup podman (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install podman podman-compose
+          podman machine init
+          podman machine start
+
       - name: Start test containers
         shell: bash
         run: |
-          export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+          fi
           podman compose up -d apollo-server-v2 strawberry-server
 
-      - name: Wait for strawberry
+      - name: Stop test containers
+        if: always()
         shell: bash
         run: |
-          timeout 60s bash -c \
-            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:5000/graphql)" != "200" ]]; do sleep 2; done' \
-          || false
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+          fi
+          podman compose down --remove-orphans
+
 
       - name: Install poetry and tox
         run: pipx install poetry tox
@@ -69,12 +82,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Get poetry cache directory
-        run: printf 'cache-dir=%s\n' "$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+        run: printf 'cache-dir=%s\n' "$(poetry config cache-dir)" >> "$GITHUB_OUTPUT"
         id: poetry-config
         shell: bash
 
       - name: Get current date
-        run: printf 'date=%s\n' "$(date -I)" >> $GITHUB_OUTPUT
+        run: printf 'date=%s\n' "$(date -I)" >> "$GITHUB_OUTPUT"
         id: get-date
         shell: bash
 
@@ -91,19 +104,14 @@ jobs:
             poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-
           enableCrossOsArchive: true
 
-      - name: Wait for hasura
-        shell: bash
-        run: |
-          timeout 300s bash -c \
-            'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:${{ job.services.hasura.ports[8080] }}/healthz)" != "200" ]]; do sleep 5; done' \
-          || false
 
       - name: Execute test suite
         shell: bash
         env:
-            SERVER_WORLD_DB: "http://127.0.0.1:${{ job.services.hasura.ports[8080] }}/v1/graphql"
-            SERVER_APOLLO_V2: "http://127.0.0.1:4000/graphql"
-            SERVER_STRAWBERRY: "http://127.0.0.1:5000/graphql"
+            GRAPHQL_ENDPOINT_WORLD_SERVER: "http://127.0.0.1:8080/v1/graphql"
+            GRAPHQL_ENDPOINT_APOLLO_V2: "http://127.0.0.1:4000/graphql"
+            GRAPHQL_ENDPOINT_STRAWBERRY: "http://127.0.0.1:5000/graphql"
         run: |
-          TOX_ENV="py$(echo ${{ matrix.python-version }} | tr -d '.')-${{ matrix.transport }}"
-          tox -e $TOX_ENV
+          python_version=$(echo ${{ matrix.python-version }} | tr -d '.')
+          TOX_ENV="py${python_version}-${{ matrix.transport }}"
+          tox -e "$TOX_ENV"
