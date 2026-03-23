@@ -1,0 +1,10 @@
+.coverage
+.tox
+.venv
+.git
+.github
+.pytest_cache
+.mypy_cache
+.ruff_cache
+tests/servers/*/.venv
+tests/servers/*/node_modules
