@@ -104,6 +104,8 @@ html_theme_options = {
     "globaltoc_collapse": True,
     # If True, show hidden TOC entries
     "globaltoc_includehidden": True,
+    "localtoc_label_text": "Contents",
+    "search_placeholder_text": "Search",
     "master_doc": False,
     # optimisation
     "html_minify": True,
