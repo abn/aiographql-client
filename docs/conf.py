@@ -43,6 +43,7 @@ master_doc = "index"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

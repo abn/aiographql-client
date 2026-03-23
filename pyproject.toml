@@ -237,6 +237,7 @@ Sphinx = {version = "^9.1.0", python = ">=3.12"}
 sphinx-material = {version = "^0.0.36", python = ">=3.12"}
 sphinx-autodoc-typehints = {version = "^3.9.9", python = ">=3.12"}
 sphinxcontrib-spelling = {version = "^8.0.2", python = ">=3.12"}
+myst-parser = {version = "^5.0.0", python = ">=3.12"}
 
 [tool.poetry.group.dev.dependencies]
 mypy = ">=1.19.1"
