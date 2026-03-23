@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import time
+import urllib.error
+import urllib.request
 import uuid
 
 from typing import TYPE_CHECKING
@@ -42,21 +45,35 @@ def _check_transport_availability(request: pytest.FixtureRequest) -> None:
         pytest.skip("pydantic not installed")
 
     if request.node.get_closest_marker("strawberry"):
-        import urllib.request
-
         strawberry_server_url = request.config.getoption("--server-strawberry")
         try:
             with urllib.request.urlopen(strawberry_server_url, timeout=1):
                 pass
-        except Exception as e:
+        except urllib.error.HTTPError as e:
             # Handle cases like 405 Method Not Allowed or 400 Bad Request which mean the server IS there
             # but doesn't like our empty/GET request.
-            if hasattr(e, "code") and e.code in {400, 405}:
-                pass
-            else:
-                pytest.skip(
-                    f"strawberry server not available at {strawberry_server_url}: {e}"
-                )
+            if e.code >= 500:
+                pytest.skip(f"strawberry server error at {strawberry_server_url}: {e}")
+        except Exception as e:
+            pytest.skip(
+                f"strawberry server not available at {strawberry_server_url}: {e}"
+            )
+
+
+def _wait_for_server(url: str, timeout: int = 300, interval: int = 5) -> bool:
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with urllib.request.urlopen(url, timeout=interval):
+                return True
+        except urllib.error.HTTPError as e:
+            # 400, 405, etc. mean the server is up but doesn't like the request
+            if e.code < 500:
+                return True
+        except Exception:
+            pass
+        time.sleep(interval)
+    return False
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -65,6 +82,26 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "websockets: mark test as requiring websockets")
     config.addinivalue_line("markers", "pydantic: mark test as requiring pydantic")
     config.addinivalue_line("markers", "strawberry: mark test as requiring strawberry")
+
+    if config.getoption("help") or config.getoption("showfixtures"):
+        return
+
+    # Pre-flight checks for servers
+    server_urls = {
+        "Hasura": config.getoption("--server-world-db"),
+        "Apollo": config.getoption("--server-apollo-v2"),
+        "Strawberry": config.getoption("--server-strawberry"),
+    }
+
+    # Only wait if we are not just collecting tests or in a environment where we don't expect servers
+    # However, since these are integration tests, we should probably wait if the options are provided.
+    # In CI, these are always provided or defaulted to local.
+    for name, url in server_urls.items():
+        if not url:
+            continue
+        print(f"Waiting for {name} server at {url}...")  # noqa: T201
+        if not _wait_for_server(url):
+            print(f"WARNING: {name} server at {url} not available after timeout.")  # noqa: T201
 
 
 def pytest_addoption(parser: Any) -> None:
