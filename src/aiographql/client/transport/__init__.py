@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
     from aiographql.client.transport.aiohttp import AiohttpTransport
     from aiographql.client.transport.httpx import HttpxTransport
+    from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
 
 
 def __getattr__(name: str) -> Any:
@@ -29,6 +30,10 @@ def __getattr__(name: str) -> Any:
         from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
         return AiohttpSubscriptionTransport
+    if name == "WebsocketSubscriptionTransport":
+        from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
+
+        return WebsocketSubscriptionTransport
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -39,6 +44,7 @@ __all__ = [
     "GraphQLSubscriptionTransport",
     "GraphQLTransport",
     "HttpxTransport",
+    "WebsocketSubscriptionTransport",
     "get_default_subscription_transport",
     "get_default_transport",
 ]

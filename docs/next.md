@@ -4,7 +4,7 @@
 - New transport abstraction layer with support for multiple protocols:
   - `AiohttpTransport` (default, requires `aiohttp`)
   - `HttpxTransport` (requires `httpx`)
-  - `WebsocketTransport` (requires `websockets`)
+  - `WebsocketSubscriptionTransport` (requires `websockets`, for subscriptions only)
 - Auto-detection of transport based on installed dependencies and environment.
 - GraphQL codec layer with support for custom encoding and decoding:
   - `DefaultGraphQLCodec` for standard JSON support.
