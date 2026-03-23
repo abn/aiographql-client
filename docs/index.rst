@@ -43,6 +43,7 @@ Documentation Content
    transport
    data-models
    api
+   changelog
 
 .. toctree::
    :caption: Community
