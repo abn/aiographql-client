@@ -1,0 +1,156 @@
+name: Examples Suite
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  examples:
+    name: ${{ matrix.os }} / ${{ matrix.python-version }} / examples
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [Ubuntu]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start podman socket
+        shell: bash
+        run: |
+          systemctl --user start podman.socket
+          systemctl --user status podman.socket
+
+      - name: Start test containers
+        shell: bash
+        run: |
+          export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+          podman compose up -d
+
+      - name: Wait for hasura
+        shell: bash
+        run: |
+          timeout 300s bash -c \
+            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:8080/healthz)" != "200" ]]; do sleep 5; done' \
+          || false
+
+      - name: Wait for apollo v2
+        shell: bash
+        run: |
+          timeout 120s bash -c \
+            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:4000/graphql)" != "400" ]]; do sleep 2; done' \
+          || false
+
+      - name: Wait for strawberry
+        shell: bash
+        run: |
+          timeout 120s bash -c \
+            'while [[ "$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:5000/graphql)" != "200" ]]; do sleep 2; done' \
+          || false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Get poetry cache directory
+        run: printf 'cache-dir=%s\n' "$(poetry config cache-dir)" >> "$GITHUB_OUTPUT"
+        id: poetry-config
+        shell: bash
+
+      - name: Get current date
+        run: printf 'date=%s\n' "$(date -I)" >> "$GITHUB_OUTPUT"
+        id: get-date
+        shell: bash
+
+      - name: Cache Poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.poetry-config.outputs.cache-dir }}/artifacts
+            ${{ steps.poetry-config.outputs.cache-dir }}/cache
+          key: poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-examples-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
+          restore-keys: |
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-examples-
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-${{ matrix.python-version }}-
+            poetry-${{ steps.get-date.outputs.date }}-${{ runner.os }}-
+          enableCrossOsArchive: true
+
+      - name: Install project and extras
+        shell: bash
+        run: poetry install --only main --all-extras
+
+      - name: Run examples
+        shell: bash
+        env:
+          SERVER_WORLD_DB: "http://127.0.0.1:8080/v1/graphql"
+          SERVER_APOLLO_V2: "http://127.0.0.1:4000/graphql"
+          SERVER_STRAWBERRY: "http://127.0.0.1:5000/graphql"
+        run: |
+          shopt -s nullglob
+          scripts=(examples/*.py)
+
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "No example scripts found in examples/*.py"
+            exit 1
+          fi
+
+          failures=0
+          declare -a results=()
+
+          for script in "${scripts[@]}"; do
+            echo "Running ${script}..."
+            if poetry run python "${script}"; then
+              results+=("${script}|PASS")
+            else
+              exit_code=$?
+              results+=("${script}|FAIL (${exit_code})")
+              failures=$((failures + 1))
+            fi
+          done
+
+          echo
+          printf "%-45s | %-12s\n" "Script" "Result"
+          printf -- "%.0s-" {1..62}
+          echo
+          for result in "${results[@]}"; do
+            script_name="${result%%|*}"
+            status="${result#*|}"
+            printf "%-45s | %-12s\n" "${script_name}" "${status}"
+          done
+
+          {
+            echo "### Examples execution results"
+            echo
+            echo "| Script | Result |"
+            echo "| --- | --- |"
+            for result in "${results[@]}"; do
+              script_name="${result%%|*}"
+              status="${result#*|}"
+              echo "| \`${script_name}\` | ${status} |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ ${failures} -gt 0 ]]; then
+            echo "${failures} example script(s) failed"
+            exit 1
+          fi
+
+      - name: Stop test containers
+        if: always()
+        shell: bash
+        run: |
+          export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+          podman compose down --remove-orphans
