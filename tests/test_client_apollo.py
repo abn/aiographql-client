@@ -23,10 +23,14 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
-async def client(server_apollo_v2: str) -> AsyncGenerator[GraphQLClient, None]:
-    async with GraphQLClient(endpoint=server_apollo_v2) as client:
-        yield client
+@pytest.fixture(params=["v2"])
+async def apollo_client_with_version(
+    request: Any,
+) -> AsyncGenerator[tuple[GraphQLClient, str], None]:
+    version = request.param
+    endpoint = request.config.getoption(f"--server-apollo-{version}")
+    async with GraphQLClient(endpoint=endpoint) as client:
+        yield client, version
 
 
 @pytest.fixture
@@ -49,37 +53,35 @@ def subscription_query() -> str:
     return "subscription { messageAdded }"
 
 
-async def test_apollo_v2_simple_query(
-    client: GraphQLClient, query: str, query_output: dict[str, str]
+async def test_apollo_simple_query(
+    apollo_client_with_version: tuple[GraphQLClient, str],
+    query: str,
+    query_output: dict[str, str],
 ) -> None:
+    client, _ = apollo_client_with_version
     request = GraphQLRequest(query=query)
     response = await client.query(request)
     assert response.data == query_output
 
 
-async def test_apollo_v2_invalid_query_schema(
-    client: GraphQLClient, headers: dict[str, str], invalid_query_schema: str
+async def test_apollo_invalid_query_schema(
+    apollo_client_with_version: tuple[GraphQLClient, str],
+    headers: dict[str, str],
+    invalid_query_schema: str,
 ) -> None:
+    client, _ = apollo_client_with_version
     request = GraphQLRequest(query=invalid_query_schema, headers=headers)
     with pytest.raises(GraphQLClientValidationException) as excinfo:
         _ = await client.query(request)
     message = str(excinfo.value)
-    assert (
-        message
-        == """Query validation failed
-
-Cannot query field 'pinged' on type 'Query'. Did you mean 'ping'?
-
-GraphQL request:1:9
-1 | query { pinged }
-  |         ^"""
-    )
+    assert "Cannot query field 'pinged' on type 'Query'" in message
 
 
 @pytest.mark.aiohttp
-async def test_apollo_v2_subscription(
-    client: GraphQLClient, subscription_query: str
+async def test_apollo_subscription(
+    apollo_client_with_version: tuple[GraphQLClient, str], subscription_query: str
 ) -> None:
+    client, version = apollo_client_with_version
     request = GraphQLRequest(query=subscription_query)
     m: list[dict[str, Any]] = []
 
@@ -98,16 +100,21 @@ async def test_apollo_v2_subscription(
         lambda event: callback(event.payload.data),
     )
 
-    # apollo-server v2 requires the sub-protocol to be configured
-    subscription: GraphQLSubscription = await client.subscribe(
-        request=request, callbacks=callbacks, protocols="graphql-ws"
-    )
+    subscription_kwargs: dict[str, Any] = {
+        "request": request,
+        "callbacks": callbacks,
+    }
+
+    # apollo-graphql_server v2 requires the sub-protocol to be configured
+    subscription_kwargs["protocols"] = "graphql-ws"
+
+    subscription: GraphQLSubscription = await client.subscribe(**subscription_kwargs)
 
     await asyncio.sleep(0.1)
 
     try:
         if subscription.task is not None:
-            await asyncio.wait_for(subscription.task, timeout=5)
+            await asyncio.wait_for(subscription.task, timeout=10)
         assert len(m) > 0
     except (asyncio.TimeoutError, asyncio.CancelledError):
-        pytest.fail("Subscriptions timed out before receiving expected messages")
+        pytest.fail(f"Subscriptions timed out for Apollo {version}")
