@@ -11,7 +11,6 @@
   - `PydanticGraphQLCodec` for Pydantic v2 model support.
   - Support for `dataclasses` out of the box.
 - Lazy initialization of client sessions with ownership management.
-- Retry mechanism for transport errors (e.g., connection issues).
 - Support for `connection_init_payload` in GraphQL subscriptions.
 - Support for Python 3.13 and 3.14.
 - Added "Data Models" and scenario-based examples to documentation.
