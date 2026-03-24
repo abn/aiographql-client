@@ -2,9 +2,9 @@
 name = "strawberry-test-server"
 version = "0.1.0"
 description = "Test server for aiographql-client"
-requires-python = ">=3.14,<4.0"
+requires-python = ">=3.13,<4.0"
 dependencies = [
-    "strawberry-graphql[fastapi,debug-server]>=0.262.0",
+    "strawberry-graphql[fastapi]>=0.262.0",
     "uvicorn[standard]",
 ]
 
