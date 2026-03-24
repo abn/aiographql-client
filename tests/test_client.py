@@ -276,6 +276,27 @@ async def test_subscription_connection_init_payload(
         assert subscription.connection_init_payload == connection_init_payload
 
 
+async def test_get_schema_ttl(mocker: MockerFixture, client: GraphQLClient) -> None:
+    client._schema_cache_ttl = 0.1
+    mocker.patch.object(
+        client, "introspect", new_callable=mocker.AsyncMock, return_value="mock_schema"
+    )
+
+    schema = await client.get_schema()
+    assert schema == "mock_schema"
+    client.introspect.assert_called_once()
+
+    client.introspect.reset_mock()
+    schema2 = await client.get_schema()
+    assert schema2 == "mock_schema"
+    client.introspect.assert_not_called()
+
+    await asyncio.sleep(0.2)
+    schema3 = await client.get_schema()
+    assert schema3 == "mock_schema"
+    client.introspect.assert_called_once()
+
+
 async def test_query_method_session_override(mocker: MockerFixture) -> None:
     try:
         import aiohttp as _  # noqa: F401

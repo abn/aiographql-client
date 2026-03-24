@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import time
 
 from typing import TYPE_CHECKING
 from typing import Any
@@ -88,6 +89,8 @@ class GraphQLClient:
     :param subscription_transport: Custom transport to use for subscriptions. If not
         provided, the best available transport is automatically selected. Must be a
         :class:`GraphQLSubscriptionTransport` instance.
+    :param schema_cache_ttl: Time-to-live in seconds for the cached schema. If set,
+        the schema will be introspected again after the TTL expires.
     """
 
     def __init__(
@@ -102,6 +105,7 @@ class GraphQLClient:
         codec: GraphQLCodec | None = None,
         transport: GraphQLTransport | None = None,
         subscription_transport: GraphQLSubscriptionTransport | None = None,
+        schema_cache_ttl: int | float | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
@@ -111,6 +115,8 @@ class GraphQLClient:
         self._validate = validate
         self._serializer = serializer or DefaultSerializer()
         self._codec = codec
+        self._schema_cache_ttl = schema_cache_ttl
+        self._schema_cache_time = time.monotonic() if schema else None
         self._transport = get_default_transport(
             endpoint=self.endpoint,
             transport=transport,
@@ -190,9 +196,15 @@ class GraphQLClient:
         :param headers: Request headers
         :return: The GraphQL schema as introspected. This maybe a previously cached value.
         """
-        # TODO: consider adding ttl logic for expiring schemas for long running services
-        if self._schema is None or refresh:
+        has_expired = False
+        if self._schema_cache_ttl is not None and self._schema_cache_time is not None:
+            has_expired = (
+                time.monotonic() - self._schema_cache_time > self._schema_cache_ttl
+            )
+
+        if self._schema is None or refresh or has_expired:
             self._schema = await self.introspect(headers=headers)
+            self._schema_cache_time = time.monotonic()
         return self._schema
 
     async def validate(
