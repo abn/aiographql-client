@@ -49,7 +49,7 @@ To set up your local development environment, you will need `Poetry`_.
 Running Tests
 ~~~~~~~~~~~~~
 
-The project uses `pytest` for testing. Some tests require running GraphQL servers (Hasura, Apollo v2), which can be managed using `podman compose` or `docker-compose`.
+The project uses `pytest` for testing. Some tests require running GraphQL servers (Hasura, Apollo v2, Strawberry), which can be managed using `podman compose` or `docker-compose`.
 
 .. code-block:: shell
 
@@ -58,6 +58,22 @@ The project uses `pytest` for testing. Some tests require running GraphQL server
 
     # Run tests
     poetry run pytest
+
+The test suite automatically checks server availability before running tests and will wait up to 300 seconds for servers to become ready. This means you don't need to manually verify that servers are running after starting them with ``podman compose``.
+
+Environment Variables
+^^^^^^^^^^^^^^^^^^^^^
+
+If you need to customize the GraphQL server endpoints for testing, you can set the following environment variables:
+
+- ``GRAPHQL_ENDPOINT_WORLD_SERVER``: Hasura world database endpoint (default: ``http://127.0.0.1:8080/v1/graphql``)
+- ``GRAPHQL_ENDPOINT_APOLLO_V2``: Apollo Server v2 endpoint (default: ``http://127.0.0.1:4000/graphql``)
+- ``GRAPHQL_ENDPOINT_STRAWBERRY``: Strawberry server endpoint (default: ``http://127.0.0.1:5000/graphql``)
+
+Cross-Platform Testing
+^^^^^^^^^^^^^^^^^^^^^^
+
+The project's CI workflows test on Ubuntu, Windows, and macOS to ensure cross-platform compatibility. While most contributors will run tests locally on their preferred platform, the automated CI ensures the codebase remains compatible across operating systems.
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
