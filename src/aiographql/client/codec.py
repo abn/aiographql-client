@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import decimal
 import enum
+import functools
 import types
 import uuid
 
@@ -38,6 +39,11 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T")
+
+
+@functools.lru_cache()
+def _get_type_hints_cached(target_type: type) -> dict[str, Any]:
+    return get_type_hints(target_type)
 
 
 @runtime_checkable
@@ -156,7 +162,7 @@ class DefaultGraphQLCodec:
                 raise GraphQLCodecException(
                     f"Cannot decode non-dict value {value} to dataclass {target_type}"
                 )
-            field_types = get_type_hints(target_type)
+            field_types = _get_type_hints_cached(target_type)
             kwargs = {}
             for k, v in value.items():
                 if k in field_types:
