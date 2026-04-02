@@ -167,7 +167,7 @@ def test_pydantic_decode_validation_exception_fallback(mocker: Any) -> None:
     mocker.patch.object(
         user_profile_model,
         "model_validate",
-        side_effect=Exception("Unexpected mock validation error")
+        side_effect=Exception("Unexpected mock validation error"),
     )
 
     with pytest.raises(GraphQLCodecException) as excinfo:
