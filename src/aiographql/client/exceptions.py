@@ -29,9 +29,17 @@ class GraphQLClientValidationException(GraphQLClientException):
 
 class GraphQLRequestException(GraphQLClientException):
     def __init__(self, response: GraphQLResponse) -> None:
-        super().__init__(
-            f"Request failed with response {json.dumps(response.json).decode('utf-8')}"
-        )
+        if response.errors:
+            error_messages = [
+                error.message for error in response.errors if error.message
+            ]
+            if error_messages:
+                message = f"Request failed with errors: {', '.join(error_messages)}"
+            else:
+                message = "Request failed with unknown errors"
+        else:
+            message = "Request failed"
+        super().__init__(message)
         self.response = response
 
 

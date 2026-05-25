@@ -48,6 +48,8 @@ class GraphQLResponse(GraphQLBaseResponse):
         """
         A list of :class:`GraphQLError` objects if server responded with query errors.
         """
+        if self.json is None:
+            return []
         errors = self.json.get("errors")
         if errors is None:
             return []
@@ -56,6 +58,8 @@ class GraphQLResponse(GraphQLBaseResponse):
     @property
     def data(self) -> dict[str, Any]:
         """The data payload the server responded with."""
+        if self.json is None:
+            return {}
         data = self.json.get("data")
         return data if isinstance(data, dict) else {}
 
