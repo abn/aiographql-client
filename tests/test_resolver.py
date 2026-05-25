@@ -27,11 +27,9 @@ def test_resolver_is_module_available_version_check() -> None:
 
 
 def test_resolver_no_transport_available() -> None:
-    with (
-        patch(
-            "aiographql.client.transport.resolver._is_module_available",
-            return_value=False,
-        )
+    with patch(
+        "aiographql.client.transport.resolver._is_module_available",
+        return_value=False,
     ):
         with pytest.raises(RuntimeError, match="No suitable transport found"):
             get_default_transport("http://test")
