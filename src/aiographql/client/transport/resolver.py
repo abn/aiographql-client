@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.metadata
 
 from typing import TYPE_CHECKING
@@ -16,17 +17,16 @@ if TYPE_CHECKING:
     from aiographql.client.transport.base import GraphQLTransport
 
 
-def _is_httpx_available(min_version: str = "0.24.0") -> bool:
+def _is_module_available(module_name: str, min_version: str | None = None) -> bool:
     """
-    Check if httpx is available and meets the minimum version requirement.
+    Check if a module is available and optionally meets a minimum version requirement.
     """
     try:
-        import httpx  # noqa: F401
+        importlib.import_module(module_name)
+        if min_version is None:
+            return True
 
-        version = importlib.metadata.version("httpx")
-        # Simple version comparison to avoid adding 'packaging' dependency if not present
-        # but the project likely has it or we can use a simpler check.
-        # Given the environment, let's try to be robust.
+        version = importlib.metadata.version(module_name)
         parts = [int(p) for p in version.split(".") if p.isdigit()]
         min_parts = [int(p) for p in min_version.split(".") if p.isdigit()]
         return parts >= min_parts
@@ -34,28 +34,16 @@ def _is_httpx_available(min_version: str = "0.24.0") -> bool:
         return False
 
 
-def _is_aiohttp_available() -> bool:
-    """
-    Check if aiohttp is available.
-    """
-    try:
-        import aiohttp  # noqa: F401
+def _is_httpx_available(min_version: str = "0.24.0") -> bool:
+    return _is_module_available("httpx", min_version=min_version)
 
-        return True
-    except ImportError:
-        return False
+
+def _is_aiohttp_available() -> bool:
+    return _is_module_available("aiohttp")
 
 
 def _is_websockets_available() -> bool:
-    """
-    Check if websockets is available.
-    """
-    try:
-        import websockets  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
+    return _is_module_available("websockets")
 
 
 def get_default_transport(
