@@ -1,4 +1,6 @@
 # ruff: noqa: T201
+from __future__ import annotations
+
 import timeit
 
 from aiographql.client.error import GraphQLError
