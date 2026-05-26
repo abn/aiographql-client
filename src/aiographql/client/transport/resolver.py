@@ -94,7 +94,7 @@ def get_default_transport(
         except ImportError:
             pass
 
-    if _is_module_available("aiohttp"):
+    if _is_aiohttp_available():
         from aiographql.client.transport.aiohttp import AiohttpTransport
 
         return AiohttpTransport(
@@ -103,7 +103,7 @@ def get_default_transport(
             **kwargs,
         )
 
-    if _is_module_available("httpx", min_version="0.24.0"):
+    if _is_httpx_available():
         from aiographql.client.transport.httpx import HttpxTransport
 
         return HttpxTransport(
@@ -142,7 +142,7 @@ def get_default_subscription_transport(
         return transport
 
     # auto or None
-    if _is_module_available("aiohttp"):
+    if _is_aiohttp_available():
         from aiographql.client.transport.aiohttp import AiohttpSubscriptionTransport
 
         return AiohttpSubscriptionTransport(
@@ -151,7 +151,7 @@ def get_default_subscription_transport(
             **kwargs,
         )
 
-    if _is_module_available("websockets"):
+    if _is_websockets_available():
         from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
 
         return WebsocketSubscriptionTransport(endpoint=endpoint, **kwargs)
