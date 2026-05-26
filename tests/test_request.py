@@ -61,7 +61,7 @@ def test_graphql_request_asdict() -> None:
     assert request.asdict() == expected_dict
 
 
-def test_graphql_request_getattr_fallback() -> None:
+def test_graphql_request_getattribute_fallback() -> None:
     request = GraphQLRequest(query="{ city { name } }", operation="GetCity")
 
     with pytest.raises(AttributeError):
