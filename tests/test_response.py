@@ -28,7 +28,6 @@ def test_graphql_response_errors_fallback() -> None:
     assert response_with_errors.errors[0].message == "Bad error"
 
 
-
 def test_graphql_response_coverage() -> None:
     # Test query property when request is a string
     # We need to bypass GraphQLRequestContainer.__post_init__ to have request as str
