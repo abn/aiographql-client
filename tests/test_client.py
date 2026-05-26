@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any, Dict
 
 from typing import TYPE_CHECKING
 from typing import Any
@@ -11,6 +12,7 @@ import pytest
 from cafeteria.asyncio.callbacks import CallbackRegistry
 from graphql import GraphQLSyntaxError
 
+<<<<<<< HEAD
 from aiographql.client import GraphQLClient
 from aiographql.client import GraphQLClientException
 from aiographql.client import GraphQLClientValidationException
@@ -25,6 +27,18 @@ from aiographql.client.response import GraphQLResponse
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
+=======
+from aiographql.client import (
+    GraphQLClient,
+    GraphQLClientException,
+    GraphQLClientValidationException,
+    GraphQLRequest,
+    GraphQLRequestException,
+    GraphQLSubscription,
+    GraphQLSubscriptionEventType,
+)
+from aiographql.client.helpers import aiohttp_client_session
+>>>>>>> ec1f4d3 (test: add type annotations to test_schema_ttl)
 
 pytestmark = pytest.mark.asyncio
 
@@ -261,6 +275,7 @@ async def test_subscription_on_data_on_error_callbacks(
         assert registry.exists(GraphQLSubscriptionEventType.ERROR, event_on_error)
 
 
+<<<<<<< HEAD
 async def test_subscription_connection_init_payload(
     client: GraphQLClient, subscription_query: str, headers: dict[str, str]
 ) -> None:
