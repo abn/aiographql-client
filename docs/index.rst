@@ -164,6 +164,7 @@
    :caption: Reference
 
    examples
+   authentication
    transport
    data-models
    errors
