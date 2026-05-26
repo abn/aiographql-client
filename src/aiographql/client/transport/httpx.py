@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -29,7 +31,7 @@ class HttpxTransport(GraphQLTransport):
         session: httpx.AsyncClient | None = None,
     ) -> None:
         try:
-            import httpx as _  # noqa: F401
+            importlib.import_module("httpx")
         except ImportError:
             raise GraphQLClientException(
                 "httpx is required to use HttpxTransport. "

@@ -82,10 +82,7 @@ async def test_client_closes_internal_transport_on_exit() -> None:
 
 
 async def test_ownership_external_aiohttp() -> None:
-    try:
-        import aiohttp as _  # noqa: F401
-    except ImportError:
-        pytest.skip("aiohttp not installed")
+    pytest.importorskip("aiohttp")
 
     import aiohttp
 

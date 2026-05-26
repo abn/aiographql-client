@@ -163,10 +163,7 @@ async def test_external_aiohttp_session(
     query_city: str,
     query_output: dict[str, Any],
 ) -> None:
-    try:
-        import aiohttp as _  # noqa: F401
-    except ImportError:
-        pytest.skip("aiohttp not installed")
+    pytest.importorskip("aiohttp")
 
     import aiohttp
 
@@ -277,10 +274,7 @@ async def test_subscription_connection_init_payload(
 
 
 async def test_query_method_session_override(mocker: MockerFixture) -> None:
-    try:
-        import aiohttp as _  # noqa: F401
-    except ImportError:
-        pytest.skip("aiohttp not installed")
+    pytest.importorskip("aiohttp")
 
     import aiohttp
 
