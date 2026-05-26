@@ -290,4 +290,3 @@ def test_subscription_connection_stop_request() -> None:
         "id": subscription.id,
         "type": GraphQLSubscriptionEventType.STOP.value,
     }
-
