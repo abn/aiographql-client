@@ -52,9 +52,6 @@ def test_graphql_request_asdict() -> None:
     # Test property 'operation' via __getattribute__
     assert request.operation == "GetCity"
 
-    with pytest.raises(AttributeError):
-        _ = request.non_existent
-
     # Test asdict
     expected_dict = {
         "query": "{ city { name } }",
@@ -62,6 +59,13 @@ def test_graphql_request_asdict() -> None:
         "variables": {},
     }
     assert request.asdict() == expected_dict
+
+
+def test_graphql_request_getattribute_fallback() -> None:
+    request = GraphQLRequest(query="{ city { name } }", operation="GetCity")
+
+    with pytest.raises(AttributeError):
+        _ = request.non_existent
 
 
 def test_request_payload_extra() -> None:
