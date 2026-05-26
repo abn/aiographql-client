@@ -157,3 +157,21 @@ def test_pydantic_decode_non_dict() -> None:
     with pytest.raises(GraphQLCodecException) as excinfo:
         codec.decode("not-a-dict", user_profile_model)
     assert "Cannot decode non-dict value" in str(excinfo.value)
+
+
+def test_pydantic_decode_validation_exception_fallback(mocker: Any) -> None:
+    models = get_models()
+    user_profile_model = models["UserProfile"]
+    codec = DefaultGraphQLCodec()
+
+    mocker.patch.object(
+        user_profile_model,
+        "model_validate",
+        side_effect=Exception("Unexpected mock validation error"),
+    )
+
+    with pytest.raises(GraphQLCodecException) as excinfo:
+        codec.decode({"bio": "Developer"}, user_profile_model)
+
+    assert "Failed to validate Pydantic model" in str(excinfo.value)
+    assert "Unexpected mock validation error" in str(excinfo.value)
