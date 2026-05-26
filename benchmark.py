@@ -1,6 +1,8 @@
+# ruff: noqa: T201
 import timeit
-import dataclasses
+
 from aiographql.client.error import GraphQLError
+
 
 def benchmark_load():
     data = {
@@ -18,6 +20,7 @@ def benchmark_load():
 
     # Run the load method
     GraphQLError.load(data)
+
 
 if __name__ == "__main__":
     t = timeit.Timer(benchmark_load)
