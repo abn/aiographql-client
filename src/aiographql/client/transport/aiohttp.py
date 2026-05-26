@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -30,7 +32,7 @@ class AiohttpTransport(GraphQLTransport):
         session: aiohttp.ClientSession | None = None,
     ) -> None:
         try:
-            import aiohttp as _  # noqa: F401
+            importlib.import_module("aiohttp")
         except ImportError:
             raise GraphQLClientException(
                 "aiohttp is required to use AiohttpTransport. "
@@ -163,7 +165,7 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         session: aiohttp.ClientSession | None = None,
     ) -> None:
         try:
-            import aiohttp as _  # noqa: F401
+            importlib.import_module("aiohttp")
         except ImportError:
             raise GraphQLClientException(
                 "aiohttp is required to use AiohttpSubscriptionTransport. "
