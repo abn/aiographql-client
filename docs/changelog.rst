@@ -1,9 +1,8 @@
 Changelog
 =========
 
-.. include:: next.md
+.. include:: ../CHANGELOG.md
    :parser: myst_parser.sphinx_
-   :start-after: # Next
 
 .. toctree::
    :maxdepth: 1
