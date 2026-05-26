@@ -23,11 +23,8 @@ class GraphQLError:
     @classmethod
     def load(cls: type[T], data: dict[str, Any]) -> T:
         construct_class = cls
-        custom_keys = [
-            key
-            for key in data
-            if key not in {field.name for field in dataclasses.fields(cls)}
-        ]
+        cls_fields = {field.name for field in dataclasses.fields(cls)}
+        custom_keys = [key for key in data if key not in cls_fields]
 
         if custom_keys:
             custom_fields = [
