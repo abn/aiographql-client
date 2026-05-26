@@ -234,9 +234,14 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = {version = "^9.1.0", python = ">=3.12"}
-sphinx-material = {version = "^0.0.36", python = ">=3.12"}
+shibuya = {version = "^2026.5.19", python = ">=3.12"}
+sphinx-design = {version = "^0.7.0", python = ">=3.12"}
+sphinx-copybutton = {version = "^0.5.2", python = ">=3.12"}
 sphinx-autodoc-typehints = {version = "^3.9.9", python = ">=3.12"}
-sphinxcontrib-spelling = {version = "^8.0.2", python = ">=3.12"}
+sphinxext-opengraph = {version = "^0.13.0", python = ">=3.12"}
+sphinx-sitemap = {version = "^2.9.0", python = ">=3.12"}
+sphinx-notfound-page = {version = "^1.1.0", python = ">=3.12"}
+sphinxcontrib-mermaid = {version = "^2.0.2", python = ">=3.12"}
 myst-parser = {version = "^5.0.0", python = ">=3.12"}
 
 [tool.poetry.group.dev.dependencies]

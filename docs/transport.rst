@@ -52,6 +52,38 @@ The library supports multiple transports for HTTP (Queries/Mutations) and WebSoc
      - ``websockets``
      - Lightweight alternative for subscriptions.
 
+Subscription Lifecycle
+**********************
+
+Subscriptions ride a long-lived WebSocket connection following the
+``graphql-ws`` protocol. The sequence below shows the handshake and
+the message flow for the lifetime of a single subscription:
+
+.. mermaid::
+
+   sequenceDiagram
+       autonumber
+       participant App as Application
+       participant Client as GraphQLClient
+       participant WS as Subscription Transport
+       participant Server as GraphQL Server
+
+       App->>Client: subscribe(query)
+       Client->>WS: connect()
+       WS->>Server: WebSocket upgrade (graphql-ws)
+       Server-->>WS: connection_ack
+       WS->>Server: start { id, query }
+       loop while subscription active
+           Server-->>WS: data { id, payload }
+           WS-->>Client: yield CallbackRegistry events
+           Client-->>App: GraphQLResponse
+       end
+       App->>Client: unsubscribe()
+       Client->>WS: stop { id }
+       WS->>Server: stop { id }
+       Server-->>WS: complete { id }
+       WS-->>Client: close()
+
 Customizing Transport
 *********************
 

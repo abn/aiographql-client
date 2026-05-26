@@ -1,20 +1,9 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
+"""Sphinx configuration for the aiographql-client documentation."""
 
-# -- Path setup --------------------------------------------------------------
+from __future__ import annotations
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
 import sys
-import warnings
-
-warnings.filterwarnings("ignore", category=SyntaxWarning, module="css_html_js_minify")
 
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -25,94 +14,137 @@ project = "Async GraphQL Client"
 copyright = "2019, Arun Neelicattu, Maria Soulountsi, Josha Inglis"
 author = "Arun Neelicattu, Maria Soulountsi, Josha Inglis"
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
-# The short X.Y version.
-# version = u'3.0'
-# The full version, including alpha/beta/rc tags.
-# version = release = u'0.3.0a0'
 
 # -- General configuration ---------------------------------------------------
 
 master_doc = "index"
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
+    "sphinx_design",
+    "sphinx_copybutton",
+    "sphinxext.opengraph",
+    "sphinx_sitemap",
+    "notfound.extension",
+    "sphinxcontrib.mermaid",
     "myst_parser",
 ]
 
-# Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_includes"]
 
+html_last_updated_fmt = "%b %d, %Y"
 
-# -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "sphinx_material"
+# -- HTML output -------------------------------------------------------------
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = "images/aiographql-client-logo-white.svg"
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
+html_theme = "shibuya"
 html_favicon = "images/favicon.ico"
-
+# `images/` is mirrored into `_static/` so the hero can reference logos
+# via `_static/...` paths.
+html_static_path = ["_static", "images"]
+html_css_files = ["custom.css"]
 html_show_sourcelink = False
-html_sidebars = {
-    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
-}
+html_baseurl = "https://aiographql-client.readthedocs.io/en/latest/"
 
-# Material theme options (see theme.conf for more information)
 html_theme_options = {
-    # Set the name of the project to appear in the navigation.
-    "nav_title": "Async GraphQL Client",
+    "accent_color": "pink",
+    "globaltoc_expand_depth": 1,
+    "light_logo": "_static/aiographql-client-logo.svg",
+    "dark_logo": "_static/aiographql-client-logo-white.svg",
     "nav_links": [
-        {"href": "introduction", "internal": True, "title": "Introduction"},
-        {"href": "examples", "internal": True, "title": "Usage Examples"},
-        {"href": "api", "internal": True, "title": "Python API"},
-        {"href": "contributing", "internal": True, "title": "Contributing"},
+        {"title": "Introduction", "url": "introduction"},
+        {"title": "Examples", "url": "examples"},
+        {"title": "API", "url": "api"},
+        {"title": "Contributing", "url": "contributing"},
+        {"title": "Changelog", "url": "changelog"},
     ],
-    "heroes": {
-        "index": "An asynchronous GraphQL client for Python and asyncio.",
-    },
-    # Specify a base_url used to generate sitemap.xml. If not
-    # specified, then no sitemap will be built.
-    # "base_url": "https://aiographql-client.readthedocs.io/",
-    # Set the color and the accent color
-    "color_primary": "pink",
-    "color_accent": "black",
-    # Set the repo location to get a badge with stats
-    "repo_url": "https://github.com/abn/aiographql-client",
-    "repo_name": "Async GraphQL Client",
-    # Visible levels of the global TOC; -1 means unlimited
-    "globaltoc_depth": 2,
-    # If False, expand all TOC entries
-    "globaltoc_collapse": True,
-    # If True, show hidden TOC entries
-    "globaltoc_includehidden": True,
-    "localtoc_label_text": "Contents",
-    "search_placeholder_text": "Search",
-    "master_doc": False,
-    # optimisation
-    "html_minify": True,
-    "css_minify": True,
+    "github_url": "https://github.com/abn/aiographql-client",
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# Drives the per-page "Edit this page" link.
+html_context = {
+    "source_type": "github",
+    "source_user": "abn",
+    "source_repo": "aiographql-client",
+    "source_version": "main",
+    "source_docs_path": "/docs/",
+}
+
+
+# -- autodoc / type hints ----------------------------------------------------
+
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
+always_document_param_types = True
+typehints_fully_qualified = False
+typehints_use_signature = True
+typehints_use_signature_return = True
+# Annotations under `from __future__ import annotations` plus TYPE_CHECKING
+# imports are unresolvable at autodoc introspection; signatures still render.
+suppress_warnings = ["sphinx_autodoc_typehints.forward_reference"]
+
+
+# -- intersphinx -------------------------------------------------------------
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "aiohttp": ("https://docs.aiohttp.org/en/stable/", None),
+    "graphql-core": ("https://graphql-core-3.readthedocs.io/en/latest/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
+}
+
+
+# -- copy button -------------------------------------------------------------
+
+copybutton_prompt_text = r">>> |\.\.\. |\$ "
+copybutton_prompt_is_regexp = True
+copybutton_only_copy_prompt_lines = False
+copybutton_remove_prompts = True
+
+
+# -- Open Graph / social previews --------------------------------------------
+
+ogp_site_url = "https://aiographql-client.readthedocs.io/"
+ogp_site_name = "Async GraphQL Client"
+ogp_image = (
+    "https://aiographql-client.readthedocs.io/en/latest/"
+    "_static/aiographql-client-logo.svg"
+)
+ogp_description_length = 200
+ogp_type = "website"
+
+
+# -- Sitemap -----------------------------------------------------------------
+
+sitemap_url_scheme = "{link}"
+
+
+# -- 404 page ----------------------------------------------------------------
+
+# Read the Docs serves content under /<lang>/<version>/.
+if os.environ.get("READTHEDOCS") == "True":
+    notfound_urls_prefix = (
+        f"/{os.environ.get('READTHEDOCS_LANGUAGE', 'en')}/"
+        f"{os.environ.get('READTHEDOCS_VERSION', 'latest')}/"
+    )
+else:
+    notfound_urls_prefix = "/"
+
+
+# -- Mermaid -----------------------------------------------------------------
+
+mermaid_version = "10.9.1"
+mermaid_init_js = "mermaid.initialize({startOnLoad:true, theme:'default'});"
+
+
+# -- MyST --------------------------------------------------------------------
+
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "substitution",
+]

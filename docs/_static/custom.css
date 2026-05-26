@@ -1,0 +1,95 @@
+/*
+ * Brand polish on top of Shibuya: typography, hero block, landing-page
+ * section headings, sphinx-design card hover.
+ *
+ * Colors come from Shibuya's `--pink-*` / `--gray-*` tokens so light and
+ * dark modes track natively; do not redefine palette variables on :root.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+}
+
+code,
+pre,
+kbd,
+samp,
+.highlight pre {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-ligatures: contextual;
+}
+
+.docs-hero {
+    padding: 3rem 0 2rem;
+    text-align: center;
+}
+
+.docs-hero img.docs-hero-logo {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 1.5rem;
+}
+
+.docs-hero h1 {
+    font-size: clamp(2rem, 4vw + 1rem, 3rem);
+    margin: 0 0 0.75rem;
+    background: linear-gradient(135deg, var(--pink-11), var(--gray-12));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.docs-hero p.docs-hero-tagline {
+    font-size: 1.125rem;
+    color: var(--gray-11);
+    max-width: 42rem;
+    margin: 0 auto 1.5rem;
+}
+
+.docs-hero .docs-hero-badges {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0 0 1.5rem;
+}
+
+.docs-hero .docs-hero-badges img {
+    height: 22px;
+}
+
+/* Hero logo swap for color mode. */
+html.dark .docs-hero img.only-light {
+    display: none;
+}
+
+html:not(.dark) .docs-hero img.only-dark {
+    display: none;
+}
+
+.docs-section-heading {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--gray-12);
+    margin: 3rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--gray-6);
+}
+
+.sd-card {
+    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.sd-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px -8px var(--pink-a8);
+    border-color: var(--pink-9);
+}
+
+.sd-card .sd-card-title {
+    font-weight: 600;
+}

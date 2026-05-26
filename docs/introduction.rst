@@ -58,19 +58,22 @@ Available Extras
 *   ``httpx``: Installs ``httpx`` for the alternative HTTP transport and ``websockets`` for subscriptions.
 *   ``pydantic``: Installs ``pydantic`` (v2) for enhanced data modeling and validation.
 
-Using Poetry
+Installation
 ~~~~~~~~~~~~
 
-.. code-block:: shell
+.. tab-set::
 
-    poetry add aiographql-client[aiohttp,pydantic]
+   .. tab-item:: pip
 
-Using pip
-~~~~~~~~~
+      .. code-block:: shell
 
-.. code-block:: shell
+         pip install "aiographql-client[aiohttp,pydantic]"
 
-    pip install aiographql-client[aiohttp,pydantic]
+   .. tab-item:: poetry
+
+      .. code-block:: shell
+
+         poetry add "aiographql-client[aiohttp,pydantic]"
 
 .. _aiographql-client: https://pypi.org/project/aiographql-client/
 .. _Poetry: https://python-poetry.org
