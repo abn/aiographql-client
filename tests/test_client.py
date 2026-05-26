@@ -356,3 +356,34 @@ async def test_get_schema_refresh(
     cast("AsyncMock", client.introspect).assert_awaited_once_with(headers=headers)
     assert schema == new_schema
     assert client._schema == new_schema
+
+
+async def test_schema_ttl(
+    mocker: Any, client: GraphQLClient, headers: dict[str, str]
+) -> None:
+    client._schema_ttl = 0.01
+
+    import graphql
+
+    mock_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+
+    # We mock introspect because we just want to count how many times it gets called
+    spy = mocker.patch.object(client, "introspect", return_value=mock_schema)
+
+    # First call - should call introspect
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 1
+
+    # Second call immediately after - should use cached schema
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 1
+
+    # Wait for TTL to expire
+    await asyncio.sleep(0.02)
+
+    # Third call after TTL - should call introspect again
+    schema = await client.get_schema(headers=headers)
+    assert schema is mock_schema
+    assert spy.call_count == 2
