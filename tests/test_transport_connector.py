@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-import aiohttp
 import pytest
+
+
+pytest.importorskip("aiohttp")
+
+import aiohttp
 
 from aiographql.client.transport.aiohttp import AiohttpTransport
 
