@@ -166,6 +166,7 @@
    examples
    transport
    data-models
+   errors
    api
    changelog
 
