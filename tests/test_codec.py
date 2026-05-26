@@ -231,4 +231,3 @@ def test_codec_decode_dataclass_failure_non_dict() -> None:
         match=f"Cannot decode non-dict value not-a-dict to dataclass {User}",
     ):
         codec.decode("not-a-dict", User)
-
