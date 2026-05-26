@@ -14,6 +14,9 @@ on:
 jobs:
   tests:
     name: ${{ matrix.os }} / ${{ matrix.python-version }} / ${{ matrix.transport }}
+    permissions:
+      contents: read
+
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false

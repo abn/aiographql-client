@@ -14,6 +14,9 @@ on:
 jobs:
   examples:
     name: ${{ matrix.os }} / ${{ matrix.python-version }} / examples
+    permissions:
+      contents: read
+
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
