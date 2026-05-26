@@ -104,7 +104,7 @@ attached so the body and status can be inspected:
         # DNS, TCP, TLS, WebSocket, etc.
         log.error("Transport failure: %s", exc)
 
-For retry strategies around these exceptions, see :ref:`transport`.
+For retry strategies around these exceptions, see :ref:`production`.
 
 GraphQL Errors in a Successful Response
 ---------------------------------------
@@ -155,7 +155,7 @@ Choosing a Handling Strategy
 * **Validation errors** are programmer errors. Surface them in tests and CI.
   Do not retry them.
 * **Transport and HTTP 5XX** are transient. Retry with backoff
-  (see :ref:`transport`).
+  (see :ref:`production`).
 * **HTTP 4XX** are caller errors (authentication, rate limit). Surface to the
   user; do not retry blindly.
 * **GraphQL errors in a 200 response** are domain errors. Inspect ``path``
