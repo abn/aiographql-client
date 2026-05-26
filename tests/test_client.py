@@ -303,3 +303,56 @@ async def test_query_method_session_override(mocker: MockerFixture) -> None:
             mock_http_request.assert_called_once()
             args = mock_http_request.call_args[0]
             assert args[0] is custom_session
+
+
+async def test_get_schema_initial_call(
+    mocker: Any, client: GraphQLClient, headers: dict[str, str]
+) -> None:
+    from typing import cast
+    from unittest.mock import AsyncMock
+
+    mock_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+    mocker.patch.object(
+        client, "introspect", new_callable=AsyncMock, return_value=mock_schema
+    )
+
+    schema = await client.get_schema(headers=headers)
+
+    cast("AsyncMock", client.introspect).assert_awaited_once_with(headers=headers)
+    assert schema == mock_schema
+    assert client._schema == mock_schema
+
+
+async def test_get_schema_uses_cache(
+    mocker: Any, client: GraphQLClient, headers: dict[str, str]
+) -> None:
+    from unittest.mock import AsyncMock
+
+    mock_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+    client._schema = mock_schema
+    mocker.patch.object(client, "introspect", new_callable=AsyncMock)
+
+    schema = await client.get_schema(headers=headers)
+
+    client.introspect.assert_not_called()  # type: ignore[attr-defined]
+    assert schema == mock_schema
+
+
+async def test_get_schema_refresh(
+    mocker: Any, client: GraphQLClient, headers: dict[str, str]
+) -> None:
+    from typing import cast
+    from unittest.mock import AsyncMock
+
+    old_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+    new_schema = mocker.MagicMock(spec=graphql.GraphQLSchema)
+    client._schema = old_schema
+    mocker.patch.object(
+        client, "introspect", new_callable=AsyncMock, return_value=new_schema
+    )
+
+    schema = await client.get_schema(refresh=True, headers=headers)
+
+    cast("AsyncMock", client.introspect).assert_awaited_once_with(headers=headers)
+    assert schema == new_schema
+    assert client._schema == new_schema
