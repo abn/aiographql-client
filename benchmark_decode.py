@@ -27,4 +27,4 @@ for _ in range(100000):
     codec.decode(data, User)
 end = time.perf_counter()
 
-print(f"Time taken: {end - start:.4f} seconds")
+print(f"Time taken: {end - start:.4f} seconds")  # noqa: T201
