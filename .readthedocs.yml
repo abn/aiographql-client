@@ -7,7 +7,11 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
-formats: all
+# `htmlzip` excluded: built with the singlehtml builder, which the
+# Shibuya theme cannot render.
+formats:
+  - pdf
+  - epub
 
 build:
   os: ubuntu-24.04
