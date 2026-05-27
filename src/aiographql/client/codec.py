@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-@functools.lru_cache
+@functools.cache
 def _get_type_hints_cached(target_type: type) -> dict[str, Any]:
     return get_type_hints(target_type)
 
