@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -11,8 +12,9 @@ sys.path.insert(0, os.path.abspath("../src"))
 # -- Project information -----------------------------------------------------
 
 project = "Async GraphQL Client"
-copyright = "2019, Arun Neelicattu, Maria Soulountsi, Josha Inglis"
-author = "Arun Neelicattu, Maria Soulountsi, Josha Inglis"
+_authors = "Arun Neelicattu, Maria Soulountsi, Josha Inglis"
+copyright = f"2019-{datetime.now(tz=timezone.utc).year}, {_authors}"
+author = _authors
 
 
 # -- General configuration ---------------------------------------------------
