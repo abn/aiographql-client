@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "aiographql-client"
-version = "1.2.0a0"
+version = "1.2.0"
 description = "An asyncio GraphQL client built on top of aiohttp and graphql-core-next"
 license = "MIT"
 readme = "README.md"
