@@ -129,8 +129,13 @@ class DefaultGraphQLCodec:
             args = get_args(target_type)
             if origin is list or origin is Iterable:
                 item_type = args[0]
-                if dataclasses.is_dataclass(item_type) and item_type not in self._dataclass_fields:
-                    self._dataclass_fields[item_type] = _get_type_hints_cached(item_type)
+                if (
+                    dataclasses.is_dataclass(item_type)
+                    and item_type not in self._dataclass_fields
+                ):
+                    self._dataclass_fields[item_type] = _get_type_hints_cached(
+                        item_type
+                    )
                 return [self.decode(item, item_type) for item in value]  # type: ignore[return-value]
             if origin is dict:
                 key_type, val_type = args
@@ -167,7 +172,9 @@ class DefaultGraphQLCodec:
                 )
             field_types = self._dataclass_fields.get(target_type)
             if field_types is None:
-                field_types = self._dataclass_fields[target_type] = _get_type_hints_cached(target_type)
+                field_types = self._dataclass_fields[target_type] = (
+                    _get_type_hints_cached(target_type)
+                )
             kwargs = {}
             for k, v in value.items():
                 if k in field_types:
