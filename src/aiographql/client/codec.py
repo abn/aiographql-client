@@ -130,11 +130,12 @@ class DefaultGraphQLCodec:
             if origin is list or origin is Iterable:
                 item_type = args[0]
                 if (
-                    dataclasses.is_dataclass(item_type)
+                    isinstance(item_type, type)
+                    and dataclasses.is_dataclass(item_type)
                     and item_type not in self._dataclass_fields
                 ):
                     self._dataclass_fields[item_type] = _get_type_hints_cached(
-                        item_type
+                        item_type,
                     )
                 return [self.decode(item, item_type) for item in value]  # type: ignore[return-value]
             if origin is dict:

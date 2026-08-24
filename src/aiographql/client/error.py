@@ -5,6 +5,8 @@ import dataclasses
 from typing import Any
 from typing import TypeVar
 
+from typing_extensions import Self
+
 
 T = TypeVar("T", bound="GraphQLError")
 
@@ -21,7 +23,7 @@ class GraphQLError:
     path: list[str | int] | None = dataclasses.field(default=None)
 
     @classmethod
-    def load(cls: type[T], data: dict[str, Any]) -> T:
+    def load(cls, data: dict[str, Any]) -> Self:
         construct_class = cls
         cls_fields = {field.name for field in dataclasses.fields(cls)}
         custom_keys = [key for key in data if key not in cls_fields]

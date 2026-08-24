@@ -64,6 +64,12 @@ fix = true
 line-length = 88
 
 [tool.ruff.lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+]
 extend-select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
@@ -91,6 +97,10 @@ extend-safe-fixes = [
 unfixable = [
     "ERA", # do not autoremove commented out code
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"benchmark*.py" = ["T201"]
+"examples/*" = ["T201", "ERA001"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
