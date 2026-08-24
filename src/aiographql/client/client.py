@@ -103,7 +103,7 @@ class GraphQLClient:
         codec: GraphQLCodec | None = None,
         transport: GraphQLTransport | None = None,
         subscription_transport: GraphQLSubscriptionTransport | None = None,
-        schema_ttl: int | float | None = None,
+        schema_ttl: float | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
