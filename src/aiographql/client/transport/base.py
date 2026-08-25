@@ -61,6 +61,9 @@ class GraphQLWebSocketResponse(Protocol):
 
     async def __anext__(self) -> Any: ...
 
+    @property
+    def subprotocol(self) -> str | None: ...
+
 
 @runtime_checkable
 class GraphQLSubscriptionTransport(Protocol):

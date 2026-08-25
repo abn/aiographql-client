@@ -31,6 +31,10 @@ from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.resolver import get_default_subscription_transport
 
 
+GRAPHQL_TRANSPORT_WS_PROTOCOL = "graphql-transport-ws"
+GRAPHQL_WS_PROTOCOL = "graphql-ws"
+
+
 class GraphQLSubscriptionEventType(Enum):
     """
     GraphQL Subscription Event Types
@@ -46,6 +50,10 @@ class GraphQLSubscriptionEventType(Enum):
     COMPLETE = "complete"
     STOP = "stop"
     KEEP_ALIVE = "ka"
+    SUBSCRIBE = "subscribe"
+    NEXT = "next"
+    PING = "ping"
+    PONG = "pong"
 
 
 if TYPE_CHECKING:
@@ -87,9 +95,15 @@ class GraphQLSubscriptionEvent(GraphQLBaseResponse):
         if payload is not None:
             if self.type in (
                 GraphQLSubscriptionEventType.DATA,
+                GraphQLSubscriptionEventType.NEXT,
                 GraphQLSubscriptionEventType.ERROR,
-            ) and isinstance(payload, dict):
-                return GraphQLResponse(request=self.request, json=payload)
+            ):
+                if isinstance(payload, dict):
+                    return GraphQLResponse(request=self.request, json=payload)
+                if isinstance(payload, list):
+                    return GraphQLResponse(
+                        request=self.request, json={"errors": payload}
+                    )
             return cast("str", payload)
         return None
 
@@ -132,7 +146,10 @@ class GraphQLSubscription(GraphQLRequestContainer):
         ]
     )
     protocols: str | Iterable[str] = dataclasses.field(
-        default_factory=lambda: ("graphql-ws",)
+        default_factory=lambda: (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        )
     )
     connection_init_payload: dict[str, Any] | None = dataclasses.field(default=None)
     serializer: GraphQLSerializer | None = dataclasses.field(default=None)
@@ -157,6 +174,8 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
         if isinstance(self.protocols, str):
             object.__setattr__(self, "protocols", (self.protocols,))
+        else:
+            object.__setattr__(self, "protocols", tuple(self.protocols))
 
         if self.callbacks is None:
             object.__setattr__(self, "callbacks", CallbackRegistry())
@@ -197,28 +216,77 @@ class GraphQLSubscription(GraphQLRequestContainer):
             "payload": payload,
         }
 
-    def connection_start_request(self) -> dict[str, Any]:
+    def connection_start_request(self, protocol: str | None = None) -> dict[str, Any]:
         """
         Connection start payload to use when starting a subscription.
 
-        :return: Connection start payload.
+        :param protocol: Negotiated or active subprotocol.
+        :return: Connection start / subscribe payload.
         """
         payload: dict[str, Any] = {}
         if not isinstance(self.request, str):
             payload = self.request.payload()
+
+        actual_protocol = protocol
+        if actual_protocol is None:
+            if GRAPHQL_WS_PROTOCOL in self.protocols:
+                actual_protocol = GRAPHQL_WS_PROTOCOL
+            else:
+                actual_protocol = GRAPHQL_TRANSPORT_WS_PROTOCOL
+
+        if actual_protocol == GRAPHQL_WS_PROTOCOL:
+            return {
+                "id": self.id,
+                "type": GraphQLSubscriptionEventType.START.value,
+                "payload": payload,
+            }
         return {
             "id": self.id,
-            "type": GraphQLSubscriptionEventType.START.value,
+            "type": GraphQLSubscriptionEventType.SUBSCRIBE.value,
             "payload": payload,
         }
 
-    def connection_stop_request(self) -> dict[str, Any]:
+    def connection_stop_request(self, protocol: str | None = None) -> dict[str, Any]:
         """
         Connection stop payload to use when stopping a subscription.
 
-        :return: Connection stop payload.
+        :param protocol: Negotiated or active subprotocol.
+        :return: Connection stop / complete payload.
         """
-        return {"id": self.id, "type": GraphQLSubscriptionEventType.STOP.value}
+        actual_protocol = protocol
+        if actual_protocol is None:
+            if GRAPHQL_WS_PROTOCOL in self.protocols:
+                actual_protocol = GRAPHQL_WS_PROTOCOL
+            else:
+                actual_protocol = GRAPHQL_TRANSPORT_WS_PROTOCOL
+
+        if actual_protocol == GRAPHQL_WS_PROTOCOL:
+            return {"id": self.id, "type": GraphQLSubscriptionEventType.STOP.value}
+        return {"id": self.id, "type": GraphQLSubscriptionEventType.COMPLETE.value}
+
+    def connection_pong_request(self, payload: Any = None) -> dict[str, Any]:
+        """
+        Connection pong payload to respond to a server ping.
+
+        :param payload: Optional payload matching the ping message.
+        :return: Pong payload.
+        """
+        msg: dict[str, Any] = {"type": GraphQLSubscriptionEventType.PONG.value}
+        if payload is not None:
+            msg["payload"] = payload
+        return msg
+
+    def connection_ping_request(self, payload: Any = None) -> dict[str, Any]:
+        """
+        Connection ping payload to send a heartbeat to the server.
+
+        :param payload: Optional payload.
+        :return: Ping payload.
+        """
+        msg: dict[str, Any] = {"type": GraphQLSubscriptionEventType.PING.value}
+        if payload is not None:
+            msg["payload"] = payload
+        return msg
 
     def is_stop_event(self, event: GraphQLSubscriptionEvent) -> bool:
         """
@@ -241,6 +309,14 @@ class GraphQLSubscription(GraphQLRequestContainer):
             and isinstance(self.callbacks, CallbackRegistry)
         ):
             self.callbacks.dispatch(event.type, event)
+            if event.type == GraphQLSubscriptionEventType.NEXT:
+                self.callbacks.dispatch(GraphQLSubscriptionEventType.DATA, event)
+            elif event.type == GraphQLSubscriptionEventType.DATA:
+                self.callbacks.dispatch(GraphQLSubscriptionEventType.NEXT, event)
+            elif event.type == GraphQLSubscriptionEventType.PING:
+                self.callbacks.dispatch(GraphQLSubscriptionEventType.KEEP_ALIVE, event)
+            elif event.type == GraphQLSubscriptionEventType.KEEP_ALIVE:
+                self.callbacks.dispatch(GraphQLSubscriptionEventType.PING, event)
 
     async def _websocket_connect(
         self,
@@ -266,15 +342,22 @@ class GraphQLSubscription(GraphQLRequestContainer):
 
             object.__setattr__(self, "serializer", DefaultSerializer())
 
-        ws = await transport.subscribe(
-            endpoint=endpoint,
-            request=cast("GraphQLRequest", self.request),
-            serializer=cast("GraphQLSerializer", self.serializer),
-            protocols=self.protocols,
-            session=session,
-        )
-
         try:
+            ws = await transport.subscribe(
+                endpoint=endpoint,
+                request=cast("GraphQLRequest", self.request),
+                serializer=cast("GraphQLSerializer", self.serializer),
+                protocols=self.protocols,
+                session=session,
+            )
+
+            negotiated_protocol = getattr(ws, "subprotocol", None)
+            if negotiated_protocol is None:
+                if GRAPHQL_WS_PROTOCOL in self.protocols:
+                    negotiated_protocol = GRAPHQL_WS_PROTOCOL
+                else:
+                    negotiated_protocol = GRAPHQL_TRANSPORT_WS_PROTOCOL
+
             async with ws:
 
                 def _serialize(value: Any) -> str:
@@ -294,7 +377,11 @@ class GraphQLSubscription(GraphQLRequestContainer):
                         GraphQLSubscriptionEventType.CONNECTION_ACK,
                         SimpleTriggerCallback(
                             function=ws.send_str,
-                            data=_serialize(self.connection_start_request()),
+                            data=_serialize(
+                                self.connection_start_request(
+                                    protocol=negotiated_protocol
+                                )
+                            ),
                         ),
                     )
 
@@ -305,12 +392,25 @@ class GraphQLSubscription(GraphQLRequestContainer):
                             request=self.request,
                             json=cast("GraphQLSerializer", self.serializer).loads(data),
                         )
+
+                        if event.type == GraphQLSubscriptionEventType.PING:
+                            ping_payload = event.json.get("payload")
+                            await ws.send_str(
+                                _serialize(
+                                    self.connection_pong_request(payload=ping_payload)
+                                )
+                            )
+
                         await self.handle(event=event)
 
                         if self.is_stop_event(event):
                             break
                 except (asyncio.CancelledError, KeyboardInterrupt):
-                    await ws.send_str(_serialize(self.connection_stop_request()))
+                    await ws.send_str(
+                        _serialize(
+                            self.connection_stop_request(protocol=negotiated_protocol)
+                        )
+                    )
         finally:
             await transport.close()
 

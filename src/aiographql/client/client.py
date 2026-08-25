@@ -18,6 +18,8 @@ from aiographql.client.exceptions import GraphQLIntrospectionException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.serializer import GraphQLSerializer
+from aiographql.client.subscription import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from aiographql.client.subscription import GRAPHQL_WS_PROTOCOL
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
@@ -439,7 +441,10 @@ class GraphQLClient:
         on_error: CallbackType | None = None,
         session: GraphQLSession | None = None,
         wait: bool = False,
-        protocols: str | Iterable[str] = ("graphql-ws",),
+        protocols: str | Iterable[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_payload: dict[str, Any] | None = None,
         transport: GraphQLSubscriptionTransport | None = None,
     ) -> GraphQLSubscription:

@@ -228,6 +228,10 @@ class AiohttpWebSocketResponse(GraphQLWebSocketResponse):
     def __init__(self, ws: aiohttp.ClientWebSocketResponse) -> None:
         self.ws = ws
 
+    @property
+    def subprotocol(self) -> str | None:
+        return self.ws.protocol
+
     async def __aenter__(self) -> AiohttpWebSocketResponse:
         # aiohttp.ClientWebSocketResponse does not have __aenter__, so return self
         return self
