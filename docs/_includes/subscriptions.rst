@@ -34,11 +34,12 @@ stdout when either :attr:`aiographql.client.GraphQLSubscriptionEventType.DATA` o
     # unsubscribe
     await subscription.unsubscribe_and_wait()
 
-.. hint:: In the case you want to specify the GraphQL over WebSocket sub-protocol to use,
-    you may do so by setting :attr:`aiographql.client.GraphQLSubscription.protocols`.
-    For example, :code:`await client.subscribe(..., protocols="graphql-ws")`. This is
-    required for certain server implementations like `Apollo Server <https://www.apollographql.com/docs/apollo-server/>`_
-    as it supports multiple implementations.
+.. hint:: By default, subscriptions negotiate the modern standard :code:`"graphql-transport-ws"`
+    sub-protocol and fall back to legacy :code:`"graphql-ws"`. In the case you want to restrict
+    the GraphQL over WebSocket sub-protocol to use, you may do so by setting
+    :attr:`aiographql.client.GraphQLSubscription.protocols`.
+    For example, :code:`await client.subscribe(..., protocols="graphql-transport-ws")` or
+    :code:`await client.subscribe(..., protocols="graphql-ws")`.
 
     Similarly, if your server requires additional fields in the `connection_init` payload
     (for example, an `authToken` or `headers`), you can provide them using the
