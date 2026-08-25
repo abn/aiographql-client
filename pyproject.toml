@@ -10,7 +10,7 @@ version = "1.2.0"
 description = "An asyncio GraphQL client built on top of aiohttp and graphql-core-next"
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 keywords = [
     "aiohttp",
     "asyncio",
@@ -177,7 +177,7 @@ output = ".coverage/coverage.json"
 [tool.tox]
 env_list = [
     { product = [
-        { prefix = "py3", start = 10, stop = 14 },
+        { prefix = "py3", start = 11, stop = 15 },
         ["aiohttp", "httpx", "all"],
     ] }
 ]

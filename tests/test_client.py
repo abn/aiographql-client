@@ -230,7 +230,7 @@ async def test_subscription(
         if subscription.task is not None:
             await asyncio.wait_for(subscription.task, timeout=1)
         assert len(m) == 2
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pytest.fail("Subscriptions timed out before receiving expected messages")
 
 

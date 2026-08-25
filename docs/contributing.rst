@@ -96,7 +96,7 @@ environment variables (or pass equivalent ``--server-*`` options to pytest):
 Cross-Platform Testing
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The CI test matrix exercises Python 3.10 through 3.14 across the ``aiohttp``, ``httpx``,
+The CI test matrix exercises Python 3.11 through 3.14 across the ``aiohttp``, ``httpx``,
 and combined transport configurations on Ubuntu. Contributors typically run tests on
 their preferred platform locally; the automated CI ensures the codebase remains
 compatible across the supported Python versions.
