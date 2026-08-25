@@ -10,6 +10,8 @@ from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.exceptions import GraphQLTransportException
 from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLTransport
+from aiographql.client.transport.base import is_graphql_response
+from aiographql.client.transport.base import prepare_get_params
 
 
 if TYPE_CHECKING:
@@ -75,13 +77,7 @@ class HttpxTransport(GraphQLTransport):
         if method == "POST":
             kwargs.setdefault("content", serializer.dumps(request.payload()))
         elif method == "GET":
-            params = {
-                k: str(v)
-                if not isinstance(v, (dict, list, bool))
-                else self._coerce_value(v, serializer)
-                for k, v in request.payload().items()
-            }
-            kwargs.setdefault("params", params)
+            kwargs.setdefault("params", prepare_get_params(request, serializer))
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
@@ -129,11 +125,9 @@ class HttpxTransport(GraphQLTransport):
                 request=request, json=body if isinstance(body, dict) else {}
             )
 
-            if (
-                200
-                <= int(getattr(resp, "status_code", getattr(resp, "status", 0)))
-                < 300
-            ):
+            status_code = int(getattr(resp, "status_code", getattr(resp, "status", 0)))
+            content_type = getattr(resp, "headers", {}).get("content-type")
+            if is_graphql_response(status_code, content_type, body):
                 return response
 
             raise GraphQLRequestException(response)
@@ -149,18 +143,6 @@ class HttpxTransport(GraphQLTransport):
                     pass
                 raise GraphQLTransportException(f"HTTP request failed: {exc}") from exc
             raise
-
-    def _coerce_value(self, value: Any, serializer: GraphQLSerializer) -> Any:
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, (dict, list)):
-            serialized = serializer.dumps(value)
-            return (
-                serialized.decode("utf-8")
-                if isinstance(serialized, bytes)
-                else serialized
-            )
-        return value
 
     async def close(self) -> None:
         if self._client is not None and self._owns_client:

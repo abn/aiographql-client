@@ -14,7 +14,6 @@ from aiographql.client.exceptions import GraphQLClientException
 from aiographql.client.exceptions import GraphQLTransportException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
-from aiographql.client.serializer import JSONSerializer
 from aiographql.client.transport.aiohttp import AiohttpTransport
 from aiographql.client.transport.aiohttp import AiohttpWebSocketResponse
 
@@ -116,18 +115,7 @@ async def test_aiohttp_transport_invalid_json_response(
     )
 
     resp = await transport.request("POST", request, serializer)
-    assert resp.json is None
-
-
-async def test_aiohttp_transport_coerce_value_async() -> None:
-    transport = AiohttpTransport(endpoint="http://test.com")
-    serializer = DefaultSerializer()
-
-    assert transport._coerce_value(True, serializer) == 1
-    assert transport._coerce_value(False, serializer) == 0
-    assert transport._coerce_value({"a": 1}, serializer) == '{"a":1}'
-    assert transport._coerce_value([1, 2], serializer) == "[1,2]"
-    assert transport._coerce_value("string", serializer) == "string"
+    assert resp.json == {}
 
 
 async def test_aiohttp_transport_invalid_method_async() -> None:
@@ -136,24 +124,6 @@ async def test_aiohttp_transport_invalid_method_async() -> None:
         await transport.request(
             "INVALID", GraphQLRequest(query="{test}"), DefaultSerializer()
         )
-
-
-async def test_aiohttp_transport_coerce_value_extra() -> None:
-    transport = AiohttpTransport(endpoint="http://localhost")
-    serializer = JSONSerializer()
-
-    # Test boolean coercion
-    assert transport._coerce_value(True, serializer) == 1
-    assert transport._coerce_value(False, serializer) == 0
-
-    # Test dict/list coercion
-    data_dict = {"a": 1}
-    coerced_dict = transport._coerce_value(data_dict, serializer)
-    assert coerced_dict == '{"a": 1}'
-
-    data_list = [1, 2]
-    coerced_list = transport._coerce_value(data_list, serializer)
-    assert coerced_list == "[1, 2]"
 
 
 async def test_aiohttp_websocket_response_anext() -> None:
