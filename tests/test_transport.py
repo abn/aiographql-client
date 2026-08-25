@@ -63,7 +63,7 @@ async def test_aiohttp_transport_non_200_raises_exception(
     with pytest.raises(GraphQLRequestException) as excinfo:
         await transport.request(method="POST", request=request, serializer=serializer)
 
-    assert excinfo.value.response.json is None
+    assert excinfo.value.response.json == {}
 
 
 async def test_aiohttp_transport_close_session_user_owned(

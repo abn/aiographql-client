@@ -146,12 +146,14 @@ class GraphQLSubscription(GraphQLRequestContainer):
         headers: dict[str, str] | None,
         operation: str | None,
         variables: dict[str, Any] | None,
+        extensions: dict[str, Any] | None,
         codec: GraphQLCodec | None,
     ) -> None:
         super().__post_init__(
             headers=headers,
             operation=operation,
             variables=variables,
+            extensions=extensions,
             codec=codec,
         )
 

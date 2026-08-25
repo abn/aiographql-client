@@ -19,6 +19,72 @@ if TYPE_CHECKING:
 
 GraphQLSession: TypeAlias = Union["aiohttp.ClientSession", "httpx.AsyncClient"]
 
+GRAPHQL_RESPONSE_MEDIA_TYPE: str = "application/graphql-response+json"
+
+
+def prepare_get_params(
+    request: GraphQLRequest, serializer: GraphQLSerializer
+) -> dict[str, str]:
+    """
+    Prepare GET query parameters conforming to the GraphQL-over-HTTP specification.
+    """
+    params: dict[str, str] = {"query": request.query}
+    if request.operationName is not None:
+        params["operationName"] = request.operationName
+    if request.variables:
+        encoded_vars = request.payload().get("variables")
+        if encoded_vars:
+            serialized = serializer.dumps(encoded_vars)
+            params["variables"] = (
+                serialized.decode("utf-8")
+                if isinstance(serialized, bytes)
+                else str(serialized)
+            )
+    if request.extensions:
+        serialized = serializer.dumps(request.extensions)
+        params["extensions"] = (
+            serialized.decode("utf-8")
+            if isinstance(serialized, bytes)
+            else str(serialized)
+        )
+    return params
+
+
+def _is_valid_graphql_payload(body: Any) -> bool:
+    if not isinstance(body, dict):
+        return False
+    has_data = "data" in body
+    has_errors = "errors" in body
+    if not (has_data or has_errors):
+        return False
+    if has_errors:
+        errors = body["errors"]
+        if not isinstance(errors, list) or not all(
+            isinstance(err, dict) for err in errors
+        ):
+            return False
+    if has_data:
+        data = body["data"]
+        if data is not None and not isinstance(data, dict):
+            return False
+    return True
+
+
+def is_graphql_response(status_code: int, content_type: str | None, body: Any) -> bool:
+    """
+    Determine if an HTTP response represents a valid GraphQL execution response
+    under the GraphQL-over-HTTP specification.
+    """
+    if 200 <= status_code < 300:
+        return True
+    if content_type:
+        media_type = content_type.split(";")[0].strip().lower()
+        if media_type == GRAPHQL_RESPONSE_MEDIA_TYPE and _is_valid_graphql_payload(
+            body
+        ):
+            return True
+    return False
+
 
 @runtime_checkable
 class GraphQLTransport(Protocol):
