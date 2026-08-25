@@ -24,7 +24,7 @@ dynamic = [
     "classifiers",
 ]
 dependencies = [
-    "cafeteria-asyncio >=0.3,<0.4",
+    "cafeteria >=1.0,<2.0",
     "graphql-core >=3.0,<4.0",
     "orjson (>=3.11.7,<4.0.0)",
 ]

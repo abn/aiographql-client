@@ -305,33 +305,18 @@ files = [
 
 [[package]]
 name = "cafeteria"
-version = "0.22.3"
+version = "1.0.0"
 description = "Cafeteria: A convenience package providing various building blocks enabling pythonic patterns."
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "cafeteria-0.22.3-py3-none-any.whl", hash = "sha256:8b5bb9f67f4fe71c91d7b932d00dcaae10a17367852e20c5bf2afa37ba28c268"},
-    {file = "cafeteria-0.22.3.tar.gz", hash = "sha256:8e847a5b6c8507459d7e1a907e0ed89e413508507e26f1d511d068d9e9107a5d"},
+    {file = "cafeteria-1.0.0-py3-none-any.whl", hash = "sha256:e482de57e4f4cdd4fb0137673c39ae00b2f022cd1237978a9d7dc8182fd69d8c"},
+    {file = "cafeteria-1.0.0.tar.gz", hash = "sha256:e5c38e86e44629374cbc1e785ddda75c682715b2a28bb65c82c95168538a20dc"},
 ]
 
-[package.dependencies]
-PyYAML = ">=3.13,<5.4.0 || >5.4.0,<5.4.1 || >5.4.1,<6.0.0 || >6.0.0"
-
-[[package]]
-name = "cafeteria-asyncio"
-version = "0.3.0"
-description = "An extension to the cafeteria package to enable asyncio specific patterns for python 3.7 and above applications/libraries."
-optional = false
-python-versions = ">=3.8,<4.0"
-groups = ["main"]
-files = [
-    {file = "cafeteria_asyncio-0.3.0-py3-none-any.whl", hash = "sha256:7940b14f89e1478b001ea76a72c476267f4a589fd32fa21f855d217ecb4c324a"},
-    {file = "cafeteria_asyncio-0.3.0.tar.gz", hash = "sha256:a57d9a0b1a77352edd1f53ea348ef8f4f7c273f16f715d23ff3bd3b31a97e167"},
-]
-
-[package.dependencies]
-cafeteria = ">=0,<0.22.0 || >0.22.0,<1"
+[package.extras]
+yaml = ["PyYAML (>=3.13,!=5.4.0,!=5.4.1,!=6.0.0)"]
 
 [[package]]
 name = "certifi"
@@ -2121,7 +2106,8 @@ version = "6.0.3"
 description = "YAML parser and emitter for Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "docs"]
+groups = ["docs"]
+markers = "python_version >= \"3.12\""
 files = [
     {file = "PyYAML-6.0.3-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:c2514fceb77bc5e7a2f7adfaa1feb2fb311607c9cb518dbc378688ec73d8292f"},
     {file = "PyYAML-6.0.3-cp38-cp38-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9c57bb8c96f6d1808c030b1687b9b5fb476abaa47f0db9c0101f5e9f394e97f4"},
@@ -2197,7 +2183,6 @@ files = [
     {file = "pyyaml-6.0.3-cp39-cp39-win_amd64.whl", hash = "sha256:2e71d11abed7344e42a8849600193d15b6def118602c4c176f748e4583246007"},
     {file = "pyyaml-6.0.3.tar.gz", hash = "sha256:d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"},
 ]
-markers = {docs = "python_version >= \"3.12\""}
 
 [[package]]
 name = "requests"
@@ -2908,4 +2893,4 @@ pydantic = ["pydantic"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "a2abdb57e9cb2d8e1a9fbed91d7aa495654d12aea69d666669fc20a73b913330"
+content-hash = "6fbbffa81948b39f765bb9429a40f0fefc63e034f0d1bb6191e4466daa17c2fb"
