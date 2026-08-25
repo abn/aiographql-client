@@ -106,14 +106,14 @@ pip install tox
 # Run all environments
 tox
 
-# Run a specific environment (e.g., Python 3.10 with aiohttp and pydantic)
-tox -e py310-aiohttp-pydantic
+# Run a specific environment (e.g., Python 3.11 with aiohttp and pydantic)
+tox -e py311-aiohttp-pydantic
 
 # Run with only aiohttp
-tox -e py310-aiohttp
+tox -e py311-aiohttp
 
 # Run with only httpx
-tox -e py310-httpx
+tox -e py311-httpx
 ```
 
 See `pyproject.toml` for all available environment factors and combinations.

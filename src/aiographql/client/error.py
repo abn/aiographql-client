@@ -3,12 +3,7 @@ from __future__ import annotations
 import dataclasses
 
 from typing import Any
-from typing import TypeVar
-
-from typing_extensions import Self
-
-
-T = TypeVar("T", bound="GraphQLError")
+from typing import Self
 
 
 @dataclasses.dataclass(frozen=True)
