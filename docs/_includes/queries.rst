@@ -148,6 +148,28 @@ You can provide custom headers for a specific request. These will be merged with
         headers={"X-Custom-Header": "value"}
     )
 
+Query Extensions
+----------------
+
+You can pass GraphQL extensions along with your queries. Extensions are extra information sent to the server that may be used for features like persisted queries, caching hints, or custom server behavior.
+
+.. code-block:: python
+
+    request = GraphQLRequest(
+        query="{ viewer { login } }",
+        extensions={"persistedQuery": {"version": 1, "sha256Hash": "..."}}
+    )
+    response = await client.query(request=request)
+
+Like variables and operation names, you can override the default extensions when making the request:
+
+.. code-block:: python
+
+    response = await client.query(
+        request=request,
+        extensions={"customExtension": "value"}
+    )
+
 Handling Errors
 ---------------
 
