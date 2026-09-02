@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* 
+*
 
 ### Features
 
