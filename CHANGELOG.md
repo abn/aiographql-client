@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.0.0](https://github.com/abn/aiographql-client/compare/v1.2.0...v2.0.0) (2026-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* 
+
+### Features
+
+* **client:** implement GraphQL-over-HTTP compliance ([4a0e72d](https://github.com/abn/aiographql-client/commit/4a0e72dbd72c00c2521782ab7f3f774d5a5f5f30))
+* drop Python 3.10 support ([#375](https://github.com/abn/aiographql-client/issues/375)) ([a6bc8fa](https://github.com/abn/aiographql-client/commit/a6bc8fa8782100bdaa137a5fd44b59381cb12ed0))
+* **subscription:** support graphql-transport-ws protocol ([8f81db7](https://github.com/abn/aiographql-client/commit/8f81db71d7b403b5c9e62fdcf935f48b784d4487))
+
+
+### Performance Improvements
+
+* optimise type hint resolution during dataclass decoding ([#360](https://github.com/abn/aiographql-client/issues/360)) ([c342d28](https://github.com/abn/aiographql-client/commit/c342d28754cd33d8195944d222f40302a3432821))
+
+
+### Documentation
+
+* auto-compute copyright year in footer ([d04cf2e](https://github.com/abn/aiographql-client/commit/d04cf2e20998caca1f2c290a2ffa6c0f93ba6378))
+* document GraphQL extensions for queries and subscriptions ([#382](https://github.com/abn/aiographql-client/issues/382)) ([8afbb55](https://github.com/abn/aiographql-client/commit/8afbb5596213bd5b0272be4ae02a85f235eea289))
+* document graphql-ws vs graphql-transport-ws protocol negotiation ([3c42f98](https://github.com/abn/aiographql-client/commit/3c42f9818ca308b4631571b17b24781dc1798025))
+
 ## [1.2.0](https://github.com/abn/aiographql-client/compare/v1.1.0...v1.2.0) (2026-05-27)
 
 
