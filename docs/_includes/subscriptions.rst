@@ -149,4 +149,3 @@ Connection Pool Limits
 **********************
 
 As mentioned in the :ref:`transport` section, the default connection limit is 100. Each active subscription consumes one connection from this pool. If you anticipate having many concurrent subscriptions, ensure your session's connector is configured with a higher limit.
-
