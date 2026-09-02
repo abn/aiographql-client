@@ -34,6 +34,18 @@ stdout when either :attr:`aiographql.client.GraphQLSubscriptionEventType.DATA` o
     # unsubscribe
     await subscription.unsubscribe_and_wait()
 
+.. hint:: You can also pass GraphQL extensions with your subscription requests using the ``extensions`` parameter:
+
+    .. code-block:: python
+
+        subscription = await client.subscribe(
+            request=request,
+            extensions={"customExtension": "value"},
+            on_data=print
+        )
+
+    Extensions can be specified in the ``GraphQLRequest`` or as a parameter to ``subscribe()``, and they will be sent with the subscription payload.
+
 .. hint:: By default, subscriptions negotiate the modern standard :code:`"graphql-transport-ws"`
     sub-protocol and fall back to legacy :code:`"graphql-ws"`. In the case you want to restrict
     the GraphQL over WebSocket sub-protocol to use, you may do so by setting
@@ -137,3 +149,4 @@ Connection Pool Limits
 **********************
 
 As mentioned in the :ref:`transport` section, the default connection limit is 100. Each active subscription consumes one connection from this pool. If you anticipate having many concurrent subscriptions, ensure your session's connector is configured with a higher limit.
+
