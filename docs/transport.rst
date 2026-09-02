@@ -46,18 +46,19 @@ The library supports multiple transports for HTTP (Queries/Mutations) and WebSoc
    * - ``AiohttpSubscriptionTransport``
      - WebSocket
      - ``aiohttp``
-     - Default for subscriptions, shares ``aiohttp`` session.
+     - Default for subscriptions, shares ``aiohttp`` session. Supports both modern ``graphql-transport-ws`` (default) and legacy ``graphql-ws`` protocols.
    * - ``WebsocketSubscriptionTransport``
      - WebSocket
      - ``websockets``
-     - Lightweight alternative for subscriptions.
+     - Lightweight alternative for subscriptions. Supports both modern ``graphql-transport-ws`` (default) and legacy ``graphql-ws`` protocols.
 
 Subscription Lifecycle
 **********************
 
-Subscriptions ride a long-lived WebSocket connection following the
-``graphql-ws`` protocol. The sequence below shows the handshake and
-the message flow for the lifetime of a single subscription:
+Subscriptions ride a long-lived WebSocket connection following the GraphQL over WebSocket protocol.
+The client negotiates the modern ``graphql-transport-ws`` protocol by default and automatically
+falls back to the legacy ``graphql-ws`` protocol for older servers. The sequence below shows the
+handshake and message flow for a single subscription:
 
 .. mermaid::
 
@@ -70,19 +71,42 @@ the message flow for the lifetime of a single subscription:
 
        App->>Client: subscribe(query)
        Client->>WS: connect()
-       WS->>Server: WebSocket upgrade (graphql-ws)
+       WS->>Server: WebSocket upgrade (protocols negotiation)
        Server-->>WS: connection_ack
-       WS->>Server: start { id, query }
+       WS->>Server: subscribe/start { id, query }
        loop while subscription active
-           Server-->>WS: data { id, payload }
+           Server-->>WS: next/data { id, payload }
            WS-->>Client: yield CallbackRegistry events
            Client-->>App: GraphQLResponse
        end
        App->>Client: unsubscribe()
-       Client->>WS: stop { id }
-       WS->>Server: stop { id }
+       Client->>WS: complete/stop { id }
+       WS->>Server: complete/stop { id }
        Server-->>WS: complete { id }
        WS-->>Client: close()
+
+Protocol Negotiation
+--------------------
+
+The client defaults to negotiating both ``graphql-transport-ws`` (modern) and ``graphql-ws`` (legacy)
+protocols during the WebSocket handshake. The server selects which protocol to use, and the client
+adapts its message format automatically:
+
+*   **Modern protocol (graphql-transport-ws)**: Uses ``subscribe``, ``next``, ``complete``, ``ping``, and ``pong`` messages.
+*   **Legacy protocol (graphql-ws)**: Uses ``start``, ``data``, ``stop``, and ``ka`` (keep-alive) messages.
+
+You can explicitly specify protocols using the ``protocols`` parameter:
+
+.. code-block:: python
+
+   # Force modern protocol only
+   await client.subscribe(query, protocols="graphql-transport-ws")
+
+   # Force legacy protocol only
+   await client.subscribe(query, protocols="graphql-ws")
+
+   # Default: try both (modern first, legacy fallback)
+   await client.subscribe(query)
 
 Customizing Transport
 *********************
