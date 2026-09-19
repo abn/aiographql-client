@@ -1,4 +1,5 @@
 # Asynchronous GraphQL Client
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/abn/aiographql-client)
 [![PyPI version](https://badge.fury.io/py/aiographql-client.svg)](https://badge.fury.io/py/aiographql-client)
 [![Python Versions](https://img.shields.io/pypi/pyversions/aiographql-client)](https://pypi.org/project/aiographql-client/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
