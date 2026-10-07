@@ -78,6 +78,10 @@ class WebsocketResponse(GraphQLWebSocketResponse):
     def __init__(self, ws: ClientConnection) -> None:
         self.ws = ws
 
+    @property
+    def subprotocol(self) -> str | None:
+        return getattr(self.ws, "subprotocol", None)
+
     async def __aenter__(self) -> WebsocketResponse:
         return self
 

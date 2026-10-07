@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
 import os
 import time
 import urllib.error
@@ -96,12 +97,13 @@ def pytest_configure(config: pytest.Config) -> None:
     # Only wait if we are not just collecting tests or in a environment where we don't expect servers
     # However, since these are integration tests, we should probably wait if the options are provided.
     # In CI, these are always provided or defaulted to local.
+    logger = logging.getLogger(__name__)
     for name, url in server_urls.items():
         if not url:
             continue
-        print(f"Waiting for {name} server at {url}...")  # noqa: T201
+        logger.warning("Waiting for %s server at %s...", name, url)
         if not _wait_for_server(url):
-            print(f"WARNING: {name} server at {url} not available after timeout.")  # noqa: T201
+            logger.warning("%s server at %s not available after timeout.", name, url)
 
 
 def pytest_addoption(parser: Any) -> None:

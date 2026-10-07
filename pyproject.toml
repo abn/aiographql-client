@@ -6,11 +6,11 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "aiographql-client"
-version = "1.2.0a0"
+version = "2.0.0"
 description = "An asyncio GraphQL client built on top of aiohttp and graphql-core-next"
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 keywords = [
     "aiohttp",
     "asyncio",
@@ -24,7 +24,7 @@ dynamic = [
     "classifiers",
 ]
 dependencies = [
-    "cafeteria-asyncio >=0.3,<0.4",
+    "cafeteria >=1.0,<2.0",
     "graphql-core >=3.0,<4.0",
     "orjson (>=3.11.7,<4.0.0)",
 ]
@@ -64,6 +64,12 @@ fix = true
 line-length = 88
 
 [tool.ruff.lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+]
 extend-select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
@@ -91,6 +97,10 @@ extend-safe-fixes = [
 unfixable = [
     "ERA", # do not autoremove commented out code
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"benchmark*.py" = ["T201"]
+"examples/*" = ["T201", "ERA001"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
@@ -167,7 +177,7 @@ output = ".coverage/coverage.json"
 [tool.tox]
 env_list = [
     { product = [
-        { prefix = "py3", start = 10, stop = 14 },
+        { prefix = "py3", start = 11, stop = 15 },
         ["aiohttp", "httpx", "all"],
     ] }
 ]
@@ -234,9 +244,14 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = {version = "^9.1.0", python = ">=3.12"}
-sphinx-material = {version = "^0.0.36", python = ">=3.12"}
+shibuya = {version = "^2026.5.19", python = ">=3.12"}
+sphinx-design = {version = "^0.7.0", python = ">=3.12"}
+sphinx-copybutton = {version = "^0.5.2", python = ">=3.12"}
 sphinx-autodoc-typehints = {version = "^3.9.9", python = ">=3.12"}
-sphinxcontrib-spelling = {version = "^8.0.2", python = ">=3.12"}
+sphinxext-opengraph = {version = "^0.13.0", python = ">=3.12"}
+sphinx-sitemap = {version = "^2.9.0", python = ">=3.12"}
+sphinx-notfound-page = {version = "^1.1.0", python = ">=3.12"}
+sphinxcontrib-mermaid = {version = "^2.0.2", python = ">=3.12"}
 myst-parser = {version = "^5.0.0", python = ">=3.12"}
 
 [tool.poetry.group.dev.dependencies]

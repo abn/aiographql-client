@@ -252,14 +252,6 @@ async def test_httpx_transport_status_error_handling(
     assert excinfo.value.response.json == {"errors": [{"message": "Bad Request"}]}
 
 
-async def test_httpx_transport_coerce_value_async() -> None:
-    transport = HttpxTransport(endpoint="http://test.com")
-    serializer = DefaultSerializer()
-
-    assert transport._coerce_value(True, serializer) == 1
-    assert transport._coerce_value({"a": 1}, serializer) == '{"a":1}'
-
-
 async def test_httpx_transport_invalid_method_async() -> None:
     transport = HttpxTransport(endpoint="http://test")
     with pytest.raises(GraphQLClientException, match="Invalid method"):

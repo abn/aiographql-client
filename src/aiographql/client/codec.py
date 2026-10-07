@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import decimal
 import enum
+import functools
 import types
 import uuid
 
@@ -40,6 +41,11 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
+@functools.cache
+def _get_type_hints_cached(target_type: type) -> dict[str, Any]:
+    return get_type_hints(target_type)
+
+
 @runtime_checkable
 class GraphQLCodec(Protocol):
     def encode(self, value: Any, include_primitives: bool = True) -> Any: ...
@@ -49,6 +55,7 @@ class GraphQLCodec(Protocol):
 
 class DefaultGraphQLCodec:
     def __init__(self) -> None:
+        self._dataclass_fields: dict[type, dict[str, Any]] = {}
         self._encoders: dict[type, Callable[[Any], Any]] = {
             datetime.datetime: lambda v: v.isoformat(),
             datetime.date: lambda v: v.isoformat(),
@@ -122,6 +129,14 @@ class DefaultGraphQLCodec:
             args = get_args(target_type)
             if origin is list or origin is Iterable:
                 item_type = args[0]
+                if (
+                    isinstance(item_type, type)
+                    and dataclasses.is_dataclass(item_type)
+                    and item_type not in self._dataclass_fields
+                ):
+                    self._dataclass_fields[item_type] = _get_type_hints_cached(
+                        item_type,
+                    )
                 return [self.decode(item, item_type) for item in value]  # type: ignore[return-value]
             if origin is dict:
                 key_type, val_type = args
@@ -156,7 +171,11 @@ class DefaultGraphQLCodec:
                 raise GraphQLCodecException(
                     f"Cannot decode non-dict value {value} to dataclass {target_type}"
                 )
-            field_types = get_type_hints(target_type)
+            field_types = self._dataclass_fields.get(target_type)
+            if field_types is None:
+                field_types = self._dataclass_fields[target_type] = (
+                    _get_type_hints_cached(target_type)
+                )
             kwargs = {}
             for k, v in value.items():
                 if k in field_types:

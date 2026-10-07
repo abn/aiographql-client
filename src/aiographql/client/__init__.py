@@ -15,6 +15,8 @@ from aiographql.client.exceptions import GraphQLIntrospectionException
 from aiographql.client.exceptions import GraphQLRequestException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.response import GraphQLResponse
+from aiographql.client.subscription import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from aiographql.client.subscription import GRAPHQL_WS_PROTOCOL
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEvent
 from aiographql.client.subscription import GraphQLSubscriptionEventType
@@ -39,6 +41,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "GRAPHQL_TRANSPORT_WS_PROTOCOL",
+    "GRAPHQL_WS_PROTOCOL",
     "AiohttpTransport",
     "DefaultGraphQLCodec",
     "GraphQLClient",

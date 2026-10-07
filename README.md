@@ -1,4 +1,5 @@
 # Asynchronous GraphQL Client
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/abn/aiographql-client)
 [![PyPI version](https://badge.fury.io/py/aiographql-client.svg)](https://badge.fury.io/py/aiographql-client)
 [![Python Versions](https://img.shields.io/pypi/pyversions/aiographql-client)](https://pypi.org/project/aiographql-client/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -69,29 +70,29 @@ You can also explicitly specify which transport to use by providing a transport 
 
 ```python
 from aiographql.client import GraphQLClient
-from aiographql.client.transport import HttpxTransport, AiohttpTransport, WebsocketSubscriptionTransport
+from aiographql.client.transport import (
+    HttpxTransport,
+    AiohttpTransport,
+    WebsocketSubscriptionTransport,
+)
 
 # Explicitly use httpx
 transport = HttpxTransport(endpoint="https://api.github.com/graphql")
-client = GraphQLClient(
-    endpoint="https://api.github.com/graphql",
-    transport=transport
-)
+client = GraphQLClient(endpoint="https://api.github.com/graphql", transport=transport)
 
 # Explicitly use aiohttp
 transport = AiohttpTransport(endpoint="https://api.github.com/graphql")
-client = GraphQLClient(
-    endpoint="https://api.github.com/graphql",
-    transport=transport
-)
+client = GraphQLClient(endpoint="https://api.github.com/graphql", transport=transport)
 
 # Explicitly use websockets for subscriptions
 from aiographql.client.transport.websocket import WebsocketSubscriptionTransport
 
-subscription_transport = WebsocketSubscriptionTransport(endpoint="wss://your-api.com/graphql")
+subscription_transport = WebsocketSubscriptionTransport(
+    endpoint="wss://your-api.com/graphql"
+)
 client = GraphQLClient(
     endpoint="https://your-api.com/graphql",
-    subscription_transport=subscription_transport
+    subscription_transport=subscription_transport,
 )
 ```
 
@@ -106,14 +107,14 @@ pip install tox
 # Run all environments
 tox
 
-# Run a specific environment (e.g., Python 3.10 with aiohttp and pydantic)
-tox -e py310-aiohttp-pydantic
+# Run a specific environment (e.g., Python 3.11 with aiohttp and pydantic)
+tox -e py311-aiohttp-pydantic
 
 # Run with only aiohttp
-tox -e py310-aiohttp
+tox -e py311-aiohttp
 
 # Run with only httpx
-tox -e py310-httpx
+tox -e py311-httpx
 ```
 
 See `pyproject.toml` for all available environment factors and combinations.
@@ -204,9 +205,7 @@ async def print_city_updates(client: GraphQLClient, city: str) -> None:
         variables={"city": city},
     )
     # subscribe to data and error events, and print them
-    await client.subscribe(
-        request=request, on_data=print, on_error=print, wait=True
-    )
+    await client.subscribe(request=request, on_data=print, on_error=print, wait=True)
 ```
 
 For custom event specific callback registration, see [Callback Registry Documentation](https://aiographql-client.readthedocs.io/en/latest/examples.html#callback-registry).
@@ -254,7 +253,7 @@ request = GraphQLRequest(
     }
     """,
     variables={"id": 109},
-    operation="get_bot_name"
+    operation="get_bot_name",
 )
 ```
 
@@ -271,20 +270,18 @@ The client supports explicit decoding of results into your own models, like `dat
 from pydantic import BaseModel
 from aiographql.client import GraphQLClient
 
+
 class User(BaseModel):
     id: int
     name: str
 
+
 client = GraphQLClient(endpoint="http://localhost/graphql")
 
 # Explicitly decode into a Pydantic model
-user = await client.query_data_as(
-    "{ user(id: 1) { id name } }",
-    User,
-    path="user"
-)
+user = await client.query_data_as("{ user(id: 1) { id name } }", User, path="user")
 
-print(user.name) # Alice
+print(user.name)  # Alice
 ```
 
 Pass models directly into variables:

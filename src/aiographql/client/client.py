@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import time
 
 from typing import TYPE_CHECKING
 from typing import Any
@@ -17,6 +18,8 @@ from aiographql.client.exceptions import GraphQLIntrospectionException
 from aiographql.client.request import GraphQLRequest
 from aiographql.client.serializer import DefaultSerializer
 from aiographql.client.serializer import GraphQLSerializer
+from aiographql.client.subscription import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from aiographql.client.subscription import GRAPHQL_WS_PROTOCOL
 from aiographql.client.subscription import CallbacksType
 from aiographql.client.subscription import GraphQLSubscription
 from aiographql.client.subscription import GraphQLSubscriptionEventType
@@ -69,9 +72,10 @@ class GraphQLClient:
 
     :param endpoint: URI of graph api.
     :param headers: Default headers to use for every request made by this client.
-        By default the client adds 'Content-Type: application/json' and
+        By default the client adds 'Content-Type: application/json',
+        'Accept: application/graphql-response+json, application/json' and
         'Accept-Encoding: gzip' to all requests. These can be overridden by
-        specifying then here.
+        specifying them here.
     :param method: Default method to use when submitting a GraphQL request to the
         specified `endpoint`.
     :param session: Optional :class:`GraphQLSession` to use when making requests.
@@ -102,10 +106,15 @@ class GraphQLClient:
         codec: GraphQLCodec | None = None,
         transport: GraphQLTransport | None = None,
         subscription_transport: GraphQLSubscriptionTransport | None = None,
+        schema_ttl: float | None = None,
     ) -> None:
         self.endpoint = endpoint
         self._method = method or GraphQLQueryMethod.post
-        self._headers = {"Content-Type": "application/json", "Accept-Encoding": "gzip"}
+        self._headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/graphql-response+json, application/json",
+            "Accept-Encoding": "gzip",
+        }
         self._headers.update(headers or {})
         self._schema = schema
         self._validate = validate
@@ -117,6 +126,8 @@ class GraphQLClient:
             session=session,
         )
         self._subscription_transport = subscription_transport
+        self._schema_ttl = schema_ttl
+        self._schema_fetched_at: float | None = None
 
     @property
     def transport(self) -> GraphQLTransport:
@@ -190,9 +201,18 @@ class GraphQLClient:
         :param headers: Request headers
         :return: The GraphQL schema as introspected. This maybe a previously cached value.
         """
-        # TODO: consider adding ttl logic for expiring schemas for long running services
+        if (
+            self._schema is not None
+            and self._schema_ttl is not None
+            and self._schema_fetched_at is not None
+        ):
+            elapsed = time.monotonic() - self._schema_fetched_at
+            if elapsed > self._schema_ttl:
+                refresh = True
+
         if self._schema is None or refresh:
             self._schema = await self.introspect(headers=headers)
+            self._schema_fetched_at = time.monotonic()
         return self._schema
 
     async def validate(
@@ -231,6 +251,7 @@ class GraphQLClient:
         request: GraphQLRequest | str,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
     ) -> GraphQLRequest:
         """
@@ -244,9 +265,10 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param extensions: Query extensions to set for the provided request.
         :param headers: Additional headers to be set when sending HTTP request.
         :return: A copy of the `request` object with the specified values of
-            `operation`, `variables` and `headers` set/merged.
+            `operation`, `variables`, `extensions` and `headers` set/merged.
         """
         if isinstance(request, str):
             request = GraphQLRequest(query=request, codec=self._codec)
@@ -256,6 +278,7 @@ class GraphQLClient:
             headers_fallback=self._headers,
             operation=operation,
             variables=variables,
+            extensions=extensions,
             codec=self._codec,
         )
 
@@ -275,6 +298,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         session: GraphQLSession | None = None,
     ) -> T:
         """
@@ -288,6 +312,7 @@ class GraphQLClient:
         :param headers: Additional headers to be set when sending HTTP request.
         :param operation: GraphQL operation name to use.
         :param variables: Query variables to set for the provided request.
+        :param extensions: Query extensions to set for the provided request.
         :param session: Optional `GraphQLSession` to use for requests.
         :return: The decoded data.
         """
@@ -297,6 +322,7 @@ class GraphQLClient:
             headers=headers,
             operation=operation,
             variables=variables,
+            extensions=extensions,
             session=session,
         )
         return response.data_as(result_type, path=path, codec=self._codec)
@@ -308,6 +334,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
@@ -334,11 +361,16 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param extensions: Query extensions to set for the provided request.
         :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting response object.
         """
         request = self._prepare_request(
-            request=request, operation=operation, variables=variables, headers=headers
+            request=request,
+            operation=operation,
+            variables=variables,
+            extensions=extensions,
+            headers=headers,
         )
 
         await self.validate(request=request)
@@ -357,6 +389,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
@@ -371,6 +404,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param extensions: Query extensions to set for the provided request.
         :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         """
@@ -380,6 +414,7 @@ class GraphQLClient:
             headers=headers,
             operation=operation,
             variables=variables,
+            extensions=extensions,
             session=session,
         )
 
@@ -389,6 +424,7 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         session: GraphQLSession | None = None,
     ) -> GraphQLResponse:
         """
@@ -403,6 +439,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param extensions: Query extensions to set for the provided request.
         :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         """
@@ -412,6 +449,7 @@ class GraphQLClient:
             headers=headers,
             operation=operation,
             variables=variables,
+            extensions=extensions,
             session=session,
         )
 
@@ -421,12 +459,16 @@ class GraphQLClient:
         headers: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         callbacks: CallbacksType | None = None,
         on_data: CallbackType | None = None,
         on_error: CallbackType | None = None,
         session: GraphQLSession | None = None,
         wait: bool = False,
-        protocols: str | Iterable[str] = ("graphql-ws",),
+        protocols: str | Iterable[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_payload: dict[str, Any] | None = None,
         transport: GraphQLSubscriptionTransport | None = None,
     ) -> GraphQLSubscription:
@@ -459,6 +501,7 @@ class GraphQLClient:
         :param variables: Query variables to set for the provided request. This will
                           override the default values for any existing variables in the
                           request if set.
+        :param extensions: Query extensions to set for the provided request.
         :param session: Optional `GraphQLSession` to use for requests
         :return: The resulting `GraphQLResponse` object.
         :param callbacks: Custom callback registry mapping an event to one more more
@@ -478,7 +521,11 @@ class GraphQLClient:
         :return: The initialised subscription.
         """
         request = self._prepare_request(
-            request=request, operation=operation, variables=variables, headers=headers
+            request=request,
+            operation=operation,
+            variables=variables,
+            extensions=extensions,
+            headers=headers,
         )
         await self.validate(request=request)
 

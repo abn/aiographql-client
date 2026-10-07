@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -10,6 +12,8 @@ from aiographql.client.response import GraphQLResponse
 from aiographql.client.transport.base import GraphQLSubscriptionTransport
 from aiographql.client.transport.base import GraphQLTransport
 from aiographql.client.transport.base import GraphQLWebSocketResponse
+from aiographql.client.transport.base import is_graphql_response
+from aiographql.client.transport.base import prepare_get_params
 
 
 if TYPE_CHECKING:
@@ -30,7 +34,7 @@ class AiohttpTransport(GraphQLTransport):
         session: aiohttp.ClientSession | None = None,
     ) -> None:
         try:
-            import aiohttp as _  # noqa: F401
+            importlib.import_module("aiohttp")
         except ImportError:
             raise GraphQLClientException(
                 "aiohttp is required to use AiohttpTransport. "
@@ -84,13 +88,7 @@ class AiohttpTransport(GraphQLTransport):
         if method == "post":
             kwargs.setdefault("data", serializer.dumps(request.payload()))
         elif method == "get":
-            params = {
-                k: str(v)
-                if not isinstance(v, (dict, list, bool))
-                else self._coerce_value(v, serializer)
-                for k, v in request.payload().items()
-            }
-            kwargs.setdefault("params", params)
+            kwargs.setdefault("params", prepare_get_params(request, serializer))
         else:
             raise GraphQLClientException(f"Invalid method ({method}) specified")
 
@@ -123,27 +121,21 @@ class AiohttpTransport(GraphQLTransport):
                 except Exception:
                     body = None
 
-                response = GraphQLResponse(request=request, json=body)
+                response = GraphQLResponse(
+                    request=request, json=body if isinstance(body, dict) else {}
+                )
 
-                if 200 <= resp.status < 300:
+                content_type = (
+                    getattr(resp, "headers", {}).get("Content-Type")
+                    if hasattr(resp, "headers")
+                    else None
+                )
+                if is_graphql_response(resp.status, content_type, body):
                     return response
 
                 raise GraphQLRequestException(response)
         except aiohttp.ClientError as exc:
             raise GraphQLTransportException(f"HTTP request failed: {exc}") from exc
-
-    @staticmethod
-    def _coerce_value(value: Any, serializer: GraphQLSerializer) -> Any:
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, (dict, list)):
-            serialized = serializer.dumps(value)
-            return (
-                serialized.decode("utf-8")
-                if isinstance(serialized, bytes)
-                else serialized
-            )
-        return value
 
     async def close(self) -> None:
         if self._session is not None and self._owns_session:
@@ -163,7 +155,7 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
         session: aiohttp.ClientSession | None = None,
     ) -> None:
         try:
-            import aiohttp as _  # noqa: F401
+            importlib.import_module("aiohttp")
         except ImportError:
             raise GraphQLClientException(
                 "aiohttp is required to use AiohttpSubscriptionTransport. "
@@ -225,6 +217,10 @@ class AiohttpSubscriptionTransport(GraphQLSubscriptionTransport):
 class AiohttpWebSocketResponse(GraphQLWebSocketResponse):
     def __init__(self, ws: aiohttp.ClientWebSocketResponse) -> None:
         self.ws = ws
+
+    @property
+    def subprotocol(self) -> str | None:
+        return self.ws.protocol
 
     async def __aenter__(self) -> AiohttpWebSocketResponse:
         # aiohttp.ClientWebSocketResponse does not have __aenter__, so return self

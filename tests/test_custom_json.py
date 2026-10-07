@@ -76,7 +76,7 @@ async def test_custom_serializer_deserialization() -> None:
         async def __aenter__(self) -> MockResponse:
             return self
 
-        async def __aexit__(self, *args: Any) -> None:
+        async def __aexit__(self, *args: object) -> None:
             pass
 
     session = MagicMock(spec=aiohttp.ClientSession)

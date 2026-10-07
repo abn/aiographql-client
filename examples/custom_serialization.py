@@ -57,13 +57,11 @@ async def main() -> None:
     ) as client:
         logger.info("--- Query: Using Custom Serializer and Codec ---")
 
-        # ruff: disable[ERA001]
         # In a real scenario, if the server returned a 'createdAt' ISO string,
         # and we requested it as a datetime object, the codec would handle it:
         # created_at: datetime = await client.query_data_as(
         #     "{ city(name: \"London\") { createdAt } }", datetime, path="city.createdAt"
         # )
-        # ruff: enable[ERA001]
 
         response = await client.query("{ cities { name } }")
         if response.json and response.json.get("data"):

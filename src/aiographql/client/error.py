@@ -3,10 +3,7 @@ from __future__ import annotations
 import dataclasses
 
 from typing import Any
-from typing import TypeVar
-
-
-T = TypeVar("T", bound="GraphQLError")
+from typing import Self
 
 
 @dataclasses.dataclass(frozen=True)
@@ -21,13 +18,10 @@ class GraphQLError:
     path: list[str | int] | None = dataclasses.field(default=None)
 
     @classmethod
-    def load(cls: type[T], data: dict[str, Any]) -> T:
+    def load(cls, data: dict[str, Any]) -> Self:
         construct_class = cls
-        custom_keys = [
-            key
-            for key in data
-            if key not in {field.name for field in dataclasses.fields(cls)}
-        ]
+        cls_fields = {field.name for field in dataclasses.fields(cls)}
+        custom_keys = [key for key in data if key not in cls_fields]
 
         if custom_keys:
             custom_fields = [

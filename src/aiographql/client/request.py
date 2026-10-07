@@ -25,6 +25,7 @@ class GraphQLRequest:
         schema from the server.
     :param headers: Headers to use, in addition to client default headers when making
         the HTTP request.
+    :param extensions: Optional dictionary of extensions to pass with the query.
     """
 
     query: str
@@ -34,6 +35,7 @@ class GraphQLRequest:
     validate: bool = True
     headers: dict[str, str] = dataclasses.field(default_factory=dict)
     codec: GraphQLCodec | None = dataclasses.field(default=None, compare=False)
+    extensions: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self, operation: str | None) -> None:
         if operation is not None:
@@ -48,7 +50,7 @@ class GraphQLRequest:
         from aiographql.client.codec import DefaultGraphQLCodec
 
         codec = self.codec or DefaultGraphQLCodec()
-        payload = {
+        payload: dict[str, Any] = {
             "query": self.query,
             "variables": cast("DefaultGraphQLCodec", codec).encode(
                 self.variables, include_primitives=False
@@ -58,6 +60,8 @@ class GraphQLRequest:
         }
         if self.operationName is not None:
             payload["operationName"] = self.operationName
+        if self.extensions:
+            payload["extensions"] = self.extensions
         return payload
 
     def asdict(self) -> dict[str, Any]:
@@ -65,6 +69,7 @@ class GraphQLRequest:
             "query": self.query,
             "operationName": self.operationName,
             "variables": self.variables,
+            "extensions": self.extensions,
         }
 
     def copy(
@@ -73,12 +78,14 @@ class GraphQLRequest:
         headers_fallback: dict[str, str] | None = None,
         operation: str | None = None,
         variables: dict[str, Any] | None = None,
+        extensions: dict[str, Any] | None = None,
         codec: GraphQLCodec | None = None,
     ) -> GraphQLRequest:
         return dataclasses.replace(
             self,
             operation=operation or self.operationName,
             variables={**deepcopy(self.variables), **(variables or {})},
+            extensions={**deepcopy(self.extensions), **(extensions or {})},
             headers={
                 **(headers_fallback or {}),
                 **self.headers,
@@ -94,6 +101,7 @@ class GraphQLRequestContainer:
     headers: dataclasses.InitVar[dict[str, str] | None] = None
     operation: dataclasses.InitVar[str | None] = None
     variables: dataclasses.InitVar[dict[str, Any] | None] = None
+    extensions: dataclasses.InitVar[dict[str, Any] | None] = None
     codec: dataclasses.InitVar[GraphQLCodec | None] = None
 
     def __post_init__(
@@ -101,18 +109,27 @@ class GraphQLRequestContainer:
         headers: dict[str, str] | None,
         operation: str | None,
         variables: dict[str, Any] | None,
+        extensions: dict[str, Any] | None,
         codec: GraphQLCodec | None,
     ) -> None:
         object.__setattr__(
             self,
             "request",
             (
-                GraphQLRequest(query=self.request, codec=codec)
+                GraphQLRequest(
+                    query=self.request,
+                    headers=headers or {},
+                    operation=operation,
+                    variables=variables or {},
+                    extensions=extensions or {},
+                    codec=codec,
+                )
                 if isinstance(self.request, str)
                 else self.request.copy(
                     headers=headers,
                     operation=operation,
                     variables=variables,
+                    extensions=extensions,
                     codec=codec,
                 )
             ),

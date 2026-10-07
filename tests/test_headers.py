@@ -70,3 +70,13 @@ async def test_no_headers(server: str, client: GraphQLClient, query_city: str) -
     request = GraphQLRequest(query=query_city)
     with pytest.raises(GraphQLIntrospectionException):
         await client.post(request)
+
+
+async def test_default_client_headers() -> None:
+    client = GraphQLClient(endpoint="http://example.com/graphql")
+    assert client._headers["Content-Type"] == "application/json"
+    assert (
+        client._headers["Accept"]
+        == "application/graphql-response+json, application/json"
+    )
+    assert client._headers["Accept-Encoding"] == "gzip"

@@ -116,5 +116,5 @@ async def test_apollo_subscription(
         if subscription.task is not None:
             await asyncio.wait_for(subscription.task, timeout=10)
         assert len(m) > 0
-    except (asyncio.TimeoutError, asyncio.CancelledError):
+    except (TimeoutError, asyncio.CancelledError):
         pytest.fail(f"Subscriptions timed out for Apollo {version}")
