@@ -21,9 +21,9 @@ class GraphQLTransportException(GraphQLClientException):
 
 class GraphQLClientValidationException(GraphQLClientException):
     def __init__(self, *args: graphql.GraphQLError) -> None:
-        message = "Query validation failed\n"
-        for error in args:
-            message += f"\n{error!s}"
+        message = "Query validation failed\n" + "".join(
+            [f"\n{error!s}" for error in args]
+        )
         super().__init__(message)
 
 
